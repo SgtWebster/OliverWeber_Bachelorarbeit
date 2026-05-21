@@ -33,9 +33,12 @@ export default function AboutPage() {
                     <div className="mt-8">
                         <h2 className="text-lg font-semibold text-slate-900">Kurz & Knapp</h2>
                         <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                            <li>🙂 <strong>Name:</strong> Oliver Weber</li>
+                            <li>😎 <strong>Rufname:</strong> Ulrich</li>
                             <li>📍 <strong>Standort:</strong> Salzburg, Österreich</li>
                             <li>💻 <strong>Beruf:</strong> Business and IT Demand Management @BMW Financial Services</li>
-                            <li>🎓 <strong>Studium:</strong> Digital Business & Software Engineering @MCI Innsbruck</li>
+                            <li>🎓 <strong>Studium:</strong> Bachelor Digital Business & Software Engineering @MCI Innsbruck</li>
+                            <li>💫 <strong>Sternzeichen:</strong> Zwilling</li>
                             <li>✉️ <strong>Email:</strong> ulrich@oliver-weber.at</li>
                         </ul>
                     </div>

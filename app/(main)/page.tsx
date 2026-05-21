@@ -11,7 +11,7 @@ export default function Home() {
                 {/*</div>*/}
 
                 <h1 className="text-balance text-4xl font-bold tracking-tight text-white sm:text-6xl">
-                    Oliver <span className="text-teal-300">Ulrich</span> Weber
+                    oliver <span className="text-teal-300">ulrich</span> weber
                 </h1>
 
                 {/*<p className="mt-6 text-pretty text-base leading-relaxed text-slate-600 sm:text-lg max-w-xl mx-auto">*/}
