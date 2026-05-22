@@ -9,7 +9,7 @@ type NavItem = { href: string; label: string };
 
 const NAV: NavItem[] = [
     { href: "/", label: "Home" },
-    { href: "/experiment", label: "Experiment" },
+    { href: "/bachelorarbeit", label: "Bachelorarbeit" },
     { href: "/about", label: "Über mich" },
 ];
 

@@ -6,7 +6,7 @@ export default function Footer() {
             <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
                 {/* Copyright / Name */}
                 <div className="text-sm font-medium">
-                    &copy; {new Date().getFullYear()} Oliver Ulrich Weber
+                    {/*&copy; {new Date().getFullYear()} Oliver Ulrich Weber*/}
                 </div>
 
                 {/* Rechtliches */}
