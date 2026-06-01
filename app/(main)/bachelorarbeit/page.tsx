@@ -1,7 +1,7 @@
 // (main)/bachelorarbeit/page.tsx
 "use client";
 
-"use client";
+import Link from "next/link";
 
 export default function ComingSoonPage() {
     return (
@@ -13,6 +13,14 @@ export default function ComingSoonPage() {
                 <p className="text-slate-700 mt-2">
                     ... bald ist es soweit ...
                 </p>
+                <div className="mt-8">
+                    <Link 
+                        href="/mockups/info" 
+                        className="inline-block bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 px-6 rounded-md transition-colors"
+                    >
+                        Zum Info Mockup
+                    </Link>
+                </div>
             </div>
         </div>
     );

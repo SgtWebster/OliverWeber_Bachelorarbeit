@@ -20,15 +20,15 @@ export default function AboutPage() {
                         Über mich
                     </h1>
 
-                    <div className="mt-6 space-y-4 text-slate-600 leading-relaxed text-pretty">
-                        {/*<p>*/}
-                        {/*    Willkommen! Mein Name ist Oliver Ulrich Weber. Ich studiere derzeit <strong>Digital Business & Software Engineering (BSc)</strong> am Management Center Innsbruck (MCI).*/}
-                        {/*</p>*/}
+                    {/*<div className="mt-6 space-y-4 text-slate-600 leading-relaxed text-pretty">*/}
+                    {/*    /!*<p>*!/*/}
+                    {/*    /!*    Willkommen! Mein Name ist Oliver Ulrich Weber. Ich studiere derzeit <strong>Digital Business & Software Engineering (BSc)</strong> am Management Center Innsbruck (MCI).*!/*/}
+                    {/*    /!*</p>*!/*/}
 
-                        <p>
-                            Diese Website dient zukünftig als digitale Visitenkarte.
-                        </p>
-                    </div>
+                    {/*    <p>*/}
+                    {/*        Diese Website dient zukünftig als digitale Visitenkarte.*/}
+                    {/*    </p>*/}
+                    {/*</div>*/}
 
                     <div className="mt-8">
                         <h2 className="text-lg font-semibold text-slate-900">Kurz & Knapp</h2>

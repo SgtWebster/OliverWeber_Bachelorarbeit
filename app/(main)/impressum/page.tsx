@@ -1,6 +1,7 @@
 // app/impressum/page.tsx
+import { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
     title: "Impressum | Oliver Ulrich Weber",
     description: "Impressum (privat) – Kontakt- und Anbieterangaben.",
 };
