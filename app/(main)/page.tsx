@@ -14,15 +14,14 @@ export default function Home() {
         setContactState('sending');
 
         try {
-            // --- NEUER TEIL ---
-            // Wir schicken die Nachricht an unsere eigene API-Route
+
             const response = await fetch('/api/contact', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message })
             });
 
-            // Prüfen ob der Server einen Fehler gemeldet hat
+
             if (!response.ok) {
                 throw new Error('Senden fehlgeschlagen');
             }
