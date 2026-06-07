@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "@/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ParticipantSession {
+  id              String   @id @default(uuid())
+  group           String
+  currentPhase    String   @default("INIT")
+
+  // Phase 1: Soziale Adhärenz (H3)
+  socialAdherence Int?
+
+  // Phase 3: Verhaltens-Compliance (H1)
+  compliance      Int?
+
+  // Phase 4: MDMT v2 Einzelitems (7-stufige Likert-Skala)
+  // Performance-Dimensionen
+  mCompetent      Int?
+  mReliable       Int?
+
+  // Moral-Dimensionen
+  mEthical        Int?
+  mSincere        Int?
+  mBenevolent     Int?
+
+  // Berechnete Mittelwerte für die statistische Auswertung (H2a, H2b)
+  performanceTrust Float?
+  moralTrust       Float?
+
+  // Kontrollvariablen
+  age             Int?
+  gender          String?
+  education       String?
+  techAffinity    Int?
+  aiExperience    Int?
+
+  // Zeitstempel zur Absicherung der Datenintegrität
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
