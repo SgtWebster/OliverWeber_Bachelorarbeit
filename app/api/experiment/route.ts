@@ -1,6 +1,6 @@
 // app/api/experiment/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/db/prisma'; // Falls dein Pfad anders ist, anpassen
+import { prisma } from '@/app/lib/db/prisma';
 
 export const dynamic = 'force-dynamic'; // Prevents static evaluation during build
 

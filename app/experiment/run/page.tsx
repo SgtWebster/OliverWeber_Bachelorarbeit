@@ -5,14 +5,14 @@ import { useEffect } from 'react';
 import { useExperimentStore } from '@/app/lib/store/experimentStore'; // Pfad ggf. anpassen
 
 // HIER WERDEN SPÄTER DIE PHASEN IMPORTIERT
-/*
+
 import Phase0Onboarding from './_components/phases/Phase0_Onboarding';
 import Phase1Routine from './_components/phases/Phase1_Routine';
 import Phase2Alert from './_components/phases/Phase2_Alert';
 import Phase3Dilemma from './_components/phases/Phase3_Dilemma';
 import Phase4Survey from './_components/phases/Phase4_Survey';
 import Phase5Debriefing from './_components/phases/Phase5_Debriefing';
-*/
+
 
 export default function ExperimentRunPage() {
     const { currentPhase, group, sessionId, setSessionId, setGroup, setPhase } = useExperimentStore();
@@ -72,6 +72,16 @@ export default function ExperimentRunPage() {
             </div>
 
             {/* HIER WERDEN DIE EINZELNEN PHASEN EINGEBLENDET */}
+            <div className="w-full max-w-4xl flex-grow flex flex-col">
+                {currentPhase === 'ONBOARDING' && <Phase0Onboarding />}
+                {currentPhase === 'ROUTINE' && <Phase1Routine />}
+                {currentPhase === 'ALERT' && <Phase2Alert />}
+                {currentPhase === 'DILEMMA' && <Phase3Dilemma />}
+                {currentPhase === 'SURVEY' && <Phase4Survey />}
+                {currentPhase === 'DEBRIEFING' && <Phase5Debriefing />}
+            </div>
+
+
             <div className="w-full max-w-4xl flex-grow flex flex-col">
                 {currentPhase === 'ONBOARDING' && (
                     <div className="text-white border border-red-500 p-8">
