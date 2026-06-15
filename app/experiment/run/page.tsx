@@ -61,73 +61,85 @@ export default function ExperimentRunPage() {
     }
 
     // 3. DER SWITCH-ROUTER (Das eigentliche Rendering)
+// 3. DER SWITCH-ROUTER & DAS NEUE MVP+ LAYOUT
     return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center p-4">
+        // Der Hauptcontainer nutzt die ganze Bildschirmhöhe.
+        // Später steuern wir hier über {group === 'TERMINAL' ? 'dark-mode' : 'light-mode'} das gesamte Theme.
+        <div className={`h-screen w-full flex flex-col font-sans transition-colors duration-500 overflow-hidden ${
+            group === 'TERMINAL' ? 'bg-slate-950 text-slate-300' : 'bg-slate-50 text-slate-800'
+        }`}>
 
-            {/* MVP-DEBUGGER: Blenden wir später für die echten Probanden aus */}
-            <div className="w-full max-w-4xl mb-4 p-3 bg-slate-900 border border-slate-800 rounded text-xs font-mono text-slate-400 flex justify-between">
-                <span>ID: <span className="text-blue-400">{sessionId}</span></span>
-                <span>Group: <span className="text-green-400 font-bold">{group}</span></span>
-                <span>Phase: <span className="text-amber-400">{currentPhase}</span></span>
+            {/* DEBUG-LEISTE (Entfernen wir vor dem Live-Gang) */}
+            <div className="absolute top-0 left-0 w-full p-1 bg-red-600/90 text-white text-[10px] font-mono flex justify-between z-50">
+                <span>ID: {sessionId}</span>
+                <span className="font-bold">CONDITION: {group}</span>
+                <span>PHASE: {currentPhase}</span>
             </div>
 
-            {/* HIER WERDEN DIE EINZELNEN PHASEN EINGEBLENDET */}
-            <div className="w-full max-w-4xl flex-grow flex flex-col">
-                {currentPhase === 'ONBOARDING' && <Phase0Onboarding />}
-                {currentPhase === 'ROUTINE' && <Phase1Routine />}
-                {currentPhase === 'ALERT' && <Phase2Alert />}
-                {currentPhase === 'DILEMMA' && <Phase3Dilemma />}
-                {currentPhase === 'SURVEY' && <Phase4Survey />}
-                {currentPhase === 'DEBRIEFING' && <Phase5Debriefing />}
-            </div>
+            {/* HAUPT-ARBEITSBEREICH (Split Screen) */}
+            <div className="flex-grow flex mt-6">
 
-
-            <div className="w-full max-w-4xl flex-grow flex flex-col">
-                {currentPhase === 'ONBOARDING' && (
-                    <div className="text-white border border-red-500 p-8">
-                        <h2>PLATZHALTER: Onboarding</h2>
-                        <button onClick={() => setPhase('ROUTINE')} className="mt-4 bg-blue-600 p-2 rounded">Weiter zu Routine</button>
+                {/* LINKE SEITE: Die Leitwarte (Deine Phasen) */}
+                <div className="flex-grow flex flex-col p-8 overflow-y-auto">
+                    <div className="max-w-3xl mx-auto w-full flex-grow flex flex-col justify-center">
+                        {/* HIER WERDEN DIE EINZELNEN PHASEN EINGEBLENDET */}
+                        {currentPhase === 'ONBOARDING' && <Phase0Onboarding />}
+                        {currentPhase === 'ROUTINE' && <Phase1Routine />}
+                        {currentPhase === 'ALERT' && <Phase2Alert />}
+                        {currentPhase === 'DILEMMA' && <Phase3Dilemma />}
+                        {currentPhase === 'SURVEY' && <Phase4Survey />}
+                        {currentPhase === 'DEBRIEFING' && <Phase5Debriefing />}
                     </div>
-                    // Später: <Phase0Onboarding />
-                )}
+                </div>
 
-                {currentPhase === 'ROUTINE' && (
-                    <div className="text-white border border-red-500 p-8">
-                        <h2>PLATZHALTER: Routinebetrieb</h2>
-                        <button onClick={() => setPhase('ALERT')} className="mt-4 bg-blue-600 p-2 rounded">Weiter zu Alert</button>
-                    </div>
-                    // Später: <Phase1Routine />
-                )}
-
-                {/* Das gleiche Schema für ALERT, DILEMMA, SURVEY, DEBRIEFING */}
-                {currentPhase === 'ALERT' && (
-                    <div className="text-white border border-red-500 p-8">
-                        <h2>PLATZHALTER: Alert</h2>
-                        <button onClick={() => setPhase('DILEMMA')} className="mt-4 bg-blue-600 p-2 rounded">Weiter zu Dilemma</button>
-                    </div>
-                )}
-
-                {currentPhase === 'DILEMMA' && (
-                    <div className="text-white border border-red-500 p-8">
-                        <h2>PLATZHALTER: Dilemma</h2>
-                        <button onClick={() => setPhase('SURVEY')} className="mt-4 bg-blue-600 p-2 rounded">Weiter zu Survey</button>
-                    </div>
-                )}
-
-                {currentPhase === 'SURVEY' && (
-                    <div className="text-white border border-red-500 p-8">
-                        <h2>PLATZHALTER: Survey</h2>
-                        <button onClick={() => setPhase('DEBRIEFING')} className="mt-4 bg-blue-600 p-2 rounded">Weiter zu Debriefing</button>
-                    </div>
-                )}
-
-                {currentPhase === 'DEBRIEFING' && (
-                    <div className="text-white border border-red-500 p-8">
-                        <h2>PLATZHALTER: Debriefing</h2>
-                        <p>Ende des Experiments.</p>
+                {/* RECHTE SEITE: Der Agent (Später Avatar vs. Terminal) */}
+                {/* Blenden wir bei Survey und Debriefing aus, da der Agent dort nichts mehr zu suchen hat */}
+                {currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
+                    <div className={`w-[400px] border-l flex flex-col flex-shrink-0 ${
+                        group === 'TERMINAL' ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'
+                    }`}>
+                        <div className="p-4 border-b border-inherit">
+                            <h3 className="font-bold tracking-wider text-sm opacity-50 uppercase">
+                                {group === 'TERMINAL' ? 'System Terminal' : 'A.I.D.A. Interface'}
+                            </h3>
+                        </div>
+                        <div className="flex-grow p-4 flex items-center justify-center opacity-30">
+                            <p className="text-sm text-center">Platzhalter:<br/>Agenten-Kommunikation</p>
+                        </div>
                     </div>
                 )}
             </div>
+
+            {/* FOOTER: Fortschrittsanzeige */}
+            <div className={`h-16 border-t flex items-center justify-between px-8 flex-shrink-0 ${
+                group === 'TERMINAL' ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'
+            }`}>
+                <div className="text-xs uppercase tracking-widest opacity-50">
+                    Experiment Status
+                </div>
+
+                {/* Rudimentärer Progress Bar */}
+                <div className="flex gap-2">
+                    {['ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY'].map((phase, index) => {
+                        // Simpler Check für den Fortschritt (MVP Style)
+                        const phases = ['INIT', 'ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY', 'DEBRIEFING'];
+                        const currentIndex = phases.indexOf(currentPhase);
+                        const phaseIndex = phases.indexOf(phase);
+
+                        const isCompleted = currentIndex > phaseIndex;
+                        const isActive = currentPhase === phase;
+
+                        return (
+                            <div key={phase} className={`h-2 w-12 rounded-full transition-all duration-300 ${
+                                isActive ? (group === 'TERMINAL' ? 'bg-emerald-500' : 'bg-blue-600') :
+                                    isCompleted ? (group === 'TERMINAL' ? 'bg-emerald-900' : 'bg-blue-200') :
+                                        (group === 'TERMINAL' ? 'bg-slate-800' : 'bg-slate-200')
+                            }`} />
+                        );
+                    })}
+                </div>
+            </div>
+
         </div>
     );
 }
