@@ -1,5 +1,6 @@
 // app/api/experiment/route.ts
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 // WICHTIG: Die geschweiften Klammern hier sind ein absolutes Muss!
 import { prisma } from '@/app/lib/db/prisma';
 
@@ -38,6 +39,14 @@ export async function POST(request: Request) {
         return NextResponse.json(newSession, { status: 201 });
 
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            console.error('🚨 Prisma Fehler beim POST:', error.code, error.message);
+            return NextResponse.json(
+                { error: 'Datenbankfehler beim Erstellen', code: error.code },
+                { status: 500 }
+            );
+        }
+
         console.error('🚨 KRITISCHER DATENBANK-FEHLER BEIM POST:', error);
         return NextResponse.json({ error: 'Datenbankfehler beim Erstellen' }, { status: 500 });
     }
@@ -70,6 +79,14 @@ export async function PATCH(request: Request) {
         return NextResponse.json(updatedSession, { status: 200 });
 
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            console.error('🚨 Prisma Fehler beim PATCH:', error.code, error.message);
+            return NextResponse.json(
+                { error: 'Datenbankfehler beim Update', code: error.code },
+                { status: 500 }
+            );
+        }
+
         console.error('🚨 KRITISCHER DATENBANK-FEHLER BEIM PATCH:', error);
         return NextResponse.json({ error: 'Datenbankfehler beim Update' }, { status: 500 });
     }
