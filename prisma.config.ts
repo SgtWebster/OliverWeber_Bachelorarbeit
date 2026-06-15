@@ -2,12 +2,14 @@
 // npm install --save-dev prisma dotenv
 // prisma.config.ts
 
-import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+
+// prisma.config.ts
+import { defineConfig, env } from "@prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: env("DATABASE_URL"),
+    // Wenn PRISMA_PROD_URL existiert (auf Vercel), nimm die. Ansonsten nimm die normale DATABASE_URL (lokal).
+    url: env("PRISMA_PROD_URL") ?? env("DATABASE_URL"),
   },
 });
