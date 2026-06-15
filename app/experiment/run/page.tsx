@@ -24,7 +24,7 @@ export default function ExperimentRunPage() {
                 ? window.crypto.randomUUID()
                 : `session_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
 
-            const assignedGroup = Math.random() < 0.5 ? 'AVATAR' : 'TERMINAL';
+            const assignedGroup = group || (Math.random() < 0.5 ? 'AVATAR' : 'TERMINAL');
 
             const initSessionInDB = async () => {
                 try {
@@ -63,26 +63,28 @@ export default function ExperimentRunPage() {
     // 3. DER SWITCH-ROUTER (Das eigentliche Rendering)
 // 3. DER SWITCH-ROUTER & DAS NEUE MVP+ LAYOUT
     return (
-        // Der Hauptcontainer nutzt die ganze Bildschirmhöhe.
-        // Später steuern wir hier über {group === 'TERMINAL' ? 'dark-mode' : 'light-mode'} das gesamte Theme.
-        <div className={`h-screen w-full flex flex-col font-sans transition-colors duration-500 overflow-hidden ${
+        // 100dvh = 100% Dynamic Viewport Height. Kein Schweben mehr, keine Scrollbalken am Hauptfenster.
+        <div className={`h-[100dvh] w-full flex flex-col font-sans transition-colors duration-500 overflow-hidden ${
             group === 'TERMINAL' ? 'bg-slate-950 text-slate-300' : 'bg-slate-50 text-slate-800'
         }`}>
 
-            {/* DEBUG-LEISTE (Entfernen wir vor dem Live-Gang) */}
-            <div className="absolute top-0 left-0 w-full p-1 bg-red-600/90 text-white text-[10px] font-mono flex justify-between z-50">
-                <span>ID: {sessionId}</span>
-                <span className="font-bold">CONDITION: {group}</span>
-                <span>PHASE: {currentPhase}</span>
-            </div>
+            {/* DEBUG-LEISTE (Nur in Dev sichtbar) */}
+            {process.env.NODE_ENV === 'development' && (
+                <div className="absolute top-0 left-0 w-full p-1 bg-red-600/90 text-white text-[10px] font-mono flex justify-between z-50">
+                    <span>ID: {sessionId}</span>
+                    <span className="font-bold">CONDITION: {group}</span>
+                    <span>PHASE: {currentPhase}</span>
+                </div>
+            )}
 
             {/* HAUPT-ARBEITSBEREICH (Split Screen) */}
-            <div className="flex-grow flex mt-6">
+            {/* Responsive Magie: flex-col auf Mobile (Handy), flex-row ab md (Desktop) */}
+            <div className="flex-grow flex flex-col md:flex-row overflow-hidden pt-6">
 
                 {/* LINKE SEITE: Die Leitwarte (Deine Phasen) */}
-                <div className="flex-grow flex flex-col p-8 overflow-y-auto">
+                {/* order-2 auf Mobile (unten), order-1 auf Desktop (links) */}
+                <div className="flex-grow flex flex-col p-4 md:p-8 overflow-y-auto order-2 md:order-1">
                     <div className="max-w-3xl mx-auto w-full flex-grow flex flex-col justify-center">
-                        {/* HIER WERDEN DIE EINZELNEN PHASEN EINGEBLENDET */}
                         {currentPhase === 'ONBOARDING' && <Phase0Onboarding />}
                         {currentPhase === 'ROUTINE' && <Phase1Routine />}
                         {currentPhase === 'ALERT' && <Phase2Alert />}
@@ -93,35 +95,34 @@ export default function ExperimentRunPage() {
                 </div>
 
                 {/* RECHTE SEITE: Der Agent (Später Avatar vs. Terminal) */}
-                {/* Blenden wir bei Survey und Debriefing aus, da der Agent dort nichts mehr zu suchen hat */}
+                {/* h-1/3 auf Mobile (drittel des Screens), w-400px auf Desktop (feste Breite). order-1 auf Mobile (oben!) */}
                 {currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
-                    <div className={`w-[400px] border-l flex flex-col flex-shrink-0 ${
+                    <div className={`w-full md:w-[400px] h-1/3 md:h-full border-b md:border-b-0 md:border-l flex flex-col flex-shrink-0 order-1 md:order-2 ${
                         group === 'TERMINAL' ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'
                     }`}>
-                        <div className="p-4 border-b border-inherit">
-                            <h3 className="font-bold tracking-wider text-sm opacity-50 uppercase">
-                                {group === 'TERMINAL' ? 'System Terminal' : 'A.I.D.A. Interface'}
+                        <div className="p-3 md:p-4 border-b border-inherit">
+                            <h3 className="font-bold tracking-wider text-xs md:text-sm opacity-50 uppercase">
+                                {group === 'TERMINAL' ? 'System Terminal' : 'AAIDA'}
                             </h3>
                         </div>
-                        <div className="flex-grow p-4 flex items-center justify-center opacity-30">
-                            <p className="text-sm text-center">Platzhalter:<br/>Agenten-Kommunikation</p>
+                        <div className="flex-grow p-4 flex items-center justify-center opacity-30 overflow-hidden">
+                            <p className="text-xs md:text-sm text-center">Platzhalter:<br/>Agenten-Kommunikation</p>
                         </div>
                     </div>
                 )}
             </div>
 
             {/* FOOTER: Fortschrittsanzeige */}
-            <div className={`h-16 border-t flex items-center justify-between px-8 flex-shrink-0 ${
+            <div className={`h-12 md:h-16 border-t flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-10 ${
                 group === 'TERMINAL' ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'
             }`}>
-                <div className="text-xs uppercase tracking-widest opacity-50">
+                <div className="text-[10px] md:text-xs uppercase tracking-widest opacity-50 hidden sm:block">
                     Experiment Status
                 </div>
 
                 {/* Rudimentärer Progress Bar */}
-                <div className="flex gap-2">
-                    {['ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY'].map((phase, index) => {
-                        // Simpler Check für den Fortschritt (MVP Style)
+                <div className="flex gap-1 md:gap-2 mx-auto sm:mx-0">
+                    {['ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY'].map((phase) => {
                         const phases = ['INIT', 'ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY', 'DEBRIEFING'];
                         const currentIndex = phases.indexOf(currentPhase);
                         const phaseIndex = phases.indexOf(phase);
@@ -130,7 +131,7 @@ export default function ExperimentRunPage() {
                         const isActive = currentPhase === phase;
 
                         return (
-                            <div key={phase} className={`h-2 w-12 rounded-full transition-all duration-300 ${
+                            <div key={phase} className={`h-1.5 md:h-2 w-8 md:w-12 rounded-full transition-all duration-300 ${
                                 isActive ? (group === 'TERMINAL' ? 'bg-emerald-500' : 'bg-blue-600') :
                                     isCompleted ? (group === 'TERMINAL' ? 'bg-emerald-900' : 'bg-blue-200') :
                                         (group === 'TERMINAL' ? 'bg-slate-800' : 'bg-slate-200')
