@@ -1,21 +1,16 @@
+// app/lib/db/prisma.ts
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-// Der clevere Trick: Wir überschreiben einfach die Standard-Variable,
-// BEVOR Prisma überhaupt auf die Idee kommt, sie zu lesen!
-if (process.env.PRISMA_PROD_URL) {
-    process.env.DATABASE_URL = process.env.PRISMA_PROD_URL;
-}
+const databaseUrl = process.env.PRISMA_PROD_URL || process.env.DATABASE_URL;
 
-if (!process.env.DATABASE_URL) {
-    console.error("🚨 KRITISCHER FEHLER: Keine Datenbank-URL gefunden!");
+if (!databaseUrl) {
     throw new Error("Datenbank-URL fehlt!");
 }
 
-console.log("✅ DB-URL vorbereitet. Initialisiere reinen Prisma Client...");
-
 const prismaClientSingleton = () => {
-    // Absolut nackt! Prisma holt sich die URL jetzt automatisch aus process.env.DATABASE_URL
-    return new PrismaClient();
+    const adapter = new PrismaPg({ connectionString: databaseUrl });
+    return new PrismaClient({ adapter });
 };
 
 declare global {

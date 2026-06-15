@@ -4,12 +4,13 @@
 
 
 // prisma.config.ts
+import "dotenv/config";
 import { defineConfig, env } from "@prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    // Wenn PRISMA_PROD_URL existiert (auf Vercel), nimm die. Ansonsten nimm die normale DATABASE_URL (lokal).
-    url: env("PRISMA_PROD_URL") ?? env("DATABASE_URL"),
+    // Optional: use production URL when present, otherwise require DATABASE_URL.
+    url: process.env.PRISMA_PROD_URL || env("DATABASE_URL"),
   },
 });
