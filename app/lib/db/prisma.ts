@@ -1,12 +1,12 @@
-// prisma.ts
+// app/lib/db/prisma.ts
 
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.PRISMA_PROD_URL || process.env.DATABASE_URL;
 
 if (!connectionString) {
-    throw new Error("DATABASE_URL is not set");
+    throw new Error("🚨 Datenbank-URL fehlt! Weder PRISMA_PROD_URL noch DATABASE_URL sind gesetzt.");
 }
 
 const adapter = new PrismaPg({
@@ -29,4 +29,3 @@ export const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 if (process.env.NODE_ENV !== "production") {
     globalThis.prismaGlobal = prisma;
 }
-
