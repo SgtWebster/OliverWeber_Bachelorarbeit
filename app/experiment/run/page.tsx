@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import AgentAida from '@/app/experiment/run/_components/AgentAida';
 import AgentTerminal from '@/app/experiment/run/_components/AgentTerminal';
@@ -14,19 +15,32 @@ import Phase4Survey from './_components/phases/Phase4_Survey';
 import Phase5Debriefing from './_components/phases/Phase5_Debriefing';
 
 export default function ExperimentRunPage() {
+    const router = useRouter();
     const {
         currentPhase,
         group,
         sessionId,
+        hasConsented,
         setSessionId,
         setGroup,
         setPhase,
         setPhaseUnlocked
     } = useExperimentStore();
 
+    // 0. DIE FIREWALL (Rauswurf bei fehlendem Consent)
+    useEffect(() => {
+        // Wenn jemand die URL direkt eingibt, hat er den Badge nicht -> Abmarsch zur Info-Seite.
+        // (Im Development-Modus lassen wir es eventuell für schnelles Testen offen,
+        // aber hier ist es strikt für Prod konfiguriert).
+        if (!hasConsented) {
+            router.replace('/bachelorarbeit');
+        }
+    }, [hasConsented, router]);
+
     // 1. INITIALISIERUNG & DATENBANK-SYNC
     useEffect(() => {
-        if (currentPhase === 'INIT') {
+        // Blockiert die Ausführung, wenn der User sowieso gerade rausgeworfen wird
+        if (currentPhase === 'INIT' && hasConsented) {
             const generatedId = typeof window !== 'undefined' && window.crypto?.randomUUID
                 ? window.crypto.randomUUID()
                 : `session_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
@@ -53,7 +67,7 @@ export default function ExperimentRunPage() {
 
             initSessionInDB();
         }
-    }, [currentPhase, group, setSessionId, setGroup, setPhase]);
+    }, [currentPhase, group, hasConsented, setSessionId, setGroup, setPhase]);
 
     // 2. LADE-SCREEN
     if (currentPhase === 'INIT') {

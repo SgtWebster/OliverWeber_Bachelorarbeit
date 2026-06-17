@@ -4,8 +4,9 @@ import profileImage from "./oliver_ulrich_weber_kl.jpg";
 
 export default function AboutPage() {
     return (
-        <div className="max-w-4xl mx-auto px-6 py-12 sm:py-20">
-            <div className="flex flex-col md:flex-row gap-10 items-start">
+        <div className="min-h-[70vh] max-w-4xl mx-auto px-4 py-16 flex items-center justify-center">
+            <div className="w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden p-8 md:p-12">
+                <div className="flex flex-col md:flex-row gap-10 items-start">
 
 
                 <div className="w-full md:w-1/3 shrink-0">
@@ -44,6 +45,7 @@ export default function AboutPage() {
                     </div>
                 </div>
 
+            </div>
             </div>
         </div>
     );

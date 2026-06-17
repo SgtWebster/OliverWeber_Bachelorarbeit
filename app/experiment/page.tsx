@@ -3,7 +3,7 @@
 
 import { type ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useExperimentStore } from "@/app/lib/store/experimentStore"; // <-- Neu für den Cheat!
+import { useExperimentStore } from "@/app/lib/store/experimentStore";
 
 const NEXT_STEP_PATH = "/experiment/run"; // <-- Gefixt!
 const CONSENT_STORAGE_KEY = "bachelorarbeit-consent-v1";
@@ -62,7 +62,9 @@ function ConsentCheckbox({
 
 export default function BachelorarbeitConsentPage() {
     const router = useRouter();
-    const { setGroup } = useExperimentStore(); // <-- Store importieren
+    const { setGroup } = useExperimentStore();
+    const { setConsented } = useExperimentStore();
+
 
     const [consent, setConsent] = useState<ConsentState>({
         informationRead: false,
@@ -82,6 +84,9 @@ export default function BachelorarbeitConsentPage() {
         if (!canStart) return;
 
         try {
+            setConsented(true); // Türsteher-Badge vergeben
+            router.push('/experiment/run');
+
             window.localStorage.setItem(
                 CONSENT_STORAGE_KEY,
                 JSON.stringify({
@@ -100,7 +105,8 @@ export default function BachelorarbeitConsentPage() {
 
     // 🚀 DIE CHEAT-FUNKTION
     function handleCheatStart(condition: 'AVATAR' | 'TERMINAL') {
-        setGroup(condition); // Wir überschreiben das Schicksal!
+        setGroup(condition);
+        setConsented(true);
         router.push(NEXT_STEP_PATH);
     }
 

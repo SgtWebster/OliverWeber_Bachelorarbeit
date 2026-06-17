@@ -19,13 +19,14 @@ interface ExperimentState {
     sessionId: string | null;
     currentPhase: ExperimentPhase;
     group: ExperimentGroup;
-    isPhaseUnlocked: boolean; // <-- NEU: Das Gatekeeper-Schloss
+    isPhaseUnlocked: boolean;
+    hasConsented: boolean;
 
-    // Actions, um den State von überall aus zu verändern
     setSessionId: (id: string) => void;
     setPhase: (phase: ExperimentPhase) => void;
     setGroup: (group: ExperimentGroup) => void;
-    setPhaseUnlocked: (unlocked: boolean) => void; // <-- NEU: Der Schlüssel
+    setPhaseUnlocked: (unlocked: boolean) => void;
+    setConsented: (val: boolean) => void;
 }
 
 // 4. Erstellung des eigentlichen Stores
@@ -35,6 +36,7 @@ export const useExperimentStore = create<ExperimentState>((set) => ({
     currentPhase: 'INIT',
     group: null,
     isPhaseUnlocked: false, // Default: Jede Phase startet gesperrt
+    hasConsented: false,
 
     // Funktionen zum Updaten der Werte
     setSessionId: (id) => set({ sessionId: id }),
@@ -48,4 +50,6 @@ export const useExperimentStore = create<ExperimentState>((set) => ({
     setGroup: (group) => set({ group }),
 
     setPhaseUnlocked: (unlocked) => set({ isPhaseUnlocked: unlocked }),
+
+    setConsented: (val) => set({ hasConsented: val }),
 }));

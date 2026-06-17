@@ -1,13 +1,25 @@
-// (main)/bachelorarbeit/thank-you/page.tsx
+// app/(main)/bachelorarbeit/thank-you/page.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useExperimentStore } from '@/app/lib/store/experimentStore';
 
 export default function ThankYouPage() {
+    const router = useRouter();
+    const { currentPhase } = useExperimentStore();
+
     const [email, setEmail] = useState('');
     const [wantsRaffle, setWantsRaffle] = useState(true); // Gewinnspiel als Default an
     const [wantsNewsletter, setWantsNewsletter] = useState(false);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+    // 🚨 DIE FIREWALL: Wirft jeden raus, der das Experiment nicht regulär beendet hat
+    useEffect(() => {
+        if (currentPhase !== 'DEBRIEFING') {
+            router.replace('/bachelorarbeit');
+        }
+    }, [currentPhase, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +45,7 @@ export default function ThankYouPage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-slate-800">
+        <div className="min-h-[70vh] max-w-2xl mx-auto px-4 py-16 flex items-center justify-center text-slate-800">
             <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
 
                 {/* Header-Bereich */}
@@ -50,7 +62,12 @@ export default function ThankYouPage() {
                         <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 p-6 rounded-xl text-center">
                             <h3 className="text-xl font-bold mb-2">Erfolgreich eingetragen!</h3>
                             <p>Deine E-Mail-Adresse wurde registriert. Die Gewinner der Amazon-Gutscheine werden nach Abschluss der Erhebung benachrichtigt.</p>
-                            <p className="mt-4 text-sm opacity-70">Du kannst dieses Fenster nun schließen.</p>
+                            <button
+                                onClick={() => router.push('/')}
+                                className="mt-6 px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition"
+                            >
+                                Zurück zur Startseite
+                            </button>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-6">
@@ -107,8 +124,8 @@ export default function ThankYouPage() {
                             )}
 
                             <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                                <button type="button" onClick={() => window.close()} className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
-                                    Ohne Eintrag schließen
+                                <button type="button" onClick={() => router.push('/')} className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
+                                    Zurück zur Startseite
                                 </button>
                                 <button
                                     type="submit"
@@ -124,6 +141,6 @@ export default function ThankYouPage() {
                     )}
                 </div>
             </div>
-        </main>
+        </div>
     );
 }
