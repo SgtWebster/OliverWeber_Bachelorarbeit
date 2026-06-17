@@ -1,7 +1,6 @@
 // app/api/experiment/route.ts
 import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-// WICHTIG: Die geschweiften Klammern hier sind ein absolutes Muss!
 import { prisma } from '@/app/lib/db/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -9,23 +8,18 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
     console.log("--> [POST] /api/experiment aufgerufen");
 
-    // Sicherheits-Check: Ist Prisma überhaupt geladen worden?
     if (!prisma) {
-        console.error("🚨 FEHLER: Das 'prisma' Objekt ist undefined! Der Import ist fehlgeschlagen.");
+        console.error("🚨 FEHLER: Das 'prisma' Objekt ist undefined!");
         return NextResponse.json({ error: 'DB Client missing' }, { status: 500 });
     }
 
     try {
         const body = await request.json();
-        console.log("--> Request Body erhalten:", body);
 
         const { sessionId, group } = body;
         if (!sessionId || !group) {
-            console.error("🚨 FEHLER: sessionId oder group fehlen im Request!");
             return NextResponse.json({ error: 'Missing sessionId or group' }, { status: 400 });
         }
-
-        console.log(`--> Versuche Datensatz für ID ${sessionId} in DB zu schreiben...`);
 
         const newSession = await prisma.participantSession.create({
             data: {
@@ -35,24 +29,15 @@ export async function POST(request: Request) {
             },
         });
 
-        console.log("--> ✅ ERFOLG! Datensatz in Neon gespeichert:", newSession);
+        console.log("--> ✅ ERFOLG! Datensatz in DB erstellt.");
         return NextResponse.json(newSession, { status: 201 });
 
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            console.error('🚨 Prisma Fehler beim POST:', error.code, error.message);
-            return NextResponse.json(
-                { error: 'Datenbankfehler beim Erstellen', code: error.code },
-                { status: 500 }
-            );
-        }
-
         console.error('🚨 KRITISCHER DATENBANK-FEHLER BEIM POST:', error);
         return NextResponse.json({ error: 'Datenbankfehler beim Erstellen' }, { status: 500 });
     }
 }
 
-// Wir loggen den PATCH-Endpunkt direkt mit
 export async function PATCH(request: Request) {
     console.log("--> [PATCH] /api/experiment aufgerufen");
 
@@ -60,33 +45,42 @@ export async function PATCH(request: Request) {
 
     try {
         const body = await request.json();
-        console.log("--> PATCH Request Body:", body);
 
-        const { sessionId, currentPhase, socialAdherence, compliance } = body;
+        // sessionId abtrennen, der Rest sind potenzielle Update-Felder
+        const { sessionId, ...updateFields } = body;
         if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
 
+        // DYNAMISCHE ALLOWLIST: Nur diese Felder dürfen in die DB geschrieben werden!
+        const allowedFields = [
+            'currentPhase', 'socialAdherence', 'compliance',
+            'mReliable', 'mCapable', 'mCompetent', 'mMeticulous',
+            'mEthical', 'mRespectable', 'mSincere', 'mBenevolent',
+            'performanceTrust', 'moralTrust', 'perceivedHumanlikeness',
+            'age', 'gender', 'education', 'techAffinity', 'aiExperience', 'criticalSystemExp'
+        ];
+
         const updateData: any = {};
-        if (currentPhase) updateData.currentPhase = currentPhase;
-        if (socialAdherence !== undefined) updateData.socialAdherence = socialAdherence;
-        if (compliance !== undefined) updateData.compliance = compliance;
+
+        // Wir iterieren über die Allowlist und packen nur mitgeschickte Werte ins Update
+        for (const key of allowedFields) {
+            if (updateFields[key] !== undefined) {
+                updateData[key] = updateFields[key];
+            }
+        }
 
         const updatedSession = await prisma.participantSession.update({
             where: { id: sessionId },
             data: updateData,
         });
 
-        console.log("--> ✅ ERFOLG! Update gespeichert:", updatedSession);
+        console.log("--> ✅ ERFOLG! Update gespeichert in Phase:", updateData.currentPhase || "Unverändert");
         return NextResponse.json(updatedSession, { status: 200 });
 
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             console.error('🚨 Prisma Fehler beim PATCH:', error.code, error.message);
-            return NextResponse.json(
-                { error: 'Datenbankfehler beim Update', code: error.code },
-                { status: 500 }
-            );
+            return NextResponse.json({ error: 'Datenbankfehler beim Update', code: error.code }, { status: 500 });
         }
-
         console.error('🚨 KRITISCHER DATENBANK-FEHLER BEIM PATCH:', error);
         return NextResponse.json({ error: 'Datenbankfehler beim Update' }, { status: 500 });
     }

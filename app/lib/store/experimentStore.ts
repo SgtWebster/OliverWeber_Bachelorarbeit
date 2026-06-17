@@ -1,4 +1,4 @@
-// lib/store/experimentStore.ts
+// app/lib/store/experimentStore.ts
 import { create } from 'zustand';
 
 // 1. Definition der strikten Phasen (State-Machine)
@@ -19,11 +19,13 @@ interface ExperimentState {
     sessionId: string | null;
     currentPhase: ExperimentPhase;
     group: ExperimentGroup;
+    isPhaseUnlocked: boolean; // <-- NEU: Das Gatekeeper-Schloss
 
     // Actions, um den State von überall aus zu verändern
     setSessionId: (id: string) => void;
     setPhase: (phase: ExperimentPhase) => void;
     setGroup: (group: ExperimentGroup) => void;
+    setPhaseUnlocked: (unlocked: boolean) => void; // <-- NEU: Der Schlüssel
 }
 
 // 4. Erstellung des eigentlichen Stores
@@ -32,9 +34,18 @@ export const useExperimentStore = create<ExperimentState>((set) => ({
     sessionId: null,
     currentPhase: 'INIT',
     group: null,
+    isPhaseUnlocked: false, // Default: Jede Phase startet gesperrt
 
     // Funktionen zum Updaten der Werte
     setSessionId: (id) => set({ sessionId: id }),
-    setPhase: (phase) => set({ currentPhase: phase }),
+
+    // WICHTIG: Beim Phasenwechsel schieben wir automatisch den Riegel wieder vor!
+    setPhase: (phase) => set({
+        currentPhase: phase,
+        isPhaseUnlocked: false
+    }),
+
     setGroup: (group) => set({ group }),
+
+    setPhaseUnlocked: (unlocked) => set({ isPhaseUnlocked: unlocked }),
 }));

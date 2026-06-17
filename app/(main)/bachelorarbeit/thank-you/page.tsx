@@ -1,0 +1,129 @@
+// (main)/bachelorarbeit/thank-you/page.tsx
+"use client";
+
+import { useState } from 'react';
+
+export default function ThankYouPage() {
+    const [email, setEmail] = useState('');
+    const [wantsRaffle, setWantsRaffle] = useState(true); // Gewinnspiel als Default an
+    const [wantsNewsletter, setWantsNewsletter] = useState(false);
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email) return;
+
+        setStatus('loading');
+
+        try {
+            const res = await fetch('/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, wantsRaffle, wantsNewsletter })
+            });
+
+            if (res.ok) {
+                setStatus('success');
+            } else {
+                setStatus('error');
+            }
+        } catch (error) {
+            setStatus('error');
+        }
+    };
+
+    return (
+        <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-slate-800">
+            <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+
+                {/* Header-Bereich */}
+                <div className="bg-sky-900 px-8 py-10 text-center text-white">
+                    <h1 className="text-3xl font-bold mb-4">Vielen Dank für deine Teilnahme!</h1>
+                    <p className="text-sky-100 leading-relaxed">
+                        Dein Datensatz wurde vollständig anonymisiert gespeichert und trägt maßgeblich zum Erfolg dieser Bachelorarbeit bei.
+                    </p>
+                </div>
+
+                {/* Formular-Bereich */}
+                <div className="p-8">
+                    {status === 'success' ? (
+                        <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 p-6 rounded-xl text-center">
+                            <h3 className="text-xl font-bold mb-2">Erfolgreich eingetragen!</h3>
+                            <p>Deine E-Mail-Adresse wurde registriert. Die Gewinner der Amazon-Gutscheine werden nach Abschluss der Erhebung benachrichtigt.</p>
+                            <p className="mt-4 text-sm opacity-70">Du kannst dieses Fenster nun schließen.</p>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900 mb-2">Gewinnspiel & Ergebnisse</h2>
+                                <p className="text-sm text-slate-600 mb-6">
+                                    Unter allen Teilnehmern werden 4x 25,- Euro Amazon Gutscheine verlost. Deine E-Mail-Adresse wird <strong>strikt getrennt</strong> von deinen Experiment-Daten gespeichert und nach der Auslosung unwiderruflich gelöscht.
+                                </p>
+                            </div>
+
+                            <div>
+                                <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+                                    E-Mail-Adresse
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="max.mustermann@example.com"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition"
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={wantsRaffle}
+                                        onChange={(e) => setWantsRaffle(e.target.checked)}
+                                        className="mt-1 w-5 h-5 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+                                    />
+                                    <span className="text-sm text-slate-700">
+                                        Ich möchte an der Verlosung der 4x 25,- Euro Amazon Gutscheine teilnehmen.
+                                    </span>
+                                </label>
+
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={wantsNewsletter}
+                                        onChange={(e) => setWantsNewsletter(e.target.checked)}
+                                        className="mt-1 w-5 h-5 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+                                    />
+                                    <span className="text-sm text-slate-700">
+                                        Ich möchte eine kurze Zusammenfassung der Ergebnisse erhalten, sobald die Arbeit abgeschlossen ist.
+                                    </span>
+                                </label>
+                            </div>
+
+                            {status === 'error' && (
+                                <p className="text-red-600 text-sm font-semibold">Es gab ein Problem bei der Speicherung. Bitte versuche es noch einmal.</p>
+                            )}
+
+                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <button type="button" onClick={() => window.close()} className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
+                                    Ohne Eintrag schließen
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={status === 'loading'}
+                                    className={`px-6 py-3 rounded-xl font-bold text-white transition ${
+                                        status === 'loading' ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-700 hover:bg-sky-800 shadow-md hover:shadow-lg'
+                                    }`}
+                                >
+                                    {status === 'loading' ? 'Wird gespeichert...' : 'Daten absenden'}
+                                </button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            </div>
+        </main>
+    );
+}

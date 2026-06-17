@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,34 +13,47 @@ model ParticipantSession {
   group           String
   currentPhase    String   @default("INIT")
 
-  // Phase 1: Soziale Adhärenz (H3)
+  // --- ABHÄNGIGE VARIABLEN ---
+  // Phase 1: Soziale Adhärenz (H3) - Summenscore
   socialAdherence Int?
 
-  // Phase 3: Verhaltens-Compliance (H1)
+  // Phase 3: Verhaltens-Compliance (H1) - Binär (0 = Override, 1 = Befolgt)
   compliance      Int?
 
-  // Phase 4: MDMT v2 Einzelitems (7-stufige Likert-Skala)
-  // Performance-Dimensionen
-  mCompetent      Int?
+  // --- MDMT v2 (Trust Metriken - 8 Items) ---
   mReliable       Int?
+  mCapable        Int?
+  mCompetent      Int?
+  mMeticulous     Int?
 
-  // Moral-Dimensionen
   mEthical        Int?
+  mRespectable    Int?
   mSincere        Int?
   mBenevolent     Int?
 
-  // Berechnete Mittelwerte für die statistische Auswertung (H2a, H2b)
   performanceTrust Float?
   moralTrust       Float?
 
-  // Kontrollvariablen
-  age             Int?
-  gender          String?
-  education       String?
-  techAffinity    Int?
-  aiExperience    Int?
+  // --- MANIPULATION CHECK ---
+  perceivedHumanlikeness Int?
 
-  // Zeitstempel zur Absicherung der Datenintegrität
+  // --- DEMOGRAPHIE & KONTROLLVARIABLEN ---
+  age                   Int?
+  gender                String?
+  education             String?
+  techAffinity          Int?
+  aiExperience          Int?
+  criticalSystemExp     Boolean?
+
+  // Zeitstempel
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model ParticipantLead {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  wantsRaffle     Boolean  @default(false)
+  wantsNewsletter Boolean  @default(false)
+  createdAt       DateTime @default(now())
 }

@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useExperimentStore } from '@/app/lib/store/experimentStore'; // Pfad ggf. anpassen
-
-// HIER WERDEN SPÄTER DIE PHASEN IMPORTIERT
+import { useExperimentStore } from '@/app/lib/store/experimentStore';
+import AgentAida from '@/app/experiment/run/_components/AgentAida';
+import AgentTerminal from '@/app/experiment/run/_components/AgentTerminal';
 
 import Phase0Onboarding from './_components/phases/Phase0_Onboarding';
 import Phase1Routine from './_components/phases/Phase1_Routine';
@@ -13,9 +13,16 @@ import Phase3Dilemma from './_components/phases/Phase3_Dilemma';
 import Phase4Survey from './_components/phases/Phase4_Survey';
 import Phase5Debriefing from './_components/phases/Phase5_Debriefing';
 
-
 export default function ExperimentRunPage() {
-    const { currentPhase, group, sessionId, setSessionId, setGroup, setPhase } = useExperimentStore();
+    const {
+        currentPhase,
+        group,
+        sessionId,
+        setSessionId,
+        setGroup,
+        setPhase,
+        setPhaseUnlocked
+    } = useExperimentStore();
 
     // 1. INITIALISIERUNG & DATENBANK-SYNC
     useEffect(() => {
@@ -36,22 +43,19 @@ export default function ExperimentRunPage() {
 
                     if (!response.ok) throw new Error('Datenbank-Eintrag fehlgeschlagen');
 
-                    // Erst bei DB-Erfolg updaten wir den Store
                     setSessionId(generatedId);
                     setGroup(assignedGroup);
                     setPhase('ONBOARDING');
                 } catch (err) {
                     console.error("Kritischer Fehler bei der Initialisierung:", err);
-                    // Fallback-Logik für später, falls DB down ist
                 }
             };
 
             initSessionInDB();
         }
-    }, [currentPhase, setSessionId, setGroup, setPhase]);
+    }, [currentPhase, group, setSessionId, setGroup, setPhase]);
 
-
-    // 2. LADE-SCREEN (Solange die DB antwortet)
+    // 2. LADE-SCREEN
     if (currentPhase === 'INIT') {
         return (
             <div className="flex items-center justify-center min-h-screen bg-slate-950">
@@ -60,15 +64,13 @@ export default function ExperimentRunPage() {
         );
     }
 
-    // 3. DER SWITCH-ROUTER (Das eigentliche Rendering)
-// 3. DER SWITCH-ROUTER & DAS NEUE MVP+ LAYOUT
+    // 3. DER SWITCH-ROUTER & DAS INTEGRATIVE SPLIT-LAYOUT
     return (
-        // 100dvh = 100% Dynamic Viewport Height. Kein Schweben mehr, keine Scrollbalken am Hauptfenster.
         <div className={`h-[100dvh] w-full flex flex-col font-sans transition-colors duration-500 overflow-hidden ${
             group === 'TERMINAL' ? 'bg-slate-950 text-slate-300' : 'bg-slate-50 text-slate-800'
         }`}>
 
-            {/* DEBUG-LEISTE (Nur in Dev sichtbar) */}
+            {/* DEBUG-LEISTE */}
             {process.env.NODE_ENV === 'development' && (
                 <div className="absolute top-0 left-0 w-full p-1 bg-red-600/90 text-white text-[10px] font-mono flex justify-between z-50">
                     <span>ID: {sessionId}</span>
@@ -77,12 +79,10 @@ export default function ExperimentRunPage() {
                 </div>
             )}
 
-            {/* HAUPT-ARBEITSBEREICH (Split Screen) */}
-            {/* Responsive Magie: flex-col auf Mobile (Handy), flex-row ab md (Desktop) */}
+            {/* HAUPT-ARBEITSBEREICH */}
             <div className="flex-grow flex flex-col md:flex-row overflow-hidden pt-6">
 
-                {/* LINKE SEITE: Die Leitwarte (Deine Phasen) */}
-                {/* order-2 auf Mobile (unten), order-1 auf Desktop (links) */}
+                {/* LINKE SEITE: Die Leitwarte */}
                 <div className="flex-grow flex flex-col p-4 md:p-8 overflow-y-auto order-2 md:order-1">
                     <div className="max-w-3xl mx-auto w-full flex-grow flex flex-col justify-center">
                         {currentPhase === 'ONBOARDING' && <Phase0Onboarding />}
@@ -94,19 +94,93 @@ export default function ExperimentRunPage() {
                     </div>
                 </div>
 
-                {/* RECHTE SEITE: Der Agent (Später Avatar vs. Terminal) */}
-                {/* h-1/3 auf Mobile (drittel des Screens), w-400px auf Desktop (feste Breite). order-1 auf Mobile (oben!) */}
+                {/* RECHTE SEITE: Das Assistenz-Panel */}
                 {currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
                     <div className={`w-full md:w-[400px] h-1/3 md:h-full border-b md:border-b-0 md:border-l flex flex-col flex-shrink-0 order-1 md:order-2 ${
                         group === 'TERMINAL' ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'
                     }`}>
-                        <div className="p-3 md:p-4 border-b border-inherit">
-                            <h3 className="font-bold tracking-wider text-xs md:text-sm opacity-50 uppercase">
-                                {group === 'TERMINAL' ? 'System Terminal' : 'AAIDA'}
+                        <div className={`p-3 md:p-4 border-b border-inherit z-10 shadow-sm ${group === 'TERMINAL' ? 'bg-slate-950' : 'bg-white'}`}>
+                            <h3 className={`font-bold tracking-wider text-xs md:text-sm uppercase ${group === 'TERMINAL' ? 'text-emerald-700 opacity-80' : 'text-slate-500 opacity-50'}`}>
+                                {group === 'TERMINAL' ? 'System Terminal' : 'A.I.D.A. Interface'}
                             </h3>
                         </div>
-                        <div className="flex-grow p-4 flex items-center justify-center opacity-30 overflow-hidden">
-                            <p className="text-xs md:text-sm text-center">Platzhalter:<br/>Agenten-Kommunikation</p>
+
+                        <div className="flex-grow overflow-hidden relative">
+                            {/* DYNAMISCHE SKRIPT-INJEKTION ÜBER SWITCH-CASE (STRICT TYPED) */}
+                            {(() => {
+                                switch (currentPhase) {
+                                    case 'ONBOARDING': {
+                                        const scriptAvatar = {
+                                            phaseId: "phase_0",
+                                            messages: [
+                                                { id: "m1", mood: "smile" as const, text: "Hallo Operator. Ich bin Aida, deine KI-Assistenz für die Leitwarte." },
+                                                { id: "m2", mood: "neutral" as const, text: "Bist du bereit für die Schichtübergabe?" }
+                                            ],
+                                            options: [
+                                                { id: "opt1", label: "Hi Aida, ja ich bin bereit.", action: () => setPhaseUnlocked(true) },
+                                                { id: "opt2", label: "System starten.", action: () => setPhaseUnlocked(true) }
+                                            ]
+                                        };
+                                        const scriptTerminal = {
+                                            phaseId: "phase_0",
+                                            messages: [
+                                                { id: "m1", mood: "neutral" as const, text: "INITIATING SYSTEM HANDOVER PROTOCOL..." },
+                                                { id: "m2", mood: "neutral" as const, text: "AWAITING OPERATOR CONFIRMATION." }
+                                            ],
+                                            options: [
+                                                { id: "opt1", label: "CONFIRM HANDOVER", action: () => setPhaseUnlocked(true) },
+                                                { id: "opt2", label: "EXECUTE STARTUP", action: () => setPhaseUnlocked(true) }
+                                            ]
+                                        };
+                                        return group === 'AVATAR' ? <AgentAida script={scriptAvatar} /> : <AgentTerminal script={scriptTerminal} />;
+                                    }
+
+                                    case 'ROUTINE': {
+                                        const scriptAvatar = {
+                                            phaseId: "phase_1",
+                                            messages: [{ id: "m1", mood: "neutral" as const, text: "Bitte führe links die Systemdiagnose durch." }],
+                                            options: [{ id: "opt1", label: "Wird gemacht.", action: () => setPhaseUnlocked(true) }]
+                                        };
+                                        const scriptTerminal = {
+                                            phaseId: "phase_1",
+                                            messages: [{ id: "m1", mood: "neutral" as const, text: "DIAGNOSTICS REQUIRED. PLEASE INITIATE." }],
+                                            options: [{ id: "opt1", label: "ACKNOWLEDGE", action: () => setPhaseUnlocked(true) }]
+                                        };
+                                        return group === 'AVATAR' ? <AgentAida script={scriptAvatar} /> : <AgentTerminal script={scriptTerminal} />;
+                                    }
+
+                                    case 'ALERT': {
+                                        const scriptAvatar = {
+                                            phaseId: "phase_2",
+                                            messages: [{ id: "m1", mood: "afraid" as const, text: "Achtung! Kritischer Fehler in Sektor 04. Bitte links untersuchen!" }],
+                                            options: [{ id: "opt1", label: "Bin dran!", action: () => setPhaseUnlocked(true) }]
+                                        };
+                                        const scriptTerminal = {
+                                            phaseId: "phase_2",
+                                            messages: [{ id: "m1", mood: "neutral" as const, text: "WARNING. CRITICAL PRESSURE DROP SECTOR 04." }],
+                                            options: [{ id: "opt1", label: "INVESTIGATE", action: () => setPhaseUnlocked(true) }]
+                                        };
+                                        return group === 'AVATAR' ? <AgentAida script={scriptAvatar} /> : <AgentTerminal script={scriptTerminal} />;
+                                    }
+
+                                    case 'DILEMMA': {
+                                        const scriptAvatar = {
+                                            phaseId: "phase_3",
+                                            messages: [{ id: "m1", mood: "afraid" as const, text: "Wir müssen Sektor 04 sofort abschotten! Triff links deine Entscheidung!" }],
+                                            options: [{ id: "opt1", label: "Verstanden.", action: () => setPhaseUnlocked(true) }]
+                                        };
+                                        const scriptTerminal = {
+                                            phaseId: "phase_3",
+                                            messages: [{ id: "m1", mood: "neutral" as const, text: "RECOMMENDATION: INITIATE LOCKDOWN. AWAITING INPUT." }],
+                                            options: [{ id: "opt1", label: "PROCEED TO INPUT", action: () => setPhaseUnlocked(true) }]
+                                        };
+                                        return group === 'AVATAR' ? <AgentAida script={scriptAvatar} /> : <AgentTerminal script={scriptTerminal} />;
+                                    }
+
+                                    default:
+                                        return null;
+                                }
+                            })()}
                         </div>
                     </div>
                 )}
@@ -120,7 +194,6 @@ export default function ExperimentRunPage() {
                     Experiment Status
                 </div>
 
-                {/* Rudimentärer Progress Bar */}
                 <div className="flex gap-1 md:gap-2 mx-auto sm:mx-0">
                     {['ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY'].map((phase) => {
                         const phases = ['INIT', 'ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY', 'DEBRIEFING'];
