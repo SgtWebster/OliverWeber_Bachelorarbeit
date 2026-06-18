@@ -8,6 +8,7 @@ import { useExperimentStore } from "@/app/lib/store/experimentStore";
 const NEXT_STEP_PATH = "/experiment/run"; // <-- Gefixt!
 const CONSENT_STORAGE_KEY = "bachelorarbeit-consent-v1";
 const CONTACT_EMAIL = "o.weber@mci4me.at";
+const PROD_START_CODE = "1234";
 
 type ConsentState = {
     informationRead: boolean;
@@ -82,6 +83,13 @@ export default function BachelorarbeitConsentPage() {
 
     function handleStartExperiment() {
         if (!canStart) return;
+        if (process.env.NODE_ENV === "production") {
+            const enteredCode = window.prompt("Bitte gib den Teilnahme-Code ein:");
+            if (enteredCode !== PROD_START_CODE) {
+                window.alert("Falscher Code. Teilnahme derzeit nur mit gültigem Code möglich.");
+                return;
+            }
+        }
 
         try {
             setConsented(true); // Türsteher-Badge vergeben

@@ -28,8 +28,7 @@ const LikertSlider = ({
         <label className="block text-sm font-bold text-slate-800 mb-1">{label}</label>
         {description && <p className="text-xs text-slate-500 mb-3">{description}</p>}
 
-        <div className="flex items-center gap-4">
-            <span className="text-xs text-slate-500 w-24 text-right font-medium leading-tight">{left}</span>
+        <div className="space-y-2">
             <input
                 type="range"
                 name={name}
@@ -38,9 +37,12 @@ const LikertSlider = ({
                 step="1"
                 value={value}
                 onChange={onChange}
-                className="flex-grow h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
             />
-            <span className="text-xs text-slate-500 w-24 text-left font-medium leading-tight">{right}</span>
+            <div className="flex justify-between gap-4 text-[11px] sm:text-xs text-slate-500 font-medium leading-tight">
+                <span className="text-left">{left}</span>
+                <span className="text-right">{right}</span>
+            </div>
         </div>
         <div className="text-center mt-2 text-xs font-mono font-bold text-sky-700">
             Wert: {value} / 7
@@ -309,7 +311,7 @@ export default function Phase4Survey() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className={`px-8 py-4 rounded-xl font-bold text-white transition-all shadow-md ${
+                        className={`w-full sm:w-auto px-6 sm:px-8 py-4 rounded-xl font-bold text-white transition-all shadow-md ${
                             isLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-700 hover:bg-sky-800 hover:shadow-lg'
                         }`}
                     >

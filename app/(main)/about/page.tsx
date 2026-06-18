@@ -10,7 +10,7 @@ export default function AboutPage() {
 
 
                 <div className="w-full md:w-1/3 shrink-0">
-                    <div className="aspect-[3/4] w-full relative rounded-2xl overflow-hidden ...">
+                    <div className="aspect-[3/4] w-full relative rounded-2xl overflow-hidden">
                         <Image src={profileImage} alt="Oliver Ulrich Weber" fill className="object-cover" />
                     </div>
                 </div>

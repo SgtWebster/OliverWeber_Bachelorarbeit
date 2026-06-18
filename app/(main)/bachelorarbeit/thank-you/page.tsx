@@ -123,14 +123,14 @@ export default function ThankYouPage() {
                                 <p className="text-red-600 text-sm font-semibold">Es gab ein Problem bei der Speicherung. Bitte versuche es noch einmal.</p>
                             )}
 
-                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                                <button type="button" onClick={() => router.push('/')} className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
+                            <div className="pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                                <button type="button" onClick={() => router.push('/')} className="w-full sm:w-auto text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
                                     Zurück zur Startseite
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={status === 'loading'}
-                                    className={`px-6 py-3 rounded-xl font-bold text-white transition ${
+                                    className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-white transition ${
                                         status === 'loading' ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-700 hover:bg-sky-800 shadow-md hover:shadow-lg'
                                     }`}
                                 >

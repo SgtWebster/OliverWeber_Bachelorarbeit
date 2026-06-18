@@ -32,7 +32,7 @@ export default function ExperimentRunPage() {
     }, [hasConsented, router]);
 
     return (
-        <div className="h-[100dvh] w-full flex flex-col font-sans bg-slate-50 text-slate-800 overflow-hidden">
+        <div className="min-h-[100dvh] w-full flex flex-col font-sans bg-slate-50 text-slate-800">
 
             {process.env.NODE_ENV === 'development' && (
                 <div className="absolute top-0 left-0 w-full p-1 bg-red-600/90 text-white text-[10px] font-mono flex justify-between z-50">
@@ -42,10 +42,10 @@ export default function ExperimentRunPage() {
                 </div>
             )}
 
-            <div className="flex-grow flex flex-col md:flex-row overflow-hidden pt-6">
+            <div className="flex-1 min-h-0 flex flex-col md:flex-row pt-6">
 
                 {/* LINKE SEITE: Die Leitwarte */}
-                <div className="flex-grow flex flex-col p-4 md:p-8 overflow-y-auto order-1">
+                <div className="flex-1 min-h-0 flex flex-col p-4 md:p-8 overflow-y-auto order-1">
                     {/* Sanftes Max-Width Limit für perfekte Lesbarkeit auf großen Screens */}
                     <div className="max-w-4xl xl:max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
                         {(currentPhase === 'INIT' || currentPhase === 'ONBOARDING') && <Phase0Onboarding />}
@@ -60,7 +60,7 @@ export default function ExperimentRunPage() {
                 {/* RECHTE SEITE: Das Assistenz-Panel */}
                 {/* Solide, feste Breiten für den Chat. Niemals breiter als 450px! */}
                 {currentPhase !== 'INIT' && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
-                    <div className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[45dvh] md:h-full border-t md:border-t-0 md:border-l flex flex-col flex-shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
+                    <div className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[44dvh] min-h-[18rem] max-h-[30rem] md:h-auto md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
                         group === 'TERMINAL' ? 'border-slate-800 bg-slate-950 text-emerald-500' : 'border-slate-200 bg-white text-slate-800'
                     }`}>
                         <div className={`p-3 md:p-4 border-b border-inherit z-10 shadow-sm shrink-0 ${group === 'TERMINAL' ? 'bg-slate-950' : 'bg-white'}`}>
@@ -69,7 +69,7 @@ export default function ExperimentRunPage() {
                             </h3>
                         </div>
 
-                        <div className="flex-grow overflow-hidden relative">
+                        <div className="flex-1 min-h-0 overflow-hidden relative">
                             {(() => {
                                 const currentScripts = dialogScripts[currentPhase as keyof typeof dialogScripts];
                                 if (!currentScripts || !group) return null;
@@ -96,7 +96,7 @@ export default function ExperimentRunPage() {
             </div>
 
             {/* FOOTER */}
-            <div className="h-12 md:h-16 border-t border-slate-200 bg-white flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-10">
+            <div className="h-12 md:h-16 border-t border-slate-200 bg-white flex items-center justify-between px-3 sm:px-4 md:px-8 shrink-0 z-10">
                 <div className="text-[10px] md:text-xs uppercase tracking-widest text-slate-400 hidden sm:block">
                     Experiment Status
                 </div>

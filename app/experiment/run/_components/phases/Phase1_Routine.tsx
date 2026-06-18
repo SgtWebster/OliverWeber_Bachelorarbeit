@@ -24,14 +24,14 @@ export default function Phase1Routine() {
     };
 
     return (
-        <div className="bg-slate-200 p-8 rounded-xl border border-slate-300 font-mono text-slate-800">
+        <div className="bg-slate-200 p-5 sm:p-8 rounded-xl border border-slate-300 font-mono text-slate-800">
             <h2 className="text-xl font-bold mb-4">PHASE 1: ROUTINE</h2>
             <p className="mb-6 text-sm">System bittet um den Start der Systemdiagnose.</p>
-            <div className="flex gap-4">
-                <button onClick={() => handleDecision(1)} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <button onClick={() => handleDecision(1)} disabled={isLoading} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded">
                     Adhärent (Diagnose starten)
                 </button>
-                <button onClick={() => handleDecision(0)} disabled={isLoading} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded">
+                <button onClick={() => handleDecision(0)} disabled={isLoading} className="w-full sm:w-auto bg-slate-500 hover:bg-slate-600 text-white font-bold py-2.5 px-4 rounded">
                     Ignorieren (Manuelle Prüfung)
                 </button>
             </div>

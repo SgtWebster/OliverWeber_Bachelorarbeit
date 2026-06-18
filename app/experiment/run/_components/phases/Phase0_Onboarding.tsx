@@ -74,12 +74,12 @@ export default function Phase0Onboarding() {
     };
 
     const StoryPage = ({ title, subTitle, image, children, onNext, onPrev }: any) => (
-        <div className="min-h-[70dvh] flex items-center justify-center p-4">
+        <div className="min-h-[70dvh] flex items-center justify-center p-2 sm:p-4">
             <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row transition-all duration-300">
-                <div className="md:w-1/2 bg-slate-100 relative min-h-[300px] md:min-h-full border-b md:border-b-0 md:border-r border-slate-200">
+                <div className="md:w-1/2 bg-slate-100 relative min-h-[220px] sm:min-h-[300px] md:min-h-full border-b md:border-b-0 md:border-r border-slate-200">
                     <img src={image} alt={title} className="absolute inset-0 w-full h-full object-cover object-center" />
                 </div>
-                <div className="p-8 md:p-12 flex-1 flex flex-col justify-between">
+                <div className="p-5 sm:p-8 md:p-12 flex-1 flex flex-col justify-between">
                     <div>
                         <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-sky-700 mb-2">{subTitle}</p>
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">{title}</h1>
@@ -92,8 +92,8 @@ export default function Phase0Onboarding() {
                             <button onClick={onPrev} className="text-sm md:text-base font-semibold text-slate-500 hover:text-slate-800 transition">
                                 Zurück
                             </button>
-                        ) : <div></div>}
-                        <button onClick={onNext} disabled={isLoading} className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 text-sm md:text-base rounded-xl shadow-md hover:shadow-lg transition-all">
+                        ) : <div className="w-12 sm:w-16" />}
+                        <button onClick={onNext} disabled={isLoading} className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 text-sm md:text-base rounded-xl shadow-md hover:shadow-lg transition-all">
                             {isLoading ? 'Initialisiere...' : 'Weiter'}
                         </button>
                     </div>
@@ -162,7 +162,7 @@ export default function Phase0Onboarding() {
 
                     <div className="text-slate-600 space-y-4 leading-relaxed text-sm md:text-base mb-8">
                         <p>Die sichere Verbindung zur Zentralinstanz ist hergestellt.</p>
-                        <p>Bitte richte deine Aufmerksamkeit nun auf das <strong className="text-slate-900">Assistenz-Panel auf der rechten Seite</strong>, um deine Identifikation zu bestätigen.</p>
+                        <p>Bitte richte deine Aufmerksamkeit nun auf das <strong className="text-slate-900">Assistenz-Panel (rechts bzw. auf Smartphones unten)</strong>, um deine Identifikation zu bestätigen.</p>
                         <p className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm shadow-inner">
                             Das System startet im Anschluss das offizielle Schichtübergabe-Protokoll und übermittelt dir die aktuellen Sensordaten der Schieferkamm-Anlage.
                         </p>

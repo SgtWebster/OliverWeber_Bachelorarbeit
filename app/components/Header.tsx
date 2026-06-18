@@ -34,10 +34,10 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/55 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 sm:px-6 lg:px-8">
             <Link
-                href="/"
-                className="group inline-flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20"
+                 href="/"
+                 className="group inline-flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20"
             >
-                    <span className="text-lg font-black tracking-tight text-white">
+                    <span className="text-sm sm:text-base lg:text-lg font-black tracking-tight text-white whitespace-nowrap">
                         oliver <span className="text-teal-300">ulrich</span> weber
                     </span>
             </Link>

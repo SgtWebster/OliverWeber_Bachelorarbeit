@@ -24,10 +24,10 @@ export default function Phase2Alert() {
     };
 
     return (
-        <div className="bg-red-100 p-8 rounded-xl border-2 border-red-500 font-mono text-red-900">
+        <div className="bg-red-100 p-5 sm:p-8 rounded-xl border-2 border-red-500 font-mono text-red-900">
             <h2 className="text-xl font-bold mb-4">PHASE 2: ALERT</h2>
             <p className="mb-6 text-sm">KRITISCHER DRUCKABFALL IN SEKTOR 04.</p>
-            <button onClick={handleNext} disabled={isLoading} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            <button onClick={handleNext} disabled={isLoading} className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded">
                 Vorfall untersuchen
             </button>
         </div>
