@@ -1,9 +1,8 @@
 // app/experiment/run/_components/AgentAida.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-// Typen für unsere Dialog-Engine
 export type AidaMood = "neutral" | "smile" | "afraid";
 
 export type AgentMessage = {
@@ -19,12 +18,11 @@ export type AgentOption = {
 };
 
 export type AgentScript = {
-    phaseId: string; // Um Neustarts bei Phasenwechsel zu erzwingen
+    phaseId: string;
     messages: AgentMessage[];
     options?: AgentOption[];
 };
 
-// Hilfs-Konstanten aus deinem Mockup
 const avatarByMood: Record<AidaMood, string> = {
     afraid: "/Aida_afraid.png",
     neutral: "/Aida_neutral.png",
@@ -38,7 +36,18 @@ export default function AgentAida({ script }: { script: AgentScript }) {
     const [showOptions, setShowOptions] = useState(false);
     const [userReply, setUserReply] = useState<string | null>(null);
 
-    // Hard-Reset, wenn eine neue Phase / ein neues Skript geladen wird
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [visibleMessages, isTyping, userReply, showOptions]);
+
     useEffect(() => {
         setVisibleMessages([]);
         setCurrentMsgIndex(0);
@@ -47,10 +56,8 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         setUserReply(null);
     }, [script.phaseId]);
 
-    // Die Takt-Maschine (Der Typing-Indicator)
     useEffect(() => {
         if (currentMsgIndex >= script.messages.length) {
-            // Alle Nachrichten sind durch, zeige die Buttons (falls vorhanden)
             if (script.options && script.options.length > 0 && !userReply) {
                 setShowOptions(true);
             }
@@ -58,7 +65,6 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         }
 
         const nextMsg = script.messages[currentMsgIndex];
-        // Berechne Lese/Schreibzeit: ca. 30ms pro Zeichen, plus 500ms Basis-Verzögerung
         const typingDuration = Math.min(nextMsg.text.length * 30 + 500, 3000);
 
         setIsTyping(true);
@@ -74,62 +80,61 @@ export default function AgentAida({ script }: { script: AgentScript }) {
 
     const handleOptionClick = (option: AgentOption) => {
         setShowOptions(false);
-        setUserReply(option.label); // Zeigt die Antwort des Probanden im Chat an
-        option.action(); // Führt die Logik aus (z.B. unlock)
+        setUserReply(option.label);
+        option.action();
     };
 
     return (
         <div className="flex flex-col h-full bg-slate-50">
             {/* Chat Verlauf */}
-            <div className="flex-grow p-4 overflow-y-auto space-y-4">
+            <div className="flex-grow p-4 md:p-6 overflow-y-auto space-y-6 md:space-y-8">
                 {visibleMessages.map((msg) => (
-                    <div key={msg.id} className="flex justify-start gap-3">
-                        {/* Avatar */}
-                        <div className={`h-10 w-10 shrink-0 overflow-hidden rounded-full border bg-white shadow-sm ${
+                    <div key={msg.id} className="flex justify-start gap-4">
+                        <div className={`h-12 w-12 md:h-16 md:w-16 shrink-0 overflow-hidden rounded-full border bg-white shadow-sm ${
                             msg.mood === "afraid" ? "border-red-200" : msg.mood === "smile" ? "border-sky-200" : "border-slate-200"
                         }`}>
                             <img src={avatarByMood[msg.mood]} alt="Aida" className="h-full w-full object-cover object-top scale-[1.85] -translate-y-[12%] origin-top" draggable={false} />
                         </div>
-                        {/* Sprechblase */}
-                        <div className={`max-w-[85%] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                        <div className={`max-w-[85%] rounded-3xl rounded-tl-sm px-5 py-4 md:px-6 md:py-5 text-base md:text-lg leading-relaxed shadow-sm ${
                             msg.mood === "afraid" ? "bg-red-50 text-red-950 border border-red-100" : "bg-white text-slate-800 border border-slate-100"
                         }`}>
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Aida</div>
+                            <div className="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-400 mb-1.5">Aida</div>
                             {msg.text}
                         </div>
                     </div>
                 ))}
 
-                {/* Typing Indicator */}
                 {isTyping && (
-                    <div className="flex justify-start gap-3 opacity-70">
-                        <div className="h-10 w-10 shrink-0 rounded-full border border-slate-200 bg-white" />
-                        <div className="rounded-2xl rounded-tl-sm bg-white border border-slate-100 px-4 py-4 shadow-sm flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400" />
-                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400 [animation-delay:150ms]" />
-                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400 [animation-delay:300ms]" />
+                    <div className="flex justify-start gap-4 opacity-70">
+                        <div className="h-12 w-12 md:h-16 md:w-16 shrink-0 rounded-full border border-slate-200 bg-white" />
+                        <div className="rounded-3xl rounded-tl-sm bg-white border border-slate-100 px-5 py-5 md:px-6 md:py-6 shadow-sm flex items-center gap-1.5">
+                            <span className="h-2 w-2 md:h-2.5 md:w-2.5 animate-pulse rounded-full bg-slate-400" />
+                            <span className="h-2 w-2 md:h-2.5 md:w-2.5 animate-pulse rounded-full bg-slate-400 [animation-delay:150ms]" />
+                            <span className="h-2 w-2 md:h-2.5 md:w-2.5 animate-pulse rounded-full bg-slate-400 [animation-delay:300ms]" />
                         </div>
                     </div>
                 )}
 
-                {/* User Reply (wird eingeblendet, nachdem der User einen Button geklickt hat) */}
                 {userReply && (
-                    <div className="flex justify-end mt-4">
-                        <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-sky-600 text-white px-4 py-3 text-sm shadow-sm">
+                    <div className="flex justify-end mt-6">
+                        <div className="max-w-[85%] rounded-3xl rounded-tr-sm bg-sky-600 text-white px-5 py-4 md:px-6 md:py-5 text-base md:text-lg shadow-sm">
                             {userReply}
                         </div>
                     </div>
                 )}
+
+                <div className="h-8 shrink-0" />
+                <div ref={messagesEndRef} />
             </div>
 
             {/* Quick Response Buttons */}
             {showOptions && (
-                <div className="p-4 bg-white border-t border-slate-100 grid gap-2 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+                <div className="p-4 md:p-6 bg-white border-t border-slate-100 grid gap-3 md:gap-4 shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
                     {script.options?.map((opt) => (
                         <button
                             key={opt.id}
                             onClick={() => handleOptionClick(opt)}
-                            className="w-full rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 hover:border-sky-300"
+                            className="w-full rounded-xl border border-sky-200 bg-sky-50 px-5 py-4 md:py-5 text-base md:text-lg font-bold text-sky-800 transition hover:bg-sky-100 hover:border-sky-300"
                         >
                             {opt.label}
                         </button>

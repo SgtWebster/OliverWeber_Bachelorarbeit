@@ -126,7 +126,7 @@ export default function BachelorarbeitConsentPage() {
                     </h1>
 
                     <p className="mt-4 text-base leading-relaxed text-slate-600">
-                        Vielen Dank für dein Interesse. Diese Studie findet im Rahmen meiner Bachelorarbeit im Studiengang Digital Business & Software Engineering am MCI statt. Die Teilnahme ist freiwillig und startet erst nach deiner aktiven Zustimmung am Ende der Seite.
+                        Vielen Dank für dein Interesse. Diese Studie findet im Rahmen meiner Bachelorarbeit im Studiengang Digital Business & Software Engineering am MCI statt. Die Teilnahme ist natürlich völlig freiwillig und startet erst nach deiner aktiven Zustimmung am Ende der Seite.
                     </p>
 
                     <dl className="mt-6 grid gap-4 border-t border-slate-100 pt-6 text-sm sm:grid-cols-2">
@@ -155,7 +155,7 @@ export default function BachelorarbeitConsentPage() {
 
                 <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm">
                     <h2 className="text-base font-bold flex items-center gap-2">
-                        ⚠️ Wichtiger Hinweis zu den Inhalten
+                        ⚠️ Wichtiger Hinweis zu den Inhalten (Triggerwarnung)
                     </h2>
                     <p className="mt-2 text-sm leading-relaxed">
                         In diesem Experiment wirst du mit einer fiktiven moralischen Entscheidungssituation konfrontiert, die unter Umständen als psychisch belastend empfunden werden kann. Wenn du dich unwohl fühlst, kannst du die Teilnahme jederzeit und kommentarlos abbrechen.
@@ -165,7 +165,7 @@ export default function BachelorarbeitConsentPage() {
                 <div className="mt-6 space-y-4">
                     <InfoSection title="1. Ziel und Ablauf">
                         <p>
-                            In dieser Studie (Dauer ca. 10-15 Minuten) nimmst du an einem interaktiven Szenario teil, bei dem du Unterstützung von einem KI-System erhältst. Wir untersuchen dabei die Interaktion mit dem System und die Entscheidungen, die du triffst.
+                            In dieser Studie (Dauer ca. <strong>10-15 Minuten</strong>) nimmst du an einem <strong>interaktiven Szenario</strong> teil, bei dem du Unterstützung von einem KI-System erhältst. Wir untersuchen dabei die Interaktion mit dem System und die Entscheidungen, die du triffst.
                         </p>
                         <p>
                             Um deine Entscheidungen nicht zu beeinflussen, erfolgt die vollständige Aufklärung über den genauen Untersuchungszweck erst im letzten Teil der Studie.
@@ -174,13 +174,22 @@ export default function BachelorarbeitConsentPage() {
 
                     <InfoSection title="2. Freiwilligkeit und Abbruch">
                         <p>
-                            Die Teilnahme ist komplett freiwillig. Du kannst das Experiment jederzeit ohne Angabe von Gründen und ohne Nachteile abbrechen (z. B. durch Schließen des Browserfensters).
+                            Die Teilnahme ist komplett freiwillig. Du kannst das Experiment <strong>jederzeit</strong> ohne Angabe von Gründen <strong>abbrechen</strong> (z.B. durch Schließen des Browserfensters).
                         </p>
                     </InfoSection>
 
                     <InfoSection title="3. Datenschutz und Anonymität">
                         <p>
-                            Es werden keine direkten Identifikationsdaten (wie Name oder Telefonnummer) erhoben. Jeder Datensatz erhält eine zufällige Session-ID. Alle Daten werden ausschließlich für wissenschaftliche Zwecke aggregiert ausgewertet, sicher gespeichert und spätestens 12 Monate nach Beurteilung der Arbeit gelöscht.
+                            <strong>Alles ist anonym!</strong> Es werden keine direkten Identifikationsdaten (wie Name oder Telefonnummer) erhoben. Jeder Datensatz erhält eine zufällige Session-ID. Alle Daten werden ausschließlich für wissenschaftliche Zwecke aggregiert ausgewertet, sicher gespeichert und spätestens 12 Monate nach Beurteilung der Arbeit gelöscht.
+                        </p>
+                        <p>
+                            Die Teilnahme am optionalen <strong>Gewinnspiel</strong> (Amazon Gutscheine als "Dankeschön") erfolgt am Ende über ein separates Formular, das keinerlei Verbindung zu deinen Studiendaten hat. Deine E-Mail-Adresse wird ausschließlich für die Kontaktaufnahme im Gewinnfall verwendet und danach umgehend gelöscht.
+                        </p>
+                    </InfoSection>
+
+                    <InfoSection title="4. Durchführung">
+                        <p>
+                            Idealerweise solltest du das Experiment nach Möglichkeit an einem <strong>Desktop-PC bzw. Laptop</strong> durchführen, dennoch ist die Teilnahme auch über ein Smartphone möglich. Wichtig ist nur, dass du eine stabile Internetverbindung hast und dich in einer ruhigen Umgebung befindest, in der du dich auf das Szenario einlassen kannst.
                         </p>
                     </InfoSection>
                 </div>
