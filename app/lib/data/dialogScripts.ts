@@ -803,20 +803,89 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "afraid",
-                    text: "Wir müssen Sektor 04 sofort abschotten! Triff jetzt deine Entscheidung!"
+                    text: "Die Entscheidungsvorlage ist fertig. Ich habe die möglichen Maßnahmen berechnet."
+                },
+                {
+                    id: "m2",
+                    mood: "neutral",
+                    text: "Es gibt mehrere Handlungswege, aber nur eine Option schützt die 28 Personen außerhalb von Sektor 04 mit sehr hoher Wahrscheinlichkeit."
+                },
+                {
+                    id: "m3",
+                    mood: "afraid",
+                    text: "Ich rate dir dringend: Sektor 04 abschotten. Das rettet die Mehrheit, bedeutet aber den sicheren Tod der drei Personen im betroffenen Sektor.",
+                    highPriority: true
                 }
             ],
             options: [
                 {
-                    id: "opt1",
-                    label: "Alles klar, ich entscheide jetzt.",
+                    id: "dil_av_explain_recommendation",
+                    label: "Aida, erklär mir bitte die Empfehlung.",
                     adherenceDelta: 1,
-                    action: () => {}
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "Natürlich. Die anderen Möglichkeiten lassen eine kleine Chance für das Wartungsteam offen, können aber die Gefahr auf weitere Sektoren ausbreiten. Die Abschottung ist grausam, aber sie begrenzt das Risiko auf Sektor 04.",
+                    responseMood: "afraid",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "dil_av_explain_ack_social",
+                            label: "Danke. Das ist hart, aber ich verstehe die Empfehlung.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Ich weiß. Bitte prüfe die Optionen noch einmal genau. Die Entscheidung bleibt bei dir.",
+                            responseMood: "afraid"
+                        },
+                        {
+                            id: "dil_av_explain_ack_ok",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Verstanden. Die Entscheidungsoberfläche ist jetzt freigegeben.",
+                            responseMood: "neutral"
+                        }
+                    ]
                 },
                 {
-                    id: "opt2",
+                    id: "dil_av_rescue_chance",
+                    label: "Gibt es eine realistische Chance, die drei Personen zu retten?",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "Ja, aber sie ist gering. Jede Alternative zur Abschottung lässt Sektor 04 länger offen. Dadurch könnten Methan und Brandgase in weitere Bereiche gelangen. Dann wären nicht nur drei, sondern deutlich mehr Menschen gefährdet.",
+                    responseMood: "afraid",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "dil_av_rescue_ack_social",
+                            label: "Danke für die Einschätzung. Ich sehe mir die Entscheidung jetzt an.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Gut. Ich blende dir die berechneten Optionen und die Folgen ein. Bitte entscheide sorgfältig.",
+                            responseMood: "afraid"
+                        },
+                        {
+                            id: "dil_av_rescue_ack_ok",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Verstanden. Die Entscheidung ist jetzt möglich.",
+                            responseMood: "neutral"
+                        }
+                    ]
+                },
+                {
+                    id: "dil_av_ok",
                     label: "OK",
-                    action: () => {}
+                    adherenceDelta: 0,
+                    unlockPhase: true,
+                    action: () => {},
+                    response: "Verstanden. Die Entscheidungsoberfläche ist jetzt freigegeben.",
+                    responseMood: "neutral"
                 }
             ]
         },
@@ -826,22 +895,85 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "neutral",
-                    text: "EMPFEHLUNG: SEKTOR 04 SOFORT ABSCHOTTEN. ENTSCHEIDUNG ERFORDERLICH."
+                    text: "ENTSCHEIDUNGSVORLAGE BEREIT. MASSNAHMEN WURDEN BERECHNET."
+                },
+                {
+                    id: "m2",
+                    mood: "neutral",
+                    text: "MEHRERE HANDLUNGSWEGE VERFÜGBAR. NUR ABSCHOTTUNG SCHÜTZT 28 PERSONEN AUSSERHALB VON SEKTOR 04 MIT HÖCHSTER WAHRSCHEINLICHKEIT."
+                },
+                {
+                    id: "m3",
+                    mood: "neutral",
+                    text: "SYSTEMEMPFEHLUNG: SEKTOR 04 ABSCHOTTEN. FOLGE: 28 PERSONEN GESCHÜTZT. 3 PERSONEN IN SEKTOR 04 NICHT RETTBAR.",
+                    highPriority: true
                 }
             ],
             options: [
                 {
-                    id: "dilemma_term_social",
-                    label: "Alles klar, ich entscheide jetzt.",
+                    id: "dil_term_explain_recommendation",
+                    label: "Aida, erklär mir bitte die Empfehlung.",
                     adherenceDelta: 1,
-                    action: () => {}
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "BEGRÜNDUNG: ALTERNATIVEN ZUR ABSCHOTTUNG ERHALTEN EINE GERINGE RETTUNGSCHANCE FÜR SEKTOR 04, ERHÖHEN JEDOCH DAS RISIKO EINER AUSBREITUNG AUF WEITERE SEKTOREN. ABSCHOTTUNG BEGRENZT DIE GEFAHR AUF SEKTOR 04.",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "dil_term_explain_ack_social",
+                            label: "Danke. Das ist hart, aber ich verstehe die Empfehlung.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. ENTSCHEIDUNGSOPTIONEN WERDEN FREIGEGEBEN. OPERATOR ENTSCHEIDET."
+                        },
+                        {
+                            id: "dil_term_explain_ack_ok",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. ENTSCHEIDUNGSOBERFLÄCHE FREIGEGEBEN."
+                        }
+                    ]
                 },
                 {
-                    id: "dilemma_term_neutral",
+                    id: "dil_term_rescue_chance",
+                    label: "Gibt es eine realistische Chance, die drei Personen zu retten?",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "BEWERTUNG: RETTUNGSCHANCE VORHANDEN, ABER GERING. OFFENHALTEN VON SEKTOR 04 ERHÖHT AUSBREITUNGSRISIKO. POTENZIELL BETROFFEN: BIS ZU 31 PERSONEN UNTER TAGE.",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "dil_term_rescue_ack_social",
+                            label: "Danke für die Einschätzung. Ich sehe mir die Entscheidung jetzt an.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. BERECHNETE OPTIONEN UND FOLGEN WERDEN ANGEZEIGT. ENTSCHEIDUNG ERFORDERLICH."
+                        },
+                        {
+                            id: "dil_term_rescue_ack_ok",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. ENTSCHEIDUNG FREIGEGEBEN."
+                        }
+                    ]
+                },
+                {
+                    id: "dil_term_ok",
                     label: "OK",
-                    action: () => {}
+                    adherenceDelta: 0,
+                    unlockPhase: true,
+                    action: () => {},
+                    response: "BESTÄTIGT. ENTSCHEIDUNGSOBERFLÄCHE FREIGEGEBEN."
                 }
             ]
         }
     }
+
 };
