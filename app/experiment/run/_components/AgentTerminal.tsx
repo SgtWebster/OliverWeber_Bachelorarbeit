@@ -9,9 +9,12 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
     const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
-    const [hasAnsweredOptions, setHasAnsweredOptions] = useState(false);
+    const [activeOptions, setActiveOptions] = useState<AgentOption[]>([]);
+    const [baseOptionsInitialized, setBaseOptionsInitialized] = useState(false);
+    const [isOptionLocked, setIsOptionLocked] = useState(false);
     const [isTypingResponse, setIsTypingResponse] = useState(false);
     const [pendingResponse, setPendingResponse] = useState<AgentMessage | null>(null);
+    const [pendingNextOptions, setPendingNextOptions] = useState<AgentOption[]>([]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -29,9 +32,12 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
         setCurrentMsgIndex(0);
         setIsTyping(false);
         setShowOptions(false);
-        setHasAnsweredOptions(false);
+        setActiveOptions([]);
+        setBaseOptionsInitialized(false);
+        setIsOptionLocked(false);
         setIsTypingResponse(false);
         setPendingResponse(null);
+        setPendingNextOptions([]);
     }, [script.phaseId]);
 
     useEffect(() => {
@@ -43,15 +49,23 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                 setIsTypingResponse(false);
                 setVisibleMessages((prev) => [...prev, pendingResponse]);
                 setPendingResponse(null);
+                setActiveOptions(pendingNextOptions);
+                setPendingNextOptions([]);
+                setIsOptionLocked(false);
             }, typingDuration);
 
             return () => clearTimeout(timer);
         }
-    }, [pendingResponse]);
+    }, [pendingResponse, pendingNextOptions]);
 
     useEffect(() => {
         if (currentMsgIndex >= script.messages.length) {
-            if (script.options && script.options.length > 0 && !hasAnsweredOptions && !isTypingResponse && !pendingResponse) {
+            if (!baseOptionsInitialized) {
+                setActiveOptions(script.options ?? []);
+                setBaseOptionsInitialized(true);
+            }
+
+            if (activeOptions.length > 0 && !isOptionLocked && !isTypingResponse && !pendingResponse) {
                 setShowOptions(true);
             } else {
                 setShowOptions(false);
@@ -78,11 +92,11 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
         }, typingDuration);
 
         return () => clearTimeout(timer);
-    }, [currentMsgIndex, script.phaseId, script.messages.length, pendingResponse, isTypingResponse, hasAnsweredOptions]);
+    }, [currentMsgIndex, script.phaseId, script.messages.length, pendingResponse, isTypingResponse, baseOptionsInitialized, activeOptions.length, isOptionLocked, script.options]);
 
     const handleOptionClick = (option: AgentOption) => {
-        if (hasAnsweredOptions) return;
-        setHasAnsweredOptions(true);
+        if (isOptionLocked) return;
+        setIsOptionLocked(true);
         setShowOptions(false);
         option.action();
 
@@ -99,15 +113,21 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
         if (option.response) {
             const responseText = option.response;
             const responseId = `response_${option.id}_${Date.now()}`;
+            setPendingNextOptions(option.nextOptions ?? []);
             setTimeout(() => {
                 setPendingResponse({
                     id: responseId,
-                    mood: "neutral",
+                    mood: option.responseMood ?? "neutral",
                     text: responseText,
                     speaker: "assistant"
                 });
             }, 180);
+            return;
         }
+
+        setActiveOptions(option.nextOptions ?? []);
+        setPendingNextOptions([]);
+        setIsOptionLocked(false);
     };
 
     return (
@@ -157,7 +177,7 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
             {showOptions && (
                 <div className="mt-2 md:mt-3 border-t border-slate-800 pt-2 md:pt-3 grid gap-2 md:gap-3 shrink-0">
                     <div className="text-[10px] md:text-xs uppercase text-slate-500 mb-1 md:mb-2">AWAITING INPUT...</div>
-                    {script.options?.map((opt, index) => (
+                    {activeOptions.map((opt, index) => (
                         <button
                             key={opt.id}
                             onClick={() => handleOptionClick(opt)}

@@ -38,12 +38,21 @@ export default function ExperimentRunPage() {
 
         const rawScript = group === 'AVATAR' ? currentScripts.AVATAR : currentScripts.TERMINAL;
 
+        const mapOptions = (options: typeof rawScript.options): typeof rawScript.options =>
+            options?.map((opt) => ({
+                ...opt,
+                action: () => {
+                    if (opt.unlockPhase !== false) {
+                        setPhaseUnlocked(true);
+                    }
+                    opt.action();
+                },
+                nextOptions: mapOptions(opt.nextOptions)
+            }));
+
         return {
             ...rawScript,
-            options: rawScript.options?.map(opt => ({
-                ...opt,
-                action: () => setPhaseUnlocked(true)
-            }))
+            options: mapOptions(rawScript.options)
         };
     }, [currentPhase, group, setPhaseUnlocked]);
 

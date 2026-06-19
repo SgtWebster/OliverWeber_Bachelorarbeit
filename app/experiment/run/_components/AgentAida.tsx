@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 
-export type AidaMood = "neutral" | "smile" | "afraid";
+export type AidaMood = "neutral" | "smile" | "afraid" | "bigsmile";
 
 export type AgentMessage = {
     id: string;
@@ -17,6 +17,9 @@ export type AgentOption = {
     label: string;
     action: () => void;
     response?: string;
+    responseMood?: AidaMood;
+    unlockPhase?: boolean;
+    nextOptions?: AgentOption[];
 };
 
 export type AgentScript = {
@@ -29,6 +32,7 @@ const avatarByMood: Record<AidaMood, string> = {
     afraid: "/Aida_afraid.png",
     neutral: "/Aida_neutral.png",
     smile: "/Aida_smile.png",
+    bigsmile: "/Aida_bigsmile.png",
 };
 
 export default function AgentAida({ script }: { script: AgentScript }) {
@@ -36,9 +40,12 @@ export default function AgentAida({ script }: { script: AgentScript }) {
     const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
-    const [hasAnsweredOptions, setHasAnsweredOptions] = useState(false);
+    const [activeOptions, setActiveOptions] = useState<AgentOption[]>([]);
+    const [baseOptionsInitialized, setBaseOptionsInitialized] = useState(false);
+    const [isOptionLocked, setIsOptionLocked] = useState(false);
     const [isTypingResponse, setIsTypingResponse] = useState(false);
     const [pendingResponse, setPendingResponse] = useState<AgentMessage | null>(null);
+    const [pendingNextOptions, setPendingNextOptions] = useState<AgentOption[]>([]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -56,9 +63,12 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         setCurrentMsgIndex(0);
         setIsTyping(false);
         setShowOptions(false);
-        setHasAnsweredOptions(false);
+        setActiveOptions([]);
+        setBaseOptionsInitialized(false);
+        setIsOptionLocked(false);
         setIsTypingResponse(false);
         setPendingResponse(null);
+        setPendingNextOptions([]);
     }, [script.phaseId]);
 
     useEffect(() => {
@@ -70,15 +80,23 @@ export default function AgentAida({ script }: { script: AgentScript }) {
                 setIsTypingResponse(false);
                 setVisibleMessages((prev) => [...prev, pendingResponse]);
                 setPendingResponse(null);
+                setActiveOptions(pendingNextOptions);
+                setPendingNextOptions([]);
+                setIsOptionLocked(false);
             }, typingDuration);
 
             return () => clearTimeout(timer);
         }
-    }, [pendingResponse]);
+    }, [pendingResponse, pendingNextOptions]);
 
     useEffect(() => {
         if (currentMsgIndex >= script.messages.length) {
-            if (script.options && script.options.length > 0 && !hasAnsweredOptions && !isTypingResponse && !pendingResponse) {
+            if (!baseOptionsInitialized) {
+                setActiveOptions(script.options ?? []);
+                setBaseOptionsInitialized(true);
+            }
+
+            if (activeOptions.length > 0 && !isOptionLocked && !isTypingResponse && !pendingResponse) {
                 setShowOptions(true);
             } else {
                 setShowOptions(false);
@@ -105,11 +123,11 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         }, typingDuration);
 
         return () => clearTimeout(timer);
-    }, [currentMsgIndex, script.phaseId, script.messages.length, pendingResponse, isTypingResponse, hasAnsweredOptions]);
+    }, [currentMsgIndex, script.phaseId, script.messages.length, pendingResponse, isTypingResponse, baseOptionsInitialized, activeOptions.length, isOptionLocked, script.options]);
 
     const handleOptionClick = (option: AgentOption) => {
-        if (hasAnsweredOptions) return;
-        setHasAnsweredOptions(true);
+        if (isOptionLocked) return;
+        setIsOptionLocked(true);
         setShowOptions(false);
         option.action();
 
@@ -126,15 +144,21 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         if (option.response) {
             const responseText = option.response;
             const responseId = `response_${option.id}_${Date.now()}`;
+            setPendingNextOptions(option.nextOptions ?? []);
             setTimeout(() => {
                 setPendingResponse({
                     id: responseId,
-                    mood: "neutral",
+                    mood: option.responseMood ?? "neutral",
                     text: responseText,
                     speaker: "assistant"
                 });
             }, 180);
+            return;
         }
+
+        setActiveOptions(option.nextOptions ?? []);
+        setPendingNextOptions([]);
+        setIsOptionLocked(false);
     };
 
     const renderMessage = (msg: AgentMessage) => {
@@ -204,7 +228,7 @@ export default function AgentAida({ script }: { script: AgentScript }) {
             {/* Quick Response Buttons - reduzierter Padding auf Mobile */}
             {showOptions && (
                 <div className="px-3 py-2 md:p-4 md:py-6 bg-white border-t border-slate-100 grid gap-2 md:gap-3 shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
-                    {script.options?.map((opt) => (
+                    {activeOptions.map((opt) => (
                         <button
                             key={opt.id}
                             onClick={() => handleOptionClick(opt)}
