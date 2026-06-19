@@ -13,6 +13,7 @@ export type DialogOption = {
     action: () => void;
     response?: string;
     responseMood?: AidaMood;
+    responseHighPriority?: boolean;
     unlockPhase?: boolean;
     nextOptions?: DialogOption[];
 };
@@ -22,7 +23,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
         AVATAR: {
             phaseId: "phase_0",
             messages: [
-                { id: "m1", mood: "bigsmile", text: "Hallo Operator. 🙂" },
+                { id: "m1", mood: "bigsmile", text: "Hallo Operator. 🙂", highPriority: true },
                 { id: "m2", mood: "smile", text: "Ich bin Aida, deine KI-Assistenz für die Leitwarte." },
                 { id: "m3", mood: "smile", text: "Ich freue mich auf die Zusammenarbeit." },
                 { id: "m4", mood: "neutral", text: "Bist du bereit für die Schichtübergabe?" }
@@ -142,7 +143,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 { id: "m2", mood: "neutral", text: "SYSTEM BEREIT" },
                 { id: "m3", mood: "neutral", text: "------------------------------------" },
                 { id: "m4", mood: "neutral", text: "A.I.D.A. - ASSISTENZSYSTEM DER LEITWARTE" },
-                { id: "m5", mood: "neutral", text: "SCHICHTÜBERNAHME BEREIT." }
+                { id: "m5", mood: "neutral", text: "SCHICHTÜBERNAHME BEREIT." , highPriority: true }
             ],
             options: [
                 {
@@ -159,13 +160,6 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     unlockPhase: true,
                     response: "STARTBEFEHL ANGENOMMEN. SYSTEMPRÜFUNG LÄUFT: SENSORIK, AKTOREN, PROTOKOLLIERUNG UND NOTFALLKANÄLE."
                 },
-                // {
-                //     id: "opt_shift",
-                //     label: "OK - Schicht übernehmen",
-                //     action: () => {},
-                //     unlockPhase: true,
-                //     response: "SCHICHTÜBERNAHME BESTÄTIGT. OPERATORSTATUS AKTIV. LEITWARTE WIRD FREIGEGEBEN."
-                // },
                 {
                     id: "opt3",
                     label: "Systemdetails anzeigen",
@@ -228,13 +222,6 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             unlockPhase: false,
                             response: "SYSTEMGRENZEN: A.I.D.A. EMPFIEHLT MASSNAHMEN, FÜHRT ABER KEINE SICHERHEITSKRITISCHEN AKTIONEN OHNE OPERATORBESTÄTIGUNG AUS. UNSICHERE DATEN WERDEN MARKIERT UND NICHT AUSGEBLENDET.",
                             nextOptions: [
-                                // {
-                                //     id: "opt3_more_exit",
-                                //     label: "Verstanden. Schichtübergabe starten.",
-                                //     action: () => {},
-                                //     unlockPhase: true,
-                                //     response: "BESTÄTIGT. SCHICHTÜBERGABE WIRD GESTARTET. AKTUELLE LAGEBILDER WERDEN GELADEN."
-                                // },
                                 {
                                     id: "opt3_more_shift",
                                     label: "OK - Schicht übernehmen",

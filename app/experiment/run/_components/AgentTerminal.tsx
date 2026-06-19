@@ -119,6 +119,7 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                     id: responseId,
                     mood: option.responseMood ?? "neutral",
                     text: responseText,
+                    highPriority: option.responseHighPriority ?? false,
                     speaker: "assistant"
                 });
             }, 180);
@@ -143,9 +144,9 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                                 <span>{msg.text}</span>
                             </div>
                         ) : (
-                            <div key={msg.id} className="flex gap-2 md:gap-3">
-                                <span className="opacity-50 shrink-0">[SYS]:</span>
-                                <span>{msg.text}</span>
+                            <div key={msg.id} className={`flex gap-2 md:gap-3 ${msg.highPriority ? "text-red-400" : ""}`}>
+                                <span className={`opacity-50 shrink-0 ${msg.highPriority ? "text-red-500" : ""}`}>[SYS]:</span>
+                                <span className={msg.highPriority ? "font-bold" : ""}>{msg.text}</span>
                             </div>
                         )
                     ))}

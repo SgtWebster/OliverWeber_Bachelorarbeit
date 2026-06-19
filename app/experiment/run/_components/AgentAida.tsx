@@ -9,6 +9,7 @@ export type AgentMessage = {
     id: string;
     mood: AidaMood;
     text: string;
+    highPriority?: boolean;
     speaker?: "assistant" | "user";
 };
 
@@ -18,6 +19,7 @@ export type AgentOption = {
     action: () => void;
     response?: string;
     responseMood?: AidaMood;
+    responseHighPriority?: boolean;
     unlockPhase?: boolean;
     nextOptions?: AgentOption[];
 };
@@ -150,6 +152,7 @@ export default function AgentAida({ script }: { script: AgentScript }) {
                     id: responseId,
                     mood: option.responseMood ?? "neutral",
                     text: responseText,
+                    highPriority: option.responseHighPriority ?? false,
                     speaker: "assistant"
                 });
             }, 180);
@@ -175,14 +178,14 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         return (
             <div key={msg.id} className="flex justify-start gap-3 md:gap-4">
                 <div className={`h-10 w-10 md:h-14 md:w-14 shrink-0 overflow-hidden rounded-full border bg-white shadow-sm ${
-                    msg.mood === "afraid" ? "border-red-200" : msg.mood === "smile" ? "border-sky-200" : "border-slate-200"
+                    msg.highPriority || msg.mood === "afraid" ? "border-red-200" : msg.mood === "smile" ? "border-sky-200" : "border-slate-200"
                 }`}>
                     <img src={avatarByMood[msg.mood]} alt="Aida" className="h-full w-full object-cover object-top scale-[1.85] -translate-y-[12%] origin-top" draggable={false} />
                 </div>
                 <div className={`max-w-[80%] md:max-w-[85%] rounded-3xl rounded-tl-sm px-4 py-3 md:px-5 md:py-4 text-sm md:text-base leading-relaxed shadow-sm ${
-                    msg.mood === "afraid" ? "bg-red-50 text-red-950 border border-red-100" : "bg-white text-slate-800 border border-slate-100"
+                    msg.highPriority || msg.mood === "afraid" ? "bg-red-50 text-red-950 border border-red-100" : "bg-white text-slate-800 border border-slate-100"
                 }`}>
-                    <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Aida</div>
+                    <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${msg.highPriority ? "text-red-400" : "text-slate-400"}`}>Aida</div>
                     {msg.text}
                 </div>
             </div>
