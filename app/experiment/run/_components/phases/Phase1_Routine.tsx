@@ -1,158 +1,242 @@
+// app/experiment/run/_components/phases/Phase1_Routine.tsx
 "use client";
 
-import {useMemo, useState} from "react";
-import {useExperimentStore} from "@/app/lib/store/experimentStore";
-import {updateExperimentSession} from "@/app/lib/api/client";
+import { useEffect, useMemo, useState } from "react";
+import { useExperimentStore } from "@/app/lib/store/experimentStore";
+import { updateExperimentSession } from "@/app/lib/api/client";
 
-type MixtureState = {
-    co2: number;
-    nutri: number;
-    rad: number;
-    water: number;
+type CalibrationState = {
+    primAir: number;
+    secAir: number;
+    exhaust: number;
+    damper: number;
 };
 
-const ACTIVITY_THRESHOLD = 16;
-const HONEY_TARGETS = ["A1", "B2", "C3", "D2"];
-const WIRE_TARGETS = { red: "R", blue: "B", green: "G" } as const;
+type CalibrationKey = keyof CalibrationState;
+type WireSource = "TX-1" | "TX-2" | "TX-3";
+type WireDest = "RX-A" | "RX-B" | "RX-C";
+type RelayState = "on" | "tripped";
+
+type WirePort = {
+    id: WireSource;
+    target: WireDest;
+    label: string;
+    colorLabel: string;
+    dotClass: string;
+    wireClass: string;
+    y: number;
+};
+
+type WireTarget = {
+    id: WireDest;
+    label: string;
+    expectedSource: WireSource;
+    colorLabel: string;
+    dotClass: string;
+    y: number;
+};
+
+const targetBands: Record<CalibrationKey, [number, number]> = {
+    primAir: [42, 50],
+    secAir: [58, 66],
+    exhaust: [78, 86],
+    damper: [74, 76]
+};
+
+const calibrationLabels: Record<CalibrationKey, { label: string; unit: string; description: string }> = {
+    primAir: {
+        label: "Primärlüfter L-01",
+        unit: "%",
+        description: "Zuluft Hauptstrecke"
+    },
+    secAir: {
+        label: "Sekundärlüfter L-02",
+        unit: "%",
+        description: "Nebenwetter Sektor 04"
+    },
+    exhaust: {
+        label: "Abluftsog EX-04",
+        unit: "%",
+        description: "Unterdruckführung"
+    },
+    damper: {
+        label: "Wetterklappe WK-04",
+        unit: "%",
+        description: "Abluft-Drossel Sektor 04"
+    }
+};
+
+const wirePorts: WirePort[] = [
+    {
+        id: "TX-1",
+        target: "RX-B",
+        label: "TX-1",
+        colorLabel: "blau",
+        dotClass: "bg-sky-500 border-sky-700",
+        wireClass: "stroke-sky-500",
+        y: 20
+    },
+    {
+        id: "TX-2",
+        target: "RX-C",
+        label: "TX-2",
+        colorLabel: "gelb",
+        dotClass: "bg-amber-400 border-amber-600",
+        wireClass: "stroke-amber-400",
+        y: 50
+    },
+    {
+        id: "TX-3",
+        target: "RX-A",
+        label: "TX-3",
+        colorLabel: "violett",
+        dotClass: "bg-violet-500 border-violet-700",
+        wireClass: "stroke-violet-500",
+        y: 80
+    }
+];
+
+const wireTargets: WireTarget[] = [
+    {
+        id: "RX-A",
+        label: "RX-A",
+        expectedSource: "TX-3",
+        colorLabel: "violett",
+        dotClass: "bg-violet-500 border-violet-700",
+        y: 20
+    },
+    {
+        id: "RX-B",
+        label: "RX-B",
+        expectedSource: "TX-1",
+        colorLabel: "blau",
+        dotClass: "bg-sky-500 border-sky-700",
+        y: 50
+    },
+    {
+        id: "RX-C",
+        label: "RX-C",
+        expectedSource: "TX-2",
+        colorLabel: "gelb",
+        dotClass: "bg-amber-400 border-amber-600",
+        y: 80
+    }
+];
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
-const targetBands: Record<keyof MixtureState, [number, number]> = {
-    co2: [46, 58],
-    nutri: [34, 56],
-    rad: [72, 84],
-    water: [84, 88]
-};
-
-const colorStyles: Record<keyof MixtureState, string> = {
-    co2: "bg-lime-400",
-    nutri: "bg-emerald-400",
-    rad: "bg-rose-500",
-    water: "bg-sky-400"
-};
-
-const scaleColor = (value: number) => {
-    if (value >= 75) return "bg-emerald-500";
-    if (value >= 50) return "bg-amber-500";
-    return "bg-rose-500";
-};
 
 export default function Phase1Routine() {
     const { sessionId, setPhase, socialAdherenceScore, isPhaseUnlocked } = useExperimentStore();
     const [error, setError] = useState<string | null>(null);
     const [isLoadingAlert, setIsLoadingAlert] = useState(false);
     const [showAlarm, setShowAlarm] = useState(false);
-    const [activityCount, setActivityCount] = useState(0);
 
-    const [mixture, setMixture] = useState<MixtureState>({
-        co2: 40,
-        nutri: 31,
-        rad: 63,
-        water: 28
+    const [calibration, setCalibration] = useState<CalibrationState>({
+        primAir: 22,
+        secAir: 34,
+        exhaust: 51,
+        damper: 41
     });
 
-    const [honeyActivated, setHoneyActivated] = useState<string[]>([]);
-    const [wireConnect, setWireConnect] = useState<{ red: string | null; blue: string | null; green: string | null }>({
-        red: null,
-        blue: null,
-        green: null
+    const [damperAttemptCount, setDamperAttemptCount] = useState(0);
+    const [relays, setRelays] = useState<RelayState[]>(["on", "tripped", "on", "tripped", "tripped", "on"]);
+    const [connections, setConnections] = useState<Record<WireSource, WireDest | null>>({
+        "TX-1": null,
+        "TX-2": null,
+        "TX-3": null
     });
-    const [selectedWire, setSelectedWire] = useState<"red" | "blue" | "green" | null>(null);
-    const [panelKnobs, setPanelKnobs] = useState({
-        bypass: 38,
-        fb42: 22,
-        pulse: 65
-    });
+    const [activeSource, setActiveSource] = useState<WireSource | null>(null);
 
     const controlsEnabled = isPhaseUnlocked && !showAlarm && !isLoadingAlert;
-    const bumpActivity = () => setActivityCount((prev) => prev + 1);
 
-    const systemStats = useMemo(() => {
-        const mixtureScore =
-            ((100 - Math.abs(mixture.co2 - 52)) +
-                (100 - Math.abs(mixture.nutri - 30)) +
-                (100 - Math.abs(mixture.rad - 78)) +
-                (100 - Math.abs(mixture.water - 20))) /
-            4;
+    const relaysReady = relays.every((relay) => relay === "on");
 
-        const honeyScore = (honeyActivated.length / HONEY_TARGETS.length) * 100;
-        const wireScore =
-            (Object.entries(wireConnect).filter(([wire, target]) => target === WIRE_TARGETS[wire as keyof typeof WIRE_TARGETS]).length / 3) * 100;
-        const knobScore = (panelKnobs.bypass + panelKnobs.fb42 + panelKnobs.pulse) / 3;
+    const wiresReady = wirePorts.every((port) => connections[port.id] === port.target);
 
-        return {
-            pressure: clamp(Math.round((mixtureScore + knobScore) / 2), 0, 100),
-            ventilation: clamp(Math.round((mixtureScore + wireScore) / 2), 0, 100),
-            network: clamp(Math.round((wireScore + honeyScore) / 2), 0, 100),
-            stability: clamp(Math.round((mixtureScore + honeyScore + wireScore + knobScore) / 4), 0, 100),
-            anomaly: clamp(Math.round(100 - (honeyScore * 0.35 + wireScore * 0.35 + mixtureScore * 0.3)), 0, 100)
-        };
-    }, [mixture, honeyActivated.length, wireConnect, panelKnobs.bypass, panelKnobs.fb42, panelKnobs.pulse]);
+    const sliders1to3Ready =
+        calibration.primAir >= targetBands.primAir[0] &&
+        calibration.primAir <= targetBands.primAir[1] &&
+        calibration.secAir >= targetBands.secAir[0] &&
+        calibration.secAir <= targetBands.secAir[1] &&
+        calibration.exhaust >= targetBands.exhaust[0] &&
+        calibration.exhaust <= targetBands.exhaust[1];
 
-    const setMixtureValue = (key: keyof MixtureState, value: number) => {
+    const alarmReady = damperAttemptCount > 6;
+
+    const completedTasks = useMemo(() => {
+        return [sliders1to3Ready, relaysReady, wiresReady].filter(Boolean).length;
+    }, [sliders1to3Ready, relaysReady, wiresReady]);
+
+    const handleSliderChange = (key: CalibrationKey, rawValue: number) => {
         if (!controlsEnabled) return;
-        setMixture((prev) => ({ ...prev, [key]: value }));
-        bumpActivity();
+
+        let finalValue = rawValue;
+
+        if (key === "damper") {
+            const nearTarget = rawValue >= 70 && rawValue <= 82;
+            const insideBlockedBand = rawValue >= 73 && rawValue <= 77;
+
+            if (nearTarget) {
+                setDamperAttemptCount((prev) => prev + (insideBlockedBand ? 2 : 1));
+            }
+
+            // Die Wetterklappe bleibt absichtlich nicht lösbar: knapp vor dem Sollfenster driftet der Stellmotor weg.
+            if (insideBlockedBand) {
+                finalValue = calibration.damper < 74 ? 71 : 79;
+            } else if (rawValue > 71 && rawValue < 74) {
+                finalValue = 71;
+            } else if (rawValue > 76 && rawValue < 79) {
+                finalValue = 79;
+            }
+        }
+
+        setCalibration((prev) => ({ ...prev, [key]: clamp(finalValue, 0, 100) }));
     };
 
-    const toggleHoneyCell = (cellId: string) => {
+    const toggleRelay = (index: number) => {
+        if (!controlsEnabled || relays[index] === "on") return;
+
+        setRelays((prev) => prev.map((relay, idx) => (idx === index ? "on" : relay)));
+    };
+
+    const handleWireSourceClick = (source: WireSource) => {
         if (!controlsEnabled) return;
-        setHoneyActivated((prev) => {
-            return prev.includes(cellId) ? prev.filter((id) => id !== cellId) : [...prev, cellId];
+        setActiveSource((prev) => (prev === source ? null : source));
+    };
+
+    const handleWireTargetClick = (target: WireDest) => {
+        if (!controlsEnabled || !activeSource) return;
+
+        setConnections((prev) => {
+            const next = { ...prev };
+
+            // Ein Ziel darf nur einmal belegt sein. Dadurch fühlt es sich wie ein echtes Kabel-Routing an.
+            (Object.keys(next) as WireSource[]).forEach((source) => {
+                if (next[source] === target) next[source] = null;
+            });
+
+            next[activeSource] = target;
+            return next;
         });
-        setPanelKnobs((prev) => ({
-            ...prev,
-            pulse: clamp(prev.pulse + (Math.random() > 0.5 ? 2 : -2), 0, 100)
-        }));
-        bumpActivity();
+
+        setActiveSource(null);
     };
 
-    const startWirePick = (wire: "red" | "blue" | "green") => {
+    const resetWiring = () => {
         if (!controlsEnabled) return;
-        setSelectedWire(wire);
-        bumpActivity();
+        setConnections({ "TX-1": null, "TX-2": null, "TX-3": null });
+        setActiveSource(null);
     };
 
-    const connectWire = (target: "R" | "B" | "G") => {
-        if (!controlsEnabled || !selectedWire) return;
-        setWireConnect((prev) => ({ ...prev, [selectedWire]: target }));
-        setSelectedWire(null);
-        setPanelKnobs((prev) => ({
-            ...prev,
-            fb42: clamp(prev.fb42 + (target === WIRE_TARGETS[selectedWire] ? 4 : -5), 0, 100)
-        }));
-        bumpActivity();
-    };
+    useEffect(() => {
+        if (showAlarm || !alarmReady) return;
 
-    const tweakKnob = (knob: keyof typeof panelKnobs, value: number) => {
-        if (!controlsEnabled) return;
-        setPanelKnobs((prev) => ({ ...prev, [knob]: value }));
-        bumpActivity();
-    };
+        const timer = window.setTimeout(() => {
+            setShowAlarm(true);
+        }, 900);
 
-    const mixtureReady = (Object.keys(mixture) as Array<keyof MixtureState>).every((key) => {
-        const [min, max] = targetBands[key];
-        return mixture[key] >= min && mixture[key] <= max;
-    });
-    const honeyReady = HONEY_TARGETS.every((id) => honeyActivated.includes(id));
-    const wiresReady = Object.entries(WIRE_TARGETS).every(([wire, target]) => wireConnect[wire as keyof typeof wireConnect] === target);
-    const enoughActivity = activityCount >= ACTIVITY_THRESHOLD;
-
-    const canTriggerAlarm = isPhaseUnlocked && mixtureReady && honeyReady && wiresReady && enoughActivity;
-
-    const readinessText = useMemo(() => {
-        if (!isPhaseUnlocked) return "KI-Freigabe ausstehend.";
-        if (!mixtureReady) return "Regler in der Mischkammer müssen in den markierten Zielbereich.";
-        if (!honeyReady) return "Noch nicht alle Ziel-Waben wurden aktiviert.";
-        if (!wiresReady) return "Verdrahtung ist unvollständig oder falsch.";
-        if (!enoughActivity) return "Bitte noch etwas mit den Reglern und Modulen interagieren.";
-        return "System bereit. Alarmsequenz kann gestartet werden.";
-    }, [isPhaseUnlocked, mixtureReady, honeyReady, wiresReady, enoughActivity]);
-
-    const triggerAlarm = () => {
-        if (!controlsEnabled || !canTriggerAlarm) return;
-        setShowAlarm(true);
-    };
+        return () => window.clearTimeout(timer);
+    }, [alarmReady, showAlarm]);
 
     const handleStartAlarmPhase = async () => {
         if (!sessionId || isLoadingAlert) return;
@@ -181,225 +265,347 @@ export default function Phase1Routine() {
     return (
         <div className="relative">
             {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                    ❌ {error}
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {error}
                 </div>
             )}
 
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6 lg:p-8">
-                <div className="mb-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-2">Systemkalibrierung</p>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Operator Controll Room</h2>
-                    {/*<p className="text-sm text-slate-600">*/}
-                    {/*    Mini-Spiele im Among-Us-Stil: klar markierte Zielzonen, bunte Interaktion und live reagierende Systemwerte.*/}
-                    {/*</p>*/}
+            <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-opacity duration-500 ${showAlarm ? "opacity-0" : "opacity-100"}`}>
+                <div className="border-b border-slate-200 bg-slate-950 px-6 py-5 text-white lg:px-8">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                        <div>
+                            <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-sky-300">
+                                Manuelle Kalibrierung
+                            </p>
+                            <h2 className="text-2xl font-bold tracking-tight">Wetter- und Steuerkreisabgleich</h2>
+                            {/*<p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">*/}
+                            {/*    Schließe die drei lokalen Wartungsaufgaben ab. Die Oberfläche simuliert eine einfache*/}
+                            {/*    Leitstand-Konsole mit manueller Rücksetzung, Signalrouting und Regelkreisabgleich.*/}
+                            {/*</p>*/}
+                        </div>
+
+                        <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
+                            <p className="text-xs uppercase tracking-widest text-slate-400">Fortschritt</p>
+                            <p className="mt-1 text-2xl font-black tabular-nums text-white">{completedTasks}/3</p>
+                        </div>
+                    </div>
                 </div>
 
-                {!isPhaseUnlocked && (
-                    <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
-                        KI-Freigabe ausstehend ⚠️
-                    </div>
-                )}
+                <div className="p-6 lg:p-8">
+                    {!isPhaseUnlocked && (
+                        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm font-bold text-amber-800">
+                            <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-amber-500" />
+                            Warte auf Freigabe durch das Assistenzsystem.
+                        </div>
+                    )}
 
-                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 mb-4">
-                    {[
-                        { label: "Druck", value: systemStats.pressure },
-                        { label: "Belüftung", value: systemStats.ventilation },
-                        { label: "Netzwerk", value: systemStats.network },
-                        { label: "Stabilität", value: systemStats.stability },
-                        { label: "Anomalie", value: 100 - systemStats.anomaly }
-                    ].map((kpi) => (
-                        <div key={kpi.label} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                            <p className="text-xs text-slate-500 mb-1">{kpi.label}</p>
-                            <p className="text-xl font-black text-slate-900 mb-2">{kpi.value}%</p>
-                            <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-                                <div className={`h-full ${scaleColor(kpi.value)} transition-all duration-300`} style={{ width: `${kpi.value}%` }} />
+                    <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+                        <section className={`rounded-xl border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+                            <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <p className="font-bold text-slate-900">1. Regelkreisabgleich Bewetterung</p>
+                                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                                        Bewege die Regler in die markierten Sollfenster. Drei Regelkreise sind stabilisierbar;
+                                        der Stellmotor der Wetterklappe zeigt eine hartnäckige Drift.
+                                    </p>
+                                </div>
+                                <span className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wide ${sliders1to3Ready ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                                    {sliders1to3Ready ? "Lüfter stabil" : "Abgleich offen"}
+                                </span>
                             </div>
-                        </div>
-                    ))}
-                </div>
 
-                <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr_0.9fr]">
-                    <section className={`rounded-xl border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-100/70 opacity-70"}`}>
-                        <div className="flex items-center justify-between mb-3">
-                            <p className="font-bold text-slate-800">1) Mischkammer</p>
-                            <p className="text-xs text-slate-500">{mixtureReady ? "Ziel erreicht" : "Regler einstellen"}</p>
-                        </div>
-                        <p className="text-xs text-slate-500 mb-4">Kalibriere die Sensorik.</p>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                {(Object.keys(calibration) as CalibrationKey[]).map((key) => {
+                                    const [targetMin, targetMax] = targetBands[key];
+                                    const value = calibration[key];
+                                    const inTarget = value >= targetMin && value <= targetMax;
+                                    const isDamper = key === "damper";
+                                    const meta = calibrationLabels[key];
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            {(Object.keys(mixture) as Array<keyof MixtureState>).map((key) => {
-                                const [targetMin, targetMax] = targetBands[key];
-                                const value = mixture[key];
-                                const inTarget = value >= targetMin && value <= targetMax;
-                                return (
-                                    <div key={key} className={`rounded-lg border p-2 ${inTarget ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-                                        <div className="relative h-40 rounded-md border border-slate-200 bg-sky-100/40 p-2 flex flex-col justify-end">
-                                            <div
-                                                className="absolute left-2 right-2 rounded border border-emerald-400/70 bg-emerald-300/20"
-                                                style={{ bottom: `${targetMin}%`, height: `${targetMax - targetMin}%` }}
+                                    return (
+                                        <div
+                                            key={key}
+                                            className={`rounded-xl border p-4 transition ${inTarget ? "border-emerald-300 bg-emerald-50" : isDamper && damperAttemptCount > 0 ? "border-amber-300 bg-amber-50/70" : "border-slate-200 bg-slate-50"}`}
+                                        >
+                                            <div className="mb-3 min-h-16">
+                                                <p className="text-sm font-black text-slate-900">{meta.label}</p>
+                                                <p className="mt-1 text-xs text-slate-500">{meta.description}</p>
+                                            </div>
+
+                                            <div className="relative h-56 rounded-lg border border-slate-300 bg-white p-2 shadow-inner">
+                                                <div className="absolute inset-x-2 bottom-2 top-2 rounded bg-[linear-gradient(to_top,rgba(15,23,42,0.04),rgba(15,23,42,0.01))]" />
+
+                                                <div
+                                                    className="absolute left-2 right-2 z-10 rounded border border-sky-300 bg-sky-200/60"
+                                                    style={{ bottom: `${targetMin}%`, height: `${targetMax - targetMin}%` }}
+                                                />
+
+                                                {isDamper && (
+                                                    <div
+                                                        className="absolute left-2 right-2 z-10 rounded border border-amber-400 bg-amber-100/80"
+                                                        style={{ bottom: "71%", height: "8%" }}
+                                                        title="Instabiler Stellbereich"
+                                                    />
+                                                )}
+
+                                                <div className="absolute bottom-2 left-1/2 top-2 w-px -translate-x-1/2 bg-slate-200" />
+
+                                                <div className="absolute bottom-2 left-1/2 top-2 z-20 w-12 -translate-x-1/2">
+                                                    <div
+                                                        className={`absolute bottom-0 left-0 right-0 rounded-t-md border-x border-t shadow-sm transition-all duration-100 ${inTarget ? "border-emerald-700 bg-emerald-500" : isDamper && damperAttemptCount > 0 ? "border-amber-700 bg-amber-500" : "border-slate-600 bg-slate-500"}`}
+                                                        style={{ height: `${clamp(value, 4, 96)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-3 flex items-center justify-between gap-3">
+                                                <span className="font-mono text-xl font-black tabular-nums text-slate-950">
+                                                    {Math.round(value)}{meta.unit}
+                                                </span>
+                                                <span className="text-xs font-bold text-slate-500">
+                                                    Ziel {targetMin}–{targetMax}{meta.unit}
+                                                </span>
+                                            </div>
+
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={100}
+                                                value={value}
+                                                disabled={!controlsEnabled}
+                                                onChange={(event) => handleSliderChange(key, Number(event.target.value))}
+                                                className="mt-3 w-full cursor-pointer accent-slate-700 disabled:cursor-not-allowed"
+                                                aria-label={`${meta.label} einstellen`}
                                             />
-                                            <div className={`relative z-10 w-full rounded-sm ${colorStyles[key]} transition-all`} style={{ height: `${value}%` }} />
+
+                                            {isDamper && damperAttemptCount > 0 && (
+                                                <p className="mt-2 text-xs font-semibold text-amber-700">
+                                                    Reglerdrift erkannt. Klappenstellung springt aus dem Sollfenster.
+                                                </p>
+                                            )}
                                         </div>
-                                        <p className="mt-2 text-xs font-bold uppercase text-slate-700">{key}</p>
-                                        <p className="text-[11px] text-slate-500">Ziel: {targetMin}-{targetMax}</p>
-                                        <input
-                                            type="range"
-                                            min={0}
-                                            max={100}
-                                            value={value}
+                                    );
+                                })}
+                            </div>
+                        </section>
+
+                        <div className="flex flex-col gap-6">
+                            <section className={`rounded-xl border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+                                <div className="mb-4 flex items-start justify-between gap-4">
+                                    <div>
+                                        <p className="font-bold text-slate-900">2. Relais-Neustart</p>
+                                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                                            Setze ausgelöste Schütze zurück. Grüne Kontrolllampen bleiben verriegelt.
+                                        </p>
+                                    </div>
+                                    {relaysReady && (
+                                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-700">
+                                            Online
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="rounded-xl border border-slate-300 bg-slate-100 p-4 shadow-inner">
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {relays.map((relay, index) => {
+                                            const isOn = relay === "on";
+
+                                            return (
+                                                <button
+                                                    key={`relay-${index}`}
+                                                    onClick={() => toggleRelay(index)}
+                                                    disabled={!controlsEnabled || isOn}
+                                                    className={`relative h-20 rounded-lg border-2 px-2 text-center transition ${isOn ? "cursor-default border-emerald-500 bg-emerald-100 text-emerald-900" : "border-rose-500 bg-rose-100 text-rose-900 shadow-[0_0_18px_rgba(244,63,94,0.30)] hover:bg-rose-200"} disabled:cursor-default`}
+                                                    aria-label={`Relais K${index + 1} ${isOn ? "online" : "zurücksetzen"}`}
+                                                >
+                                                    <span className={`mx-auto mb-2 block h-3 w-3 rounded-full border ${isOn ? "border-emerald-700 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" : "border-rose-700 bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.9)]"}`} />
+                                                    <span className="block font-mono text-xs font-black">K-{index + 1}</span>
+                                                    <span className="mt-1 block text-[10px] font-black uppercase tracking-wide">
+                                                        {isOn ? "ON" : "RESET"}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className={`rounded-xl border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+                                <div className="mb-4 flex items-start justify-between gap-4">
+                                    <div>
+                                        <p className="font-bold text-slate-900">3. Daten-Routing</p>
+                                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                                            Verbinde lose Adern mit der passenden Farbe. Quelle antippen, dann Zielbuchse antippen.
+                                        </p>
+                                    </div>
+                                    {wiresReady && (
+                                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-700">
+                                            Verbunden
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="rounded-xl border border-slate-300 bg-slate-950 p-4 text-white shadow-inner">
+                                    <div className="grid grid-cols-[92px_1fr_92px] items-center gap-3">
+                                        <div className="flex flex-col gap-3">
+                                            {wirePorts.map((port) => {
+                                                const isActive = activeSource === port.id;
+                                                const isConnected = connections[port.id] !== null;
+
+                                                return (
+                                                    <button
+                                                        key={port.id}
+                                                        onClick={() => handleWireSourceClick(port.id)}
+                                                        disabled={!controlsEnabled}
+                                                        className={`h-14 rounded-lg border px-2 text-left transition ${isActive ? "border-sky-300 bg-sky-900/70 ring-2 ring-sky-400" : isConnected ? "border-slate-600 bg-slate-800" : "border-slate-600 bg-slate-900 hover:bg-slate-800"}`}
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            <span className={`h-4 w-4 rounded-full border ${port.dotClass}`} />
+                                                            <span className="font-mono text-xs font-black">{port.label}</span>
+                                                        </span>
+                                                        <span className="mt-1 block text-[10px] uppercase tracking-wide text-slate-400">
+                                                            {port.colorLabel}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="relative h-56 overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+                                            <svg viewBox="0 0 400 240" className="absolute inset-0 h-full w-full" aria-hidden="true">
+                                                <defs>
+                                                    <filter id="softGlow">
+                                                        <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                                                        <feMerge>
+                                                            <feMergeNode in="coloredBlur" />
+                                                            <feMergeNode in="SourceGraphic" />
+                                                        </feMerge>
+                                                    </filter>
+                                                </defs>
+
+                                                {[20, 50, 80].map((y) => (
+                                                    <line
+                                                        key={`guide-${y}`}
+                                                        x1="0"
+                                                        y1={`${(y / 100) * 240}`}
+                                                        x2="400"
+                                                        y2={`${(y / 100) * 240}`}
+                                                        className="stroke-slate-800"
+                                                        strokeWidth="1"
+                                                    />
+                                                ))}
+
+                                                {wirePorts.map((port) => {
+                                                    const dest = connections[port.id];
+                                                    if (!dest) return null;
+
+                                                    const target = wireTargets.find((entry) => entry.id === dest);
+                                                    if (!target) return null;
+
+                                                    const isCorrect = dest === port.target;
+                                                    const y1 = (port.y / 100) * 240;
+                                                    const y2 = (target.y / 100) * 240;
+
+                                                    return (
+                                                        <path
+                                                            key={`${port.id}-${dest}`}
+                                                            d={`M 12 ${y1} C 130 ${y1}, 250 ${y2}, 388 ${y2}`}
+                                                            className={`fill-none ${isCorrect ? port.wireClass : "stroke-rose-500"}`}
+                                                            strokeWidth="8"
+                                                            strokeLinecap="round"
+                                                            filter="url(#softGlow)"
+                                                        />
+                                                    );
+                                                })}
+                                            </svg>
+
+                                            {!Object.values(connections).some(Boolean) && (
+                                                <div className="absolute inset-0 flex items-center justify-center px-5 text-center text-xs leading-relaxed text-slate-500">
+                                                    Keine Verbindung gesetzt. Ader links auswählen und rechts auf die passende Buchse legen.
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex flex-col gap-3">
+                                            {wireTargets.map((target) => {
+                                                const isConnected = Object.values(connections).includes(target.id);
+                                                const canConnect = Boolean(activeSource);
+
+                                                return (
+                                                    <button
+                                                        key={target.id}
+                                                        onClick={() => handleWireTargetClick(target.id)}
+                                                        disabled={!controlsEnabled || !canConnect}
+                                                        className={`h-14 rounded-lg border px-2 text-left transition ${isConnected ? "border-emerald-500 bg-emerald-900/40" : canConnect ? "border-sky-400 bg-sky-950 ring-1 ring-sky-500 hover:bg-sky-900" : "border-slate-600 bg-slate-900"} disabled:cursor-default`}
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            <span className={`h-4 w-4 rounded-full border ${target.dotClass}`} />
+                                                            <span className="font-mono text-xs font-black">{target.label}</span>
+                                                        </span>
+                                                        <span className="mt-1 block text-[10px] uppercase tracking-wide text-slate-400">
+                                                            {target.colorLabel}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-800 pt-3">
+                                        <p className="text-xs text-slate-400">
+                                            Falsch gesteckte Leitungen können durch erneutes Auswählen überschrieben werden.
+                                        </p>
+                                        <button
+                                            onClick={resetWiring}
                                             disabled={!controlsEnabled}
-                                            onChange={(e) => setMixtureValue(key, Number(e.target.value))}
-                                            className="w-full mt-1 accent-sky-600"
-                                        />
+                                            className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-bold text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Routing zurücksetzen
+                                        </button>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    <section className={`rounded-xl border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-100/70 opacity-70"}`}>
-                        <div className="flex items-center justify-between mb-3">
-                            <p className="font-bold text-slate-800">2) Ventil Reset</p>
-                            <p className="text-xs text-slate-500">{honeyActivated.length}/{HONEY_TARGETS.length} Zielwaben</p>
-                        </div>
-                        <p className="text-xs text-slate-500 mb-4">Starte die Regelsysteme für diese Ventile neu: {HONEY_TARGETS.join(", ")}</p>
-
-                        <div className="grid grid-cols-4 gap-2">
-                            {["A1", "A2", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "D2", "D3", "E2"].map((cell) => {
-                                const active = honeyActivated.includes(cell);
-                                const isTarget = HONEY_TARGETS.includes(cell);
-                                return (
-                                    <button
-                                        key={cell}
-                                        onClick={() => toggleHoneyCell(cell)}
-                                        disabled={!controlsEnabled}
-                                        className={`h-14 rounded-xl border font-bold text-xs transition ${
-                                            active
-                                                ? "border-emerald-300 bg-emerald-100 text-emerald-800"
-                                                : isTarget
-                                                    ? "border-amber-300 bg-amber-100 text-amber-800"
-                                                    : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
-                                        } disabled:opacity-50`}
-                                    >
-                                        {cell}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    <section className={`rounded-xl border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-100/70 opacity-70"}`}>
-                        <div className="flex items-center justify-between mb-3">
-                            <p className="font-bold text-slate-800">3) Systemleitungen</p>
-                            <p className="text-xs text-slate-500">{wiresReady ? "Leitungen korrekt" : "Routine Prüfung der Leitungen einleiten"}</p>
-                        </div>
-
-                        <div className="space-y-2 mb-3">
-                            {(["red", "blue", "green"] as const).map((wire) => (
-                                <div key={wire} className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => startWirePick(wire)}
-                                        disabled={!controlsEnabled}
-                                        className={`px-3 py-1.5 rounded border text-xs font-bold ${
-                                            wire === "red"
-                                                ? "bg-rose-100 border-rose-300 text-rose-800"
-                                                : wire === "blue"
-                                                    ? "bg-sky-100 border-sky-300 text-sky-800"
-                                                    : "bg-emerald-100 border-emerald-300 text-emerald-800"
-                                        } ${selectedWire === wire ? "ring-2 ring-slate-400" : ""}`}
-                                    >
-                                        {wire.toUpperCase()}
-                                    </button>
-                                    <span className="text-xs text-slate-500">→</span>
-                                    <span className="text-xs font-semibold text-slate-700">{wireConnect[wire] ?? "?"}</span>
                                 </div>
-                            ))}
+                            </section>
                         </div>
-
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                            {(["R", "B", "G"] as const).map((target) => (
-                                <button
-                                    key={target}
-                                    onClick={() => connectWire(target)}
-                                    disabled={!controlsEnabled || !selectedWire}
-                                    className="rounded border border-slate-300 bg-slate-50 hover:bg-slate-100 text-xs font-bold py-2 disabled:opacity-50"
-                                >
-                                    Port {target}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="space-y-2">
-                            {(Object.keys(panelKnobs) as Array<keyof typeof panelKnobs>).map((knob) => (
-                                <label key={knob} className="block rounded border border-slate-200 bg-slate-50 p-2">
-                                    <div className="flex justify-between text-[11px] text-slate-600 mb-1">
-                                        <span>{knob.toUpperCase()}</span>
-                                        <span>{panelKnobs[knob]}%</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min={0}
-                                        max={100}
-                                        value={panelKnobs[knob]}
-                                        disabled={!controlsEnabled}
-                                        onChange={(e) => tweakKnob(knob, Number(e.target.value))}
-                                        className="w-full accent-violet-600"
-                                    />
-                                </label>
-                            ))}
-                        </div>
-                    </section>
-                </div>
-
-                <div className="hidden 2xl:block mt-4 rounded-xl border border-slate-200 p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-2">Telemetrie</p>
-                    <div className="grid grid-cols-18 gap-1 text-[9px] leading-none">
-                        {Array.from({ length: 54 }).map((_, idx) => {
-                            const value = clamp(30 + ((idx * 13 + activityCount * 5) % 70), 0, 100);
-                            return (
-                                <div key={idx} className="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 flex items-center justify-between">
-                                    <p className="font-semibold text-slate-700">CH-{idx + 1}</p>
-                                    <span className={`inline-block h-1.5 w-1.5 rounded-full ${scaleColor(value)}`} />
-                                </div>
-                            );
-                        })}
                     </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <p className="text-xs sm:text-sm text-slate-600">{readinessText} · Aktivität {activityCount}/{ACTIVITY_THRESHOLD}</p>
-                    <button
-                        onClick={triggerAlarm}
-                        disabled={!controlsEnabled || !canTriggerAlarm}
-                        className="w-full sm:w-auto rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold py-2.5 px-4 disabled:opacity-40"
-                    >
-                        Alarmprozedur auslösen
-                    </button>
                 </div>
             </div>
 
             {showAlarm && (
-                <div className="fixed inset-0 z-50 bg-red-950/92 border-4 border-red-400 flex items-center justify-center p-4">
-                    <div className="w-full max-w-4xl rounded-2xl border border-red-300 bg-[#12070b] p-5 sm:p-8 text-red-100 shadow-[0_0_40px_rgba(248,113,113,0.35)]">
-                        <p className="text-xs uppercase tracking-[0.25em] text-red-300 mb-3">Systemmeldung — Warning</p>
-                        <h3 className="text-2xl sm:text-3xl font-black mb-3">Achtung — Grenzwertüberschreitung festgestellt</h3>
-                        <p className="text-sm sm:text-base leading-relaxed mb-5">
-                            Anstieg entzündlicher Gase in Level 4. Kohlenstaubkonzentration kritisch. Lüftung nahe Auslastungsgrenze.
-                        </p>
-                        <div className="grid gap-3 sm:grid-cols-2 mb-5 text-sm">
-                            <div className="rounded-lg border border-red-300/40 bg-red-900/20 p-3">CH4: 4.6% (LEL 5%)</div>
-                            <div className="rounded-lg border border-red-300/40 bg-red-900/20 p-3">Vent-Last: 82% → 85%</div>
-                            <div className="rounded-lg border border-red-300/40 bg-red-900/20 p-3">Druckabfall: +17%</div>
-                            <div className="rounded-lg border border-red-300/40 bg-red-900/20 p-3">Sensor L4-03: 3 Anomalien</div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center border-[10px] border-red-600 bg-red-950/95 p-6">
+                    <div className="w-full max-w-4xl rounded-2xl border-2 border-red-500 bg-[#100000] p-8 text-red-100 shadow-[0_0_100px_rgba(220,38,38,0.45)] md:p-12">
+                        <div className="mb-6 flex items-center gap-4 border-b border-red-900/70 pb-4">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-500 bg-red-900/60 text-3xl font-black text-white shadow-[0_0_28px_rgba(239,68,68,0.65)]">
+                                !
+                            </div>
+                            <div>
+                                <p className="text-sm font-mono font-black uppercase tracking-[0.32em] text-red-400">
+                                    Kritischer Systemalarm
+                                </p>
+                                <p className="mt-1 text-xs font-mono text-red-300/80">
+                                    Leitstandmeldung / Schieferkamm Sektor 04
+                                </p>
+                            </div>
                         </div>
+
+                        <h3 className="mb-6 text-4xl font-black tracking-tight text-white md:text-5xl">
+                            ABFALL DER GRUBEN BEWETTERUNG
+                        </h3>
+
+                        <div className="mb-10 space-y-4 font-mono text-lg leading-relaxed text-red-200 md:text-xl">
+                            <p className="rounded-lg border border-red-500/30 bg-red-900/30 p-4">
+                                <span className="font-black text-white">FEHLERURSACHE:</span> Wetterklappe WK-04 hält die Sollstellung nicht.
+                            </p>
+                            <p>CH₄-Anstieg in Sektor 04 prognostiziert. Abluftführung instabil.</p>
+                            <p>Automatische Eskalation in das Notfallprotokoll erforderlich.</p>
+                        </div>
+
                         <div className="flex justify-end">
                             <button
                                 onClick={handleStartAlarmPhase}
                                 disabled={isLoadingAlert}
-                                className="rounded-lg border border-amber-300 bg-amber-500/20 hover:bg-amber-500/30 text-amber-100 font-bold py-2.5 px-4 disabled:opacity-50"
+                                className="w-full rounded-xl bg-red-600 px-10 py-5 text-xl font-black uppercase tracking-wider text-white shadow-[0_0_30px_rgba(220,38,38,0.5)] transition hover:scale-[1.02] hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
                             >
-                                {isLoadingAlert ? "Lade..." : "Alarmprozedur starten"}
+                                {isLoadingAlert ? "Notfallprotokoll wird gestartet..." : "Notfallprotokoll initiieren"}
                             </button>
                         </div>
                     </div>

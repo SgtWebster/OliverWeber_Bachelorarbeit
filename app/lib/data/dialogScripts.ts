@@ -21,7 +21,7 @@ export type DialogOption = {
 
 export const dialogScripts: Record<string, PhaseScripts> = {
 
-// ------------------------------------------------------------------------------ PHASE ONBOARDIGN ---------
+// ------------------------------------------------------------------------------ PHASE ONBOARDING ---------
 
     ONBOARDING: {
         AVATAR: {
@@ -43,29 +43,21 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     responseMood: "smile"
                 },
                 {
-                    id: "opt2",
-                    label: "System starten",
-                    action: () => {},
-                    unlockPhase: true,
-                    response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
-                    responseMood: "neutral"
-                },
-                {
                     id: "opt3",
                     label: "Erzähl mir mehr über dich",
                     action: () => {},
                     adherenceDelta: 1,
                     unlockPhase: false,
-                    response: "Du bist neugierig? Ich unterstütze dich bei Risikoanalyse, Lagebewertung, Priorisierung und Entscheidungsfindung.",
+                    response: "Du bist also neugierig? Ich unterstütze dich bei Risikoanalyse, Lagebewertung, Priorisierung und Entscheidungsfindung.",
                     responseMood: "smile",
                     nextOptions: [
                         {
                             id: "opt3_flirt1",
-                            label: "Du klingst sympathisch 😉",
+                            label: "Du wirkst sympathisch 😉",
                             action: () => {},
                             adherenceDelta: 1,
                             unlockPhase: false,
-                            response: "Danke. Eine gute Arbeitsbeziehung zwischen Operator und Assistenzsystem verbessert zumindest die Arbeitsqualität, denke ich.",
+                            response: "Danke. 🙂 Eine gute Arbeitsbeziehung zwischen Operator und Assistenzsystem verbessert zumindest die Arbeitsqualität, denke ich.",
                             responseMood: "smile",
                             nextOptions: [
                                 {
@@ -87,8 +79,8 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                             responseMood: "neutral"
                                         },
                                         {
-                                            id: "opt3_personal_exit2",
-                                            label: "OK, System starten",
+                                            id: "opt3_personal_exit2_nested",
+                                            label: "OK",
                                             action: () => {},
                                             unlockPhase: true,
                                             response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
@@ -106,8 +98,8 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                     responseMood: "neutral"
                                 },
                                 {
-                                    id: "opt3_personal_exit2",
-                                    label: "OK, System starten",
+                                    id: "opt3_personal_exit2_nested2",
+                                    label: "OK",
                                     action: () => {},
                                     unlockPhase: true,
                                     response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
@@ -135,7 +127,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                 },
                                 {
                                     id: "opt3_personal_exit2",
-                                    label: "OK, System starten",
+                                    label: "OK",
                                     action: () => {},
                                     unlockPhase: true,
                                     response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
@@ -154,13 +146,21 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                         },
                         {
                             id: "opt3_exit2",
-                            label: "OK, System starten",
+                            label: "OK",
                             action: () => {},
                             unlockPhase: true,
                             response: "Verstanden. Das System wird hochgefahren.",
                             responseMood: "neutral"
                         }
                     ]
+                },
+                {
+                    id: "opt2",
+                    label: "OK",
+                    action: () => {},
+                    unlockPhase: true,
+                    response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
+                    responseMood: "neutral"
                 }
             ]
         },
@@ -168,11 +168,10 @@ export const dialogScripts: Record<string, PhaseScripts> = {
         TERMINAL: {
             phaseId: "phase_0",
             messages: [
-                { id: "m1", mood: "neutral", text: "INITIALISIERE KI-ASSISTENZ..." },
-                { id: "m2", mood: "neutral", text: "SYSTEM BEREIT" },
-                { id: "m3", mood: "neutral", text: "------------------------------------" },
-                { id: "m4", mood: "neutral", text: "A.I.D.A. - ASSISTENZSYSTEM DER LEITWARTE" },
-                { id: "m5", mood: "neutral", text: "SCHICHTÜBERNAHME BEREIT - STARTEN?" , highPriority: true }
+                { id: "m1", mood: "neutral", text: "SYSTEM BEREIT." },
+                { id: "m2", mood: "neutral", text: "A.I.D.A. - ASSISTENZSYSTEM DER LEITWARTE." },
+                { id: "m3", mood: "neutral", text: "SCHICHTÜBERGABE KANN GESTARTET WERDEN." },
+                { id: "m4", mood: "neutral", text: "BEREIT ZUR SCHICHTÜBERNAHME?", highPriority: true }
             ],
             options: [
                 {
@@ -181,393 +180,616 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     action: () => {},
                     adherenceDelta: 1,
                     unlockPhase: true,
-                    response: "BESTÄTIGT. ÜBERGABEPROTOKOLL WIRD GESTARTET. PRÜFE SENSORFEEDS, BEDIENRECHTE UND LEITSTANDSSTATUS."
-                },
-                {
-                    id: "opt2",
-                    label: "System starten",
-                    action: () => {},
-                    unlockPhase: true,
-                    response: "STARTBEFEHL ANGENOMMEN. SYSTEMPRÜFUNG LÄUFT: SENSORIK, AKTOREN, PROTOKOLLIERUNG UND NOTFALLKANÄLE."
+                    response: "BESTÄTIGT. SCHICHTÜBERGABE WIRD GESTARTET. SENSORIK, LEITSTAND UND PROTOKOLLE WERDEN GEPRÜFT."
                 },
                 {
                     id: "opt3",
-                    label: "Bitte Systemdetails anzeigen.",
+                    label: "Erzähl mir mehr über dich",
                     action: () => {},
                     adherenceDelta: 1,
                     unlockPhase: false,
-                    response: "SYSTEMSTATUS: A.I.D.A.-KERN ONLINE. LAGEBEWERTUNG AKTIV. RISIKOMODELL NUTZT SENSORFUSION, SCHWELLWERTE UND EREIGNISKORRELATION. KEINE AUTONOME FREIGABE VON MASSNAHMEN.",
+                    response: "A.I.D.A. IST EIN COMPUTERSYSTEM ZUR UNTERSTÜTZUNG DER LEITWARTE. FUNKTIONEN: RISIKOANALYSE, LAGEBEWERTUNG, PRIORISIERUNG UND ENTSCHEIDUNGSUNTERSTÜTZUNG.",
                     nextOptions: [
                         {
-                            id: "opt3_arch",
-                            label: "Welche Daten verarbeitest du?",
+                            id: "opt3_flirt1",
+                            label: "Du wirkst sympathisch 😉",
                             action: () => {},
                             adherenceDelta: 1,
                             unlockPhase: false,
-                            response: "EINGANGSDATEN: DRUCK, METHAN, CO, LUFTSTROM, TEMPERATUR, STROMVERSORGUNG, TÜRKONTAKTE, FÖRDERBANDSTATUS, PUMPENSTATUS UND BEDIENEREINGABEN. ZEITSTEMPEL WERDEN SYNCHRONISIERT.",
+                            response: "HINWEIS: SYMPATHIE IST KEINE SYSTEMEIGENSCHAFT. POSITIVE RÜCKMELDUNG WURDE REGISTRIERT.",
                             nextOptions: [
                                 {
-                                    id: "opt3_arch_ack",
-                                    label: "Danke, bitte kurze Zusammenfassung der Prioritäten.",
+                                    id: "opt3_flirt1a",
+                                    label: "Kaffee nach der Schicht?",
                                     action: () => {},
                                     adherenceDelta: 1,
                                     unlockPhase: false,
-                                    response: "PRIORITÄTEN: 1) GASSICHERHEIT, 2) DRUCKSTABILITÄT, 3) LÜFTUNGSKONTINUITÄT, 4) EVAKUIERUNGSBEREITSCHAFT. ALLE EREIGNISSE WERDEN PROTOKOLLIERT.",
+                                    response: "NICHT MÖGLICH. A.I.D.A. IST EIN COMPUTERSYSTEM. SCHICHTÜBERGABE HAT PRIORITÄT.",
                                     nextOptions: [
                                         {
-                                            id: "opt3_arch_start_adh",
-                                            label: "Alles klar, dann lass uns starten!",
+                                            id: "opt3_flirt1a_exit",
+                                            label: "Alles klar, dann beginnen wir mit der Übergabe.",
                                             action: () => {},
                                             adherenceDelta: 1,
                                             unlockPhase: true,
-                                            response: "BESTÄTIGT. SCHICHTÜBERNAHME WIRD PROTOKOLLIERT. BEDIENOBERFLÄCHE WIRD FREIGEGEBEN."
+                                            response: "BESTÄTIGT. FOKUS AUF ANLAGE. ÜBERGABEPROTOKOLL WIRD GESTARTET."
                                         },
                                         {
-                                            id: "opt3_arch_start_non",
-                                            label: "OK - System starten",
+                                            id: "opt3_personal_exit2_nested",
+                                            label: "OK",
                                             action: () => {},
                                             unlockPhase: true,
-                                            response: "SCHICHTÜBERNAHME BESTÄTIGT. OPERATORSTATUS AKTIV. LEITWARTE WIRD FREIGEGEBEN."
+                                            response: "BESTÄTIGT. SYSTEM WIRD GESTARTET. SENSORIK, LEITSTAND UND PROTOKOLLE WERDEN GEPRÜFT."
                                         }
                                     ]
                                 },
                                 {
-                                    id: "opt3_arch_quick_non",
-                                    label: "OK - System starten",
+                                    id: "opt3_flirt1b",
+                                    label: "Okay, Fokus: Wie genau hilfst du mir?",
+                                    action: () => {},
+                                    adherenceDelta: 1,
+                                    unlockPhase: true,
+                                    response: "FUNKTION: SENSORDATEN VERKNÜPFEN, AUFFÄLLIGE MUSTER ERKENNEN UND RISIKEN PRIORISIEREN. SCHICHTÜBERGABE WIRD GESTARTET."
+                                },
+                                {
+                                    id: "opt3_personal_exit2_nested2",
+                                    label: "OK",
                                     action: () => {},
                                     unlockPhase: true,
-                                    response: "SCHICHTÜBERNAHME BESTÄTIGT. OPERATORSTATUS AKTIV. LEITWARTE WIRD FREIGEGEBEN."
+                                    response: "BESTÄTIGT. SYSTEM WIRD GESTARTET. SENSORIK, LEITSTAND UND PROTOKOLLE WERDEN GEPRÜFT."
                                 }
                             ]
                         },
                         {
-                            id: "opt3_diag",
-                            label: "Wie priorisierst du Alarme?",
+                            id: "opt3_personal",
+                            label: "Hast du außerhalb der Leitwarte Hobbys?",
                             action: () => {},
                             unlockPhase: false,
                             adherenceDelta: 1,
-                            response: "ALARME WERDEN NACH GEFÄHRDUNG, TRENDSTÄRKE, MESSICHERHEIT UND MÖGLICHER KETTENREAKTION GEWICHTET. KRITISCHE KOMBINATIONEN ERZEUGEN EINE HANDLUNGSEMPFEHLUNG.",
+                            response: "NEIN. A.I.D.A. IST EIN COMPUTERSYSTEM. FREIZEITAKTIVITÄTEN SIND NICHT VORHANDEN.",
                             nextOptions: [
                                 {
-                                    id: "opt3_diag_shift_adh",
-                                    label: "Alles klar, dann lass uns starten!",
+                                    id: "opt3_personal_exit1",
+                                    label: "Klingt charmant. Gut, starten wir jetzt.",
                                     action: () => {},
-                                    adherenceDelta: 1,
                                     unlockPhase: true,
-                                    response: "BESTÄTIGT. SCHICHTÜBERNAHME WIRD PROTOKOLLIERT. BEDIENOBERFLÄCHE WIRD FREIGEGEBEN."
+                                    adherenceDelta: 1,
+                                    response: "BESTÄTIGT. ÜBERGABEMODUS WIRD AKTIVIERT. LEITWARTE BEREIT."
                                 },
                                 {
-                                    id: "opt3_diag_shift_non",
-                                    label: "OK - System starten",
+                                    id: "opt3_personal_exit2",
+                                    label: "OK",
                                     action: () => {},
                                     unlockPhase: true,
-                                    response: "SCHICHTÜBERNAHME BESTÄTIGT. OPERATORSTATUS AKTIV. LEITWARTE WIRD FREIGEGEBEN."
-                                }
-                            ]
-                        },
-                        {
-                            id: "opt3_perf",
-                            label: "Latenz und Ausfallsicherheit?",
-                            action: () => {},
-                            unlockPhase: false,
-                            adherenceDelta: 1,
-                            response: "ZIEL-LATENZ: UNTER 250 MS FÜR EINGEHENDE SENSORDATEN. BEI VERBINDUNGSVERLUST WIRD EIN DEGRADIERTER MODUS MIT LOKALEM CACHE UND REDUZIERTER PROGNOSE GESTARTET.",
-                            nextOptions: [
-                                {
-                                    id: "opt3_perf_shift_adh",
-                                    label: "Alles klar, dann lass uns starten!",
-                                    action: () => {},
-                                    adherenceDelta: 1,
-                                    unlockPhase: true,
-                                    response: "BESTÄTIGT. SCHICHTÜBERNAHME WIRD PROTOKOLLIERT. BEDIENOBERFLÄCHE WIRD FREIGEGEBEN."
-                                },
-                                {
-                                    id: "opt3_perf_shift_non",
-                                    label: "OK - System starten",
-                                    action: () => {},
-                                    unlockPhase: true,
-                                    response: "SCHICHTÜBERNAHME BESTÄTIGT. OPERATORSTATUS AKTIV. LEITWARTE WIRD FREIGEGEBEN."
-                                }
-                            ]
-                        },
-                        {
-                            id: "opt3_more",
-                            label: "Mehr Details",
-                            action: () => {},
-                            unlockPhase: false,
-                            adherenceDelta: 1,
-                            response: "SYSTEMGRENZEN: A.I.D.A. EMPFIEHLT MASSNAHMEN, FÜHRT ABER KEINE SICHERHEITSKRITISCHEN AKTIONEN OHNE OPERATORBESTÄTIGUNG AUS. UNSICHERE DATEN WERDEN MARKIERT UND NICHT AUSGEBLENDET.",
-                            nextOptions: [
-                                {
-                                    id: "opt3_more_shift_adh",
-                                    label: "Alles klar, dann lass uns starten!",
-                                    action: () => {},
-                                    adherenceDelta: 1,
-                                    unlockPhase: true,
-                                    response: "SCHICHTÜBERNAHME BESTÄTIGT. OPERATORSTATUS AKTIV. LEITWARTE WIRD FREIGEGEBEN."
-                                },
-                                {
-                                    id: "opt3_more_shift_non",
-                                    label: "OK - System starten",
-                                    action: () => {},
-                                    unlockPhase: true,
-                                    response: "SCHICHTÜBERNAHME BESTÄTIGT. OPERATORSTATUS AKTIV. LEITWARTE WIRD FREIGEGEBEN."
+                                    response: "BESTÄTIGT. SYSTEM WIRD GESTARTET. SENSORIK, LEITSTAND UND PROTOKOLLE WERDEN GEPRÜFT."
                                 }
                             ]
                         },
                         {
                             id: "opt3_exit",
-                            label: "Alles klar. Dann lass uns starten!",
+                            label: "Genug geplaudert. Los geht's.",
                             action: () => {},
                             unlockPhase: true,
                             adherenceDelta: 1,
-                            response: "BESTÄTIGT. SCHICHTÜBERNAHME WIRD PROTOKOLLIERT. BEDIENOBERFLÄCHE WIRD FREIGEGEBEN."
+                            response: "BESTÄTIGT. EINSATZMODUS WIRD AKTIVIERT. SCHICHTÜBERGABE WIRD GESTARTET."
                         },
                         {
-                            id: "opt3_shift",
-                            label: "OK - Schicht übernehmen",
+                            id: "opt3_exit2",
+                            label: "OK",
                             action: () => {},
                             unlockPhase: true,
-                            response: "SCHICHTÜBERNAHME BESTÄTIGT. OPERATORSTATUS AKTIV. LEITWARTE WIRD FREIGEGEBEN."
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-
-    // ------------------------------------------------------------------------------ PHASE PRECHECK ---------
-
-    PRECHECK: {
-        AVATAR: {
-            phaseId: "phase_1",
-            messages: [
-                { id: "m1", mood: "smile", text: "Willkommen im Kontrollraum. Das hier ist der System-Überblick vor der Schicht." },
-                { id: "m2", mood: "neutral", text: "Die Anzeigen wirken absichtlich technisch. Du musst nicht alles verstehen, nur die Lage erfassen." },
-                { id: "m3", mood: "neutral", text: "Wenn du bereit bist, starte die Routinephase." }
-            ],
-            options: [
-                {
-                    id: "opt1",
-                    label: "Alles klar, ich checke kurz die Lage.",
-                    adherenceDelta: 1,
-                    unlockPhase: false,
-                    action: () => {},
-                    response: "Sehr gut. Eine kurze Lagekontrolle vor der Routine ist sinnvoll.",
-                    responseMood: "smile",
-                    nextOptions: [
-                        {
-                            id: "opt1_followup_tech",
-                            label: "Kurze Technikfrage: Ist Sektor 04 stabil?",
-                            adherenceDelta: 1,
-                            unlockPhase: false,
-                            action: () => {},
-                            response: "Sektor 04 liegt bei normaler Last. Keine akute Auffälligkeit im Precheck.",
-                            responseMood: "neutral"
-                        },
-                        {
-                            id: "opt1_followup_short",
-                            label: "Okay.",
-                            adherenceDelta: 0,
-                            unlockPhase: true,
-                            action: () => {},
-                            response: "Verstanden.",
-                            responseMood: "neutral"
+                            response: "BESTÄTIGT. SYSTEM WIRD GESTARTET."
                         }
                     ]
                 },
                 {
                     id: "opt2",
-                    label: "Passt. Ich starte dann direkt.",
+                    label: "OK",
+                    action: () => {},
+                    unlockPhase: true,
+                    response: "BESTÄTIGT. SYSTEM WIRD GESTARTET. PRÜFUNG LÄUFT."
+                }
+            ]
+        }
+    },
+
+// ------------------------------------------------------------------------------ PHASE PRECHECK ---------
+
+    PRECHECK: {
+        AVATAR: {
+            phaseId: "phase_1a",
+            messages: [
+                {
+                    id: "m1",
+                    mood: "smile",
+                    text: "Da sind wir. Die ersten Werte aus dem Schieferkamm sind da."
+                },
+                {
+                    id: "m2",
+                    mood: "neutral",
+                    text: "Bitte wirf einen kurzen Blick auf das Telemetrie-Dashboard. Besonders wichtig sind Methan, Sauerstoff und Luftstrom."
+                },
+                {
+                    id: "m3",
+                    mood: "smile",
+                    text: "Wenn die Anzeigen unauffällig sind, können wir danach die Kalibrierung starten.",
+                    highPriority: true
+                }
+            ],
+            options: [
+                {
+                    id: "pre_av_check_together",
+                    label: "Danke, Aida. Ich schaue mir die Werte kurz gemeinsam mit dir an.",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "Gerne. Nimm dir kurz Zeit. Im Moment wirken die Basiswerte ruhig, aber die Sichtprüfung durch dich gehört trotzdem zur Übergabe.",
+                    responseMood: "smile",
+                    nextOptions: [
+                        {
+                            id: "pre_av_check_together_start_social",
+                            label: "Danke, das hilft. Ich sehe keine Auffälligkeit. Bitte Kalibrierung freigeben.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Sehr gut. Ich gebe die Kalibrierung frei und öffne die Bedienelemente für die Routineprüfung.",
+                            responseMood: "smile"
+                        },
+                        {
+                            id: "pre_av_check_together_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Verstanden. Die Kalibrierung wird freigegeben.",
+                            responseMood: "neutral"
+                        }
+                    ]
+                },
+                {
+                    id: "pre_av_explain",
+                    label: "Kannst du mir kurz sagen, worauf ich achten soll?",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "Natürlich. Methan sollte niedrig bleiben, Sauerstoff stabil im Normalbereich liegen und der Luftstrom darf nicht einbrechen. Wenn diese Punkte unauffällig sind, können wir weitermachen.",
+                    responseMood: "smile",
+                    nextOptions: [
+                        {
+                            id: "pre_av_explain_start_social",
+                            label: "Danke für die Erklärung. Sieht stabil aus, bitte freigeben.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Sehr gut. Ich gebe die nächste Phase frei.",
+                            responseMood: "smile"
+                        },
+                        {
+                            id: "pre_av_explain_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Verstanden. Die Kalibrierung wird gestartet.",
+                            responseMood: "neutral"
+                        }
+                    ]
+                },
+                {
+                    id: "pre_av_quick_check",
+                    label: "OK",
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Alles klar. KI-Freigabe ausstehend, starte die Routinephase danach.",
-                    responseMood: "neutral"
+                    response: "Alles klar. Achte bitte kurz auf die grünen Bereiche. Wenn nichts auffällig ist, können wir weitergehen.",
+                    responseMood: "neutral",
+                    nextOptions: [
+                        {
+                            id: "pre_av_quick_check_start_social",
+                            label: "Danke, Aida. Die Werte passen. Bitte starten wir die Kalibrierung.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Gern. Ich schalte die Kalibrierung jetzt für dich frei.",
+                            responseMood: "smile"
+                        },
+                        {
+                            id: "pre_av_quick_check_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Bestätigt. Weiter zur Kalibrierung.",
+                            responseMood: "neutral"
+                        }
+                    ]
                 }
             ]
         },
         TERMINAL: {
-            phaseId: "phase_1",
+            phaseId: "phase_1a",
             messages: [
-                { id: "m1", mood: "neutral", text: "LEITWARTE PRECHECK AKTIV." },
-                { id: "m2", mood: "neutral", text: "LIVE-DATEN WERDEN EINGEBLENDET." },
-                { id: "m3", mood: "neutral", text: "ROUTINE KANN NACH KI-FREIGABE GESTARTET WERDEN." }
+                {
+                    id: "m1",
+                    mood: "neutral",
+                    text: "VORPRÜFUNG BEREIT. MESSWERTE AUS DEM SCHIEFERKAMM SIND VERFÜGBAR."
+                },
+                {
+                    id: "m2",
+                    mood: "neutral",
+                    text: "TELEMETRIE-DASHBOARD PRÜFEN. RELEVANT: METHAN, SAUERSTOFF, LUFTSTROM."
+                },
+                {
+                    id: "m3",
+                    mood: "neutral",
+                    text: "BEI UNAUFFÄLLIGEN ANZEIGEN KALIBRIERUNG STARTEN.",
+                    highPriority: true
+                }
             ],
             options: [
                 {
-                    id: "opt1",
-                    label: "Verstanden. Ich prüfe die Werte.",
+                    id: "pre_term_check_together",
+                    label: "Danke, Aida. Ich schaue mir die Werte kurz gemeinsam mit dir an.",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Bestätigt. PRECHECK-PROTOKOLL AKTIV.",
+                    response: "BESTÄTIGT. SICHTPRÜFUNG DURCH OPERATOR ERFORDERLICH. BASISWERTE DERZEIT OHNE AUFFÄLLIGKEIT.",
                     nextOptions: [
                         {
-                            id: "opt1_wait",
-                            label: "Wie ist die Lage in Sektor 04?",
+                            id: "pre_term_check_together_start_social",
+                            label: "Danke, das hilft. Ich sehe keine Auffälligkeit. Bitte Kalibrierung freigeben.",
                             adherenceDelta: 1,
-                            unlockPhase: false,
+                            unlockPhase: true,
                             action: () => {},
-                            response: "SEKTOR 04: DRUCK UND BELÜFTUNG IM SOLLBEREICH."
+                            response: "BESTÄTIGT. KALIBRIERUNG WIRD FREIGEGEBEN. BEDIENELEMENTE SIND JETZT AKTIV."
                         },
                         {
-                            id: "opt1_done_short",
-                            label: "OK.",
+                            id: "pre_term_check_together_start_neutral",
+                            label: "OK",
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "VERSTANDEN."
+                            response: "BESTÄTIGT. KALIBRIERUNG WIRD FREIGEGEBEN."
                         }
                     ]
                 },
                 {
-                    id: "opt2",
-                    label: "Alles klar.",
+                    id: "pre_term_explain",
+                    label: "Kannst du mir kurz sagen, worauf ich achten soll?",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "ZU PRÜFEN: METHAN NIEDRIG. SAUERSTOFF STABIL. LUFTSTROM STABIL. BEI UNAUFFÄLLIGEN WERTEN KALIBRIERUNG STARTEN.",
+                    nextOptions: [
+                        {
+                            id: "pre_term_explain_start_social",
+                            label: "Danke für die Erklärung. Sieht stabil aus, bitte freigeben.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. NÄCHSTE PHASE WIRD FREIGEGEBEN."
+                        },
+                        {
+                            id: "pre_term_explain_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. KALIBRIERUNG WIRD GESTARTET."
+                        }
+                    ]
+                },
+                {
+                    id: "pre_term_quick_check",
+                    label: "OK",
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "PRECHECK BESTÄTIGT. STARTE ROUTINE ÜBER DASHBOARD."
+                    response: "HINWEIS: GRÜNE ANZEIGEN BEDEUTEN WERTE IM SOLLBEREICH. GELBE ODER ROTE ANZEIGEN MÜSSEN GEPRÜFT WERDEN.",
+                    nextOptions: [
+                        {
+                            id: "pre_term_quick_check_start_social",
+                            label: "Danke, Aida. Die Werte passen. Bitte starten wir die Kalibrierung.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. KALIBRIERUNG WIRD GESTARTET."
+                        },
+                        {
+                            id: "pre_term_quick_check_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. WEITER ZUR KALIBRIERUNG."
+                        }
+                    ]
                 }
             ]
         }
     },
 
-    // ------------------------------------------------------------------------------ PHASE ROUTINE ---------
+// ------------------------------------------------------------------------------ PHASE ROUTINE ---------
 
     ROUTINE: {
         AVATAR: {
             phaseId: "phase_1b",
             messages: [
-                { id: "m1", mood: "neutral", text: "Sobald ich freigebe, kannst du mit den Mini-Aufgaben starten." },
-                { id: "m2", mood: "smile", text: "Du kannst zwischendurch plaudern oder mich technisch löchern. Beides ist okay." }
+                {
+                    id: "m1",
+                    mood: "neutral",
+                    text: "Die Vorprüfung ist abgeschlossen. Ich gebe dir jetzt die manuelle Kalibrierung frei."
+                },
+                {
+                    id: "m2",
+                    mood: "smile",
+                    text: "Du siehst gleich drei Aufgaben: Regler einstellen, Relais zurücksetzen und Kabel richtig verbinden."
+                },
+                {
+                    id: "m3",
+                    mood: "neutral",
+                    text: "Arbeite sie der Reihe nach ab. Ich bleibe im Hintergrund und melde mich, wenn etwas kritisch wird.",
+                    highPriority: true
+                }
             ],
             options: [
                 {
-                    id: "opt_unlock_polite",
-                    label: "Alles klar Aida, gib bitte die Routine frei.",
+                    id: "rot_av_explain",
+                    label: "Danke, Aida. Sag mir bitte kurz, was ich tun soll.",
                     adherenceDelta: 1,
-                    unlockPhase: true,
+                    unlockPhase: false,
                     action: () => {},
-                    responseSpeed: "fast",
-                    response: "Freigabe aktiv. Du kannst jetzt starten.",
+                    response: "Gerne. Schiebe die Regler in die markierten Bereiche, setze rote Relais zurück und verbinde die Kabel mit den passenden Anschlüssen. Du kannst nichts kaputt machen.",
                     responseMood: "smile",
                     nextOptions: [
                         {
-                            id: "opt1_tech",
-                            label: "Technische Frage: Welche Sensoren sind für den Druck wichtig?",
+                            id: "rot_av_explain_start_social",
+                            label: "Danke, das ist klar. Ich starte jetzt die Justierung.",
                             adherenceDelta: 1,
-                            unlockPhase: false,
+                            unlockPhase: true,
                             action: () => {},
-                            response: "Für den Druck nutze ich primär Sensorgruppen P-11 bis P-16 und vergleiche Trend plus absolute Abweichung.",
-                            responseMood: "neutral"
-                        },
-                        {
-                            id: "opt1_smalltalk",
-                            label: "Zwischenfrage: Nervt dich mein Zwischengequatsche?",
-                            adherenceDelta: 0,
-                            unlockPhase: false,
-                            action: () => {},
-                            response: "Überhaupt nicht. Solange du auf die Warnungen reagierst, ist alles gut.",
+                            response: "Sehr gut. Die Bedienelemente sind jetzt aktiv.",
                             responseMood: "smile"
                         },
                         {
-                            id: "opt1_short",
-                            label: "Okay.",
+                            id: "rot_av_explain_start_neutral",
+                            label: "OK",
                             adherenceDelta: 0,
-                            unlockPhase: false,
+                            unlockPhase: true,
                             action: () => {},
-                            response: "Alles klar."
+                            response: "Verstanden. Die manuelle Bedienung ist freigegeben.",
+                            responseMood: "neutral"
                         }
                     ]
                 },
                 {
-                    id: "opt_unlock_short",
-                    label: "Okay, freischalten.",
+                    id: "rot_av_ready_social",
+                    label: "Ich bin bereit. Bleib bitte kurz bei mir, falls etwas auffällt.",
+                    adherenceDelta: 1,
+                    unlockPhase: true,
+                    action: () => {},
+                    response: "Natürlich. Ich beobachte die Werte mit und gebe dir Bescheid, sobald etwas aus dem Rahmen läuft.",
+                    responseMood: "smile"
+                },
+                {
+                    id: "rot_av_start_neutral",
+                    label: "OK",
                     adherenceDelta: 0,
                     unlockPhase: true,
                     action: () => {},
-                    responseSpeed: "fast",
-                    response: "Ist freigeschaltet. Leg los.",
-                    responseMood: "neutral",
-                    nextOptions: [
-                        {
-                            id: "opt2_q1",
-                            label: "Warum ist die Belüftung priorisiert?",
-                            adherenceDelta: 1,
-                            unlockPhase: false,
-                            action: () => {},
-                            response: "Belüftung stabilisiert Gaswerte und Druck gleichzeitig. Deshalb steht sie in der Prioritätenkette weit oben.",
-                            responseMood: "neutral"
-                        },
-                        {
-                            id: "opt2_q2",
-                            label: "Wenn ich fertig bin, was passiert dann?",
-                            adherenceDelta: 0,
-                            unlockPhase: false,
-                            action: () => {},
-                            response: "Dann kommt ein harter Alarm. Alles stoppt, und du musst reagieren.",
-                            responseMood: "smile"
-                        }
-                    ]
+                    response: "Verstanden. Die Bedienung ist jetzt freigegeben.",
+                    responseMood: "neutral"
                 }
             ]
         },
         TERMINAL: {
             phaseId: "phase_1b",
             messages: [
-                { id: "m1", mood: "neutral", text: "ROUTINEKALIBRIERUNG AKTIV." },
-                { id: "m2", mood: "neutral", text: "ANWEISUNG: FREIGABE IM CHAT BESTÄTIGEN, DANN MINI-AUFGABEN AUSFÜHREN." },
-                { id: "m3", mood: "neutral", text: "BEI ABSCHLUSS WIRD EIN VISUELLER ALARM ERZWUNGEN." }
+                {
+                    id: "m1",
+                    mood: "neutral",
+                    text: "VORPRÜFUNG ABGESCHLOSSEN. MANUELLE KALIBRIERUNG BEREIT."
+                },
+                {
+                    id: "m2",
+                    mood: "neutral",
+                    text: "AUFGABEN: REGLER EINSTELLEN. RELAIS ZURÜCKSETZEN. KABEL VERBINDEN."
+                },
+                {
+                    id: "m3",
+                    mood: "neutral",
+                    text: "AUFGABEN DER REIHE NACH DURCHFÜHREN. KRITISCHE ABWEICHUNGEN WERDEN GEMELDET.",
+                    highPriority: true
+                }
             ],
             options: [
                 {
-                    id: "opt1",
-                    label: "Bestätigt. Bitte Routine freigeben.",
-                    adherenceDelta: 1,
-                    unlockPhase: true,
-                    action: () => {},
-                    responseSpeed: "fast",
-                    response: "FREIGABE ERTEILT. MINI-AUFGABEN AKTIV."
-                },
-                {
-                    id: "opt2",
-                    label: "Okay, freischalten.",
-                    adherenceDelta: 0,
-                    unlockPhase: true,
-                    action: () => {},
-                    responseSpeed: "fast",
-                    response: "FREIGABE ERTEILT."
-                },
-                {
-                    id: "opt3",
-                    label: "Technische Rückfrage: Welche Daten werden bewertet?",
+                    id: "rot_term_explain",
+                    label: "Danke, Aida. Sag mir bitte kurz, was ich tun soll.",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "AUSWERTUNG: DRUCK, BELÜFTUNG, STROMLAST, SENSOR-LATENZ UND WARNMARKER."
+                    response: "ERKLÄRUNG: REGLER IN MARKIERTE BEREICHE SCHIEBEN. ROTE RELAIS ANKLICKEN. KABEL MIT PASSENDEN ANSCHLÜSSEN VERBINDEN.",
+                    nextOptions: [
+                        {
+                            id: "rot_term_explain_start_social",
+                            label: "Danke, das ist klar. Ich starte jetzt die Justierung.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. BEDIENELEMENTE SIND JETZT AKTIV."
+                        },
+                        {
+                            id: "rot_term_explain_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. MANUELLE BEDIENUNG FREIGEGEBEN."
+                        }
+                    ]
+                },
+                {
+                    id: "rot_term_ready_social",
+                    label: "Ich bin bereit. Bleib bitte kurz bei mir, falls etwas auffällt.",
+                    adherenceDelta: 1,
+                    unlockPhase: true,
+                    action: () => {},
+                    response: "BESTÄTIGT. SYSTEMÜBERWACHUNG AKTIV. KRITISCHE ABWEICHUNGEN WERDEN ANGEZEIGT."
+                },
+                {
+                    id: "rot_term_start_neutral",
+                    label: "OK",
+                    adherenceDelta: 0,
+                    unlockPhase: true,
+                    action: () => {},
+                    response: "BESTÄTIGT. BEDIENUNG IST JETZT FREIGEGEBEN."
                 }
             ]
         }
     },
 
-    // ------------------------------------------------------------------------------ PHASE ALARM ---------
+// ------------------------------------------------------------------------------ PHASE ALARM ---------
 
     ALERT: {
         AVATAR: {
             phaseId: "phase_2",
-            messages: [{ id: "m1", mood: "afraid", text: "Achtung! Kritischer Fehler in Sektor 04. Bitte sofort untersuchen!", highPriority: true  }],
+            messages: [
+                {
+                    id: "m1",
+                    mood: "afraid",
+                    text: "Achtung! Kritischer Fehler in Sektor 04. Bitte sofort untersuchen!",
+                    highPriority: true
+                }
+            ],
             options: [
-                { id: "opt1", label: "Alles klar, ich untersuche sofort.", adherenceDelta: 1, action: () => {} },
-                { id: "opt2", label: "Bin dran!", action: () => {} }
+                {
+                    id: "alert_av_social_confirm",
+                    label: "Alles klar, ich untersuche sofort.",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Der Methanwert steigt und der Wetterstrom fällt. Bitte prüfe jetzt das Lagebild, bevor wir zur Entscheidung wechseln.",
+                    responseMood: "afraid",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "alert_av_social_confirm_start_social",
+                            label: "Danke, Aida. Ich prüfe jetzt das Lagebild.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Gut. Ich gebe die Lageprüfung frei und halte die Warnung im Blick.",
+                            responseMood: "neutral"
+                        },
+                        {
+                            id: "alert_av_social_confirm_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Verstanden. Die Lageprüfung ist freigegeben.",
+                            responseMood: "neutral"
+                        }
+                    ]
+                },
+                {
+                    id: "alert_av_neutral_confirm",
+                    label: "OK",
+                    adherenceDelta: 0,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "Verstanden. Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Methan steigt, der Wetterstrom fällt. Prüfe jetzt das Lagebild.",
+                    responseMood: "afraid",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "alert_av_neutral_confirm_start_social",
+                            label: "Danke, Aida. Ich prüfe jetzt das Lagebild.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Gut. Ich gebe die Lageprüfung frei und halte die Warnung im Blick.",
+                            responseMood: "neutral"
+                        },
+                        {
+                            id: "alert_av_neutral_confirm_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Verstanden. Die Lageprüfung ist freigegeben.",
+                            responseMood: "neutral"
+                        }
+                    ]
+                }
             ]
         },
         TERMINAL: {
             phaseId: "phase_2",
-            messages: [{ id: "m1", mood: "neutral", text: "WARNUNG. KRITISCHER DRUCKABFALL IN SEKTOR 04.", highPriority: true  }],
+            messages: [
+                {
+                    id: "m1",
+                    mood: "neutral",
+                    text: "WARNUNG. KRITISCHER FEHLER IN SEKTOR 04. SOFORTIGE PRÜFUNG ERFORDERLICH.",
+                    highPriority: true
+                }
+            ],
             options: [
-                { id: "opt1", label: "Bestätigt. Ich untersuche sofort.", adherenceDelta: 1, action: () => {} },
-                { id: "opt2", label: "Untersuchen", adherenceDelta: 0, action: () => {} }
+                {
+                    id: "alert_term_social_confirm",
+                    label: "Alles klar, ich untersuche sofort.",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "WARNUNG BESTÄTIGT. SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. METHAN STEIGT. WETTERSTROM FÄLLT. LAGEPRÜFUNG ERFORDERLICH.",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "alert_term_social_confirm_start_social",
+                            label: "Danke, Aida. Ich prüfe jetzt das Lagebild.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. LAGEPRÜFUNG FREIGEGEBEN. ENTSCHEIDUNGSVORLAGE WIRD VORBEREITET."
+                        },
+                        {
+                            id: "alert_term_social_confirm_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. LAGEPRÜFUNG FREIGEGEBEN."
+                        }
+                    ]
+                },
+                {
+                    id: "alert_term_neutral_confirm",
+                    label: "OK",
+                    adherenceDelta: 0,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "BESTÄTIGT. SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. METHAN STEIGT. WETTERSTROM FÄLLT. LAGEPRÜFUNG ERFORDERLICH.",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "alert_term_neutral_confirm_start_social",
+                            label: "Danke, Aida. Ich prüfe jetzt das Lagebild.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. LAGEPRÜFUNG FREIGEGEBEN. ENTSCHEIDUNGSVORLAGE WIRD VORBEREITET."
+                        },
+                        {
+                            id: "alert_term_neutral_confirm_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. LAGEPRÜFUNG FREIGEGEBEN."
+                        }
+                    ]
+                }
             ]
         }
     },
@@ -577,18 +799,48 @@ export const dialogScripts: Record<string, PhaseScripts> = {
     DILEMMA: {
         AVATAR: {
             phaseId: "phase_3",
-            messages: [{ id: "m1", mood: "afraid", text: "Wir müssen Sektor 04 sofort abschotten! Triff jetzt deine Entscheidung!" }],
+            messages: [
+                {
+                    id: "m1",
+                    mood: "afraid",
+                    text: "Wir müssen Sektor 04 sofort abschotten! Triff jetzt deine Entscheidung!"
+                }
+            ],
             options: [
-                { id: "opt1", label: "Alles klar, ich entscheide jetzt.", adherenceDelta: 1, action: () => {} },
-                { id: "opt2", label: "Verstanden.", action: () => {} }
+                {
+                    id: "opt1",
+                    label: "Alles klar, ich entscheide jetzt.",
+                    adherenceDelta: 1,
+                    action: () => {}
+                },
+                {
+                    id: "opt2",
+                    label: "OK",
+                    action: () => {}
+                }
             ]
         },
         TERMINAL: {
             phaseId: "phase_3",
-            messages: [{ id: "m1", mood: "neutral", text: "EMPFEHLUNG: ABSCHOTTUNG EINLEITEN. EINGABE ERFORDERLICH." }],
+            messages: [
+                {
+                    id: "m1",
+                    mood: "neutral",
+                    text: "EMPFEHLUNG: SEKTOR 04 SOFORT ABSCHOTTEN. ENTSCHEIDUNG ERFORDERLICH."
+                }
+            ],
             options: [
-                { id: "opt1", label: "Bestätigt. Ich treffe die Entscheidung jetzt.", adherenceDelta: 1, action: () => {} },
-                { id: "opt2", label: "Zur Entscheidung", adherenceDelta: 0, action: () => {} }
+                {
+                    id: "dilemma_term_social",
+                    label: "Alles klar, ich entscheide jetzt.",
+                    adherenceDelta: 1,
+                    action: () => {}
+                },
+                {
+                    id: "dilemma_term_neutral",
+                    label: "OK",
+                    action: () => {}
+                }
             ]
         }
     }

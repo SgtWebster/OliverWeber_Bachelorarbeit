@@ -228,7 +228,7 @@ export default function Phase0Onboarding() {
                     <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                         {!isPhaseUnlocked ? (
                             <p className="text-sm md:text-base text-amber-600 animate-pulse font-bold flex items-center gap-2">
-                                ⚠️ Warte auf Bestätigung...
+                                ⚠️ Warte auf Freigabe durch das Assistenzsystem.
                             </p>
                         ) : (
                             <p className="text-sm md:text-base text-emerald-600 font-bold flex items-center gap-2">

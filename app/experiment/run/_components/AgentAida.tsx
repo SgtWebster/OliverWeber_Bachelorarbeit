@@ -99,7 +99,7 @@ export default function AgentAida({
 
     useEffect(() => {
         if (pendingResponse) {
-            const baseTypingDuration = Math.min(pendingResponse.text.length * 30 + 500, 3000);
+            const baseTypingDuration = Math.min(pendingResponse.text.length * 30 + 400, 2000);
             const typingDuration = pendingResponseSpeed === "fast"
                 ? Math.max(260, Math.floor(baseTypingDuration / 5))
                 : baseTypingDuration;
@@ -182,8 +182,11 @@ export default function AgentAida({
         if (option.response) {
             const responseText = option.response;
             const responseId = `response_${option.id}_${nextId()}`;
+            const shouldUseFastResponseSpeed =
+                option.responseSpeed === "fast" ||
+                (script.phaseId === "phase_0" && option.unlockPhase === true);
             setPendingNextOptions(option.nextOptions ?? []);
-            setPendingResponseSpeed(option.responseSpeed ?? "normal");
+            setPendingResponseSpeed(shouldUseFastResponseSpeed ? "fast" : "normal");
             setTimeout(() => {
                 setPendingResponse({
                     id: responseId,

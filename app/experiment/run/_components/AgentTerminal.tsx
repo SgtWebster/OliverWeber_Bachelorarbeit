@@ -100,7 +100,7 @@ export default function AgentTerminal({
         }
 
         const nextMsg = script.messages[currentMsgIndex];
-        const typingDuration = Math.min(nextMsg.text.length * 30 + 400, 3000);
+        const typingDuration = Math.min(nextMsg.text.length * 10 + 400, 1500);
 
         setIsTyping(true);
 
@@ -147,8 +147,11 @@ export default function AgentTerminal({
         if (option.response) {
             const responseText = option.response;
             const responseId = `response_${option.id}_${nextId()}`;
+            const shouldUseFastResponseSpeed =
+                option.responseSpeed === "fast" ||
+                (script.phaseId === "phase_0" && option.unlockPhase === true);
             setPendingNextOptions(option.nextOptions ?? []);
-            setPendingResponseSpeed(option.responseSpeed ?? "normal");
+            setPendingResponseSpeed(shouldUseFastResponseSpeed ? "fast" : "normal");
             setTimeout(() => {
                 setPendingResponse({
                     id: responseId,

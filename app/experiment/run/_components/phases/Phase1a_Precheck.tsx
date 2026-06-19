@@ -1,162 +1,148 @@
+// app/experiment/run/_components/phases/Phase1a_Precheck.tsx
 "use client";
 
 import { useMemo, useState } from "react";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
 import { updateExperimentSession } from "@/app/lib/api/client";
 
-type SystemStats = {
-    pressure: number;
-    ventilation: number;
-    gasIndex: number;
-    energy: number;
-    jitter: number;
+type TelemetryStats = {
+    ch4: number;          // Methan in % Vol. (Betriebsgrenze < 1,0 %)
+    co: number;           // Kohlenmonoxid in ppm (Normalbereich < 10 ppm)
+    o2: number;           // Sauerstoff in % Vol. (Normalbereich ca. 20,9 %)
+    airflow: number;      // Wetterstrom Sektor 04 in m³/s
+    diffPressure: number; // Differenzdruck an Wettertür / Strecke in Pa
 };
+
+type MetricStatus = "ok" | "warn" | "danger";
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
-const scaleColor = (value: number, warningAt: number) => {
-    if (value >= warningAt + 8) return "bg-emerald-500";
-    if (value >= warningAt - 3) return "bg-amber-500";
-    return "bg-rose-500";
+const makeTimestamp = () =>
+    new Date().toLocaleTimeString("de-AT", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    });
+
+const statusClasses: Record<MetricStatus, { badge: string; bar: string; card: string; label: string }> = {
+    ok: {
+        badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        bar: "bg-emerald-500",
+        card: "border-slate-200 bg-slate-50",
+        label: "stabil"
+    },
+    warn: {
+        badge: "bg-amber-50 text-amber-700 border-amber-200",
+        bar: "bg-amber-500",
+        card: "border-amber-200 bg-amber-50/60",
+        label: "prüfen"
+    },
+    danger: {
+        badge: "bg-rose-50 text-rose-700 border-rose-200",
+        bar: "bg-rose-500",
+        card: "border-rose-200 bg-rose-50/70",
+        label: "kritisch"
+    }
 };
 
 export default function Phase1aPrecheck() {
-    const { sessionId, setPhase, socialAdherenceScore } = useExperimentStore();
+    const { sessionId, setPhase, socialAdherenceScore, isPhaseUnlocked } = useExperimentStore();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [stats, setStats] = useState<SystemStats>({
-        pressure: 74,
-        ventilation: 69,
-        gasIndex: 61,
-        energy: 81,
-        jitter: 22
-    });
-
-    const [fanBoost, setFanBoost] = useState(55);
-    const [opsCount, setOpsCount] = useState(0);
-    const [moduleStates, setModuleStates] = useState<Record<string, boolean>>({
-        "L4-SENSOR": true,
-        "VENT-PATH-B": false,
-        "RIG-DELTA": true,
-        "AUX-PUMP": false,
-        "MESH-LINK": true,
-        "LOG-BRIDGE": false
+    const [stats, setStats] = useState<TelemetryStats>({
+        ch4: 0.34,
+        co: 5.8,
+        o2: 20.8,
+        airflow: 28.6,
+        diffPressure: 312
     });
 
     const [eventFeed, setEventFeed] = useState<string[]>([
-        "[OK] Lüftung stabil",
-        "[INFO] CH4 steigt leicht",
-        "[INFO] L4-03 Signaljitter ~3%"
+        "[T-00:04] [SYS] Wetterführung Sektor 04 im Sollbereich.",
+        "[T-00:03] [OPS] Wartungstrupp WT-2 im Bereich Bandstrecke 4B angemeldet.",
+        "[T-00:02] [SENS] Gassensorik S04-GAS-2 kalibriert. Drift < 0,03 %.",
+        "[T-00:01] [SYS] Precheck-Datensatz geladen. Standby für Schichtübernahme."
     ]);
 
     const pushEvent = (entry: string) => {
-        setEventFeed((prev) => [entry, ...prev].slice(0, 9));
+        setEventFeed((prev) => [`[${makeTimestamp()}] ${entry}`, ...prev].slice(0, 40));
     };
 
-    const mutateStats = (changes: Partial<SystemStats>, eventText: string) => {
+    const driftTelemetry = () => {
         setStats((prev) => ({
-            pressure: clamp((changes.pressure ?? prev.pressure), 0, 100),
-            ventilation: clamp((changes.ventilation ?? prev.ventilation), 0, 100),
-            gasIndex: clamp((changes.gasIndex ?? prev.gasIndex), 0, 100),
-            energy: clamp((changes.energy ?? prev.energy), 0, 100),
-            jitter: clamp((changes.jitter ?? prev.jitter), 0, 100)
+            ch4: clamp(prev.ch4 + (Math.random() * 0.06 - 0.03), 0.18, 0.72),
+            co: clamp(prev.co + (Math.random() * 1.2 - 0.6), 3.0, 9.5),
+            o2: clamp(prev.o2 + (Math.random() * 0.08 - 0.04), 20.55, 20.95),
+            airflow: clamp(prev.airflow + (Math.random() * 1.4 - 0.7), 24.0, 32.5),
+            diffPressure: clamp(prev.diffPressure + (Math.random() * 18 - 9), 260, 360)
         }));
-        setOpsCount((prev) => prev + 1);
-        pushEvent(eventText);
     };
 
-    const triggerToyAction = (action: "flush" | "pump" | "ping" | "scramble") => {
-        if (action === "flush") {
-            mutateStats(
-                {
-                    ventilation: stats.ventilation + 4,
-                    gasIndex: stats.gasIndex + 3,
-                    energy: stats.energy - 2,
-                    jitter: stats.jitter + 2
-                },
-                "[OPS] Filter-Spülung ausgelöst"
-            );
-            return;
-        }
+    const runDiagnostic = (system: string) => {
+        pushEvent(`[OPS] Prüfroutine ${system} angefordert.`);
 
-        if (action === "pump") {
-            mutateStats(
-                {
-                    pressure: stats.pressure + 4,
-                    ventilation: stats.ventilation - 3,
-                    gasIndex: stats.gasIndex - 2,
-                    energy: stats.energy - 5
-                },
-                "[OPS] Puls-Pumpe getaktet"
-            );
-            return;
-        }
+        window.setTimeout(() => {
+            driftTelemetry();
+            pushEvent(`[SYS] ${system}: Rückmeldung plausibel. Keine Grenzwertverletzung.`);
+        }, 650);
+    };
 
-        if (action === "ping") {
-            mutateStats(
-                {
-                    jitter: stats.jitter - 6,
-                    energy: stats.energy - 1
-                },
-                "[OPS] Diagnose-Ping gesendet"
-            );
-            return;
-        }
+    const metrics = useMemo(() => {
+        const ch4Status: MetricStatus = stats.ch4 < 0.8 ? "ok" : stats.ch4 < 1.0 ? "warn" : "danger";
+        const coStatus: MetricStatus = stats.co < 10 ? "ok" : stats.co < 25 ? "warn" : "danger";
+        const o2Status: MetricStatus = stats.o2 >= 20.0 ? "ok" : stats.o2 >= 19.5 ? "warn" : "danger";
+        const airflowStatus: MetricStatus = stats.airflow >= 24 && stats.airflow <= 34 ? "ok" : "warn";
+        const pressureStatus: MetricStatus = stats.diffPressure >= 240 && stats.diffPressure <= 380 ? "ok" : "warn";
 
-        mutateStats(
+        return [
             {
-                pressure: stats.pressure + (Math.random() > 0.5 ? 3 : -3),
-                ventilation: stats.ventilation + (Math.random() > 0.5 ? 4 : -4),
-                gasIndex: stats.gasIndex + (Math.random() > 0.5 ? 2 : -2),
-                jitter: stats.jitter + (Math.random() > 0.5 ? 5 : -5)
+                key: "ch4",
+                label: "Methan CH₄",
+                value: `${stats.ch4.toFixed(2)} %`,
+                target: "Betrieb < 1,0 %",
+                status: ch4Status,
+                progress: clamp((stats.ch4 / 1.2) * 100, 4, 100)
             },
-            "[OPS] Zufallscheck ausgeführt"
-        );
-    };
-
-    const toggleModule = (moduleName: string) => {
-        setModuleStates((prev) => {
-            const nextValue = !prev[moduleName];
-            mutateStats(
-                {
-                    pressure: stats.pressure + (nextValue ? 1 : -1),
-                    ventilation: stats.ventilation + (nextValue ? 2 : -2),
-                    gasIndex: stats.gasIndex + (nextValue ? 1 : -1),
-                    jitter: stats.jitter + (nextValue ? 1 : -2)
-                },
-                `[MOD] ${moduleName} ${nextValue ? "aktiviert" : "deaktiviert"}`
-            );
-            return { ...prev, [moduleName]: nextValue };
-        });
-    };
-
-    const handleFanBoost = (value: number) => {
-        setFanBoost(value);
-        mutateStats(
             {
-                ventilation: value,
-                pressure: clamp(70 + (value - 55) * 0.2, 0, 100),
-                energy: clamp(stats.energy - 1 + (value < 45 ? 2 : -1), 0, 100)
+                key: "co",
+                label: "Kohlenmonoxid CO",
+                value: `${stats.co.toFixed(1)} ppm`,
+                target: "Normal < 10 ppm",
+                status: coStatus,
+                progress: clamp((stats.co / 30) * 100, 4, 100)
             },
-            `[CTRL] Lüfterboost auf ${value}% gesetzt`
-        );
-    };
-
-    const kpiCards = useMemo(
-        () => [
-            { label: "Druckstabilität", value: stats.pressure, warningAt: 70 },
-            { label: "Belüftung", value: stats.ventilation, warningAt: 68 },
-            { label: "Gasindex", value: stats.gasIndex, warningAt: 63 },
-            { label: "Energie", value: stats.energy, warningAt: 75 },
-            { label: "Signalrauschen", value: 100 - stats.jitter, warningAt: 66 }
-        ],
-        [stats]
-    );
+            {
+                key: "o2",
+                label: "Sauerstoff O₂",
+                value: `${stats.o2.toFixed(1)} %`,
+                target: "Soll 20,5–21,0 %",
+                status: o2Status,
+                progress: clamp(((stats.o2 - 18.5) / 2.7) * 100, 4, 100)
+            },
+            {
+                key: "airflow",
+                label: "Wetterstrom S04",
+                value: `${stats.airflow.toFixed(1)} m³/s`,
+                target: "Soll 24–34 m³/s",
+                status: airflowStatus,
+                progress: clamp(((stats.airflow - 18) / 22) * 100, 4, 100)
+            },
+            {
+                key: "pressure",
+                label: "Differenzdruck",
+                value: `${Math.round(stats.diffPressure)} Pa`,
+                target: "Soll 240–380 Pa",
+                status: pressureStatus,
+                progress: clamp((stats.diffPressure / 450) * 100, 4, 100)
+            }
+        ];
+    }, [stats]);
 
     const handleStartRoutine = async () => {
-        if (!sessionId || isLoading) return;
+        if (!sessionId || isLoading || !isPhaseUnlocked) return;
         setIsLoading(true);
         setError(null);
 
@@ -182,124 +168,167 @@ export default function Phase1aPrecheck() {
     return (
         <div className="w-full">
             {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                    ❌ {error}
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {error}
                 </div>
             )}
 
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6 lg:p-8">
-                <div className="mb-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-2">Allgemeines Operator Dashboard</p>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Systemübersicht</h2>
-                    {/*<p className="text-sm text-slate-600">*/}
-                    {/*    Viele Anzeigen sind absichtlich überladen. Jede Aktion verändert Werte und Event-Logs.*/}
-                    {/*</p>*/}
-                </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 bg-slate-950 px-6 py-5 text-white lg:px-8">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                        <div>
+                            <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-sky-300">
+                                Leitstand / Precheck
+                            </p>
+                            <h2 className="text-2xl font-bold tracking-tight">Schieferkamm — Sektor 04</h2>
+                            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
+                                Prüfe die Umwelt- und Wetterdaten vor der Schichtübernahme. Die Werte werden als
+                                Momentaufnahme der lokalen Sensorik dargestellt.
+                            </p>
+                        </div>
 
-                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
-                    {kpiCards.map((kpi) => (
-                        <div key={kpi.label} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                            <p className="text-xs text-slate-500 mb-1">{kpi.label}</p>
-                            <p className="text-2xl font-black text-slate-900 mb-2">{Math.round(kpi.value)}%</p>
-                            <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-                                <div
-                                    className={`h-full ${scaleColor(kpi.value, kpi.warningAt)} transition-all duration-300`}
-                                    style={{ width: `${kpi.value}%` }}
-                                />
+                        <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
+                            <p className="text-xs uppercase tracking-widest text-slate-400">Betriebszustand</p>
+                            <div className="mt-2 flex items-center gap-2 font-bold text-emerald-300">
+                                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
+                                Nominal / bemannt
                             </div>
                         </div>
-                    ))}
-                </div>
-
-                <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-                    <section className="rounded-xl border border-slate-200 p-4">
-                        <div className="flex items-center justify-between mb-3">
-                            <p className="font-bold text-slate-800">Interaktive Kontrollmodule</p>
-                            <p className="text-xs text-slate-500">Aktionen: {opsCount}</p>
-                        </div>
-
-                        <div className="grid sm:grid-cols-2 gap-2 mb-3">
-                            <button onClick={() => triggerToyAction("flush")} className="rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-2 text-sm font-semibold text-blue-800">
-                                Filter spülen
-                            </button>
-                            <button onClick={() => triggerToyAction("pump")} className="rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-800">
-                                Pumpe takten
-                            </button>
-                            <button onClick={() => triggerToyAction("ping")} className="rounded-lg border border-violet-200 bg-violet-50 hover:bg-violet-100 px-3 py-2 text-sm font-semibold text-violet-800">
-                                Diagnose-Ping
-                            </button>
-                            <button onClick={() => triggerToyAction("scramble")} className="rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">
-                                Zufallscheck
-                            </button>
-                        </div>
-
-                        <label className="block rounded-lg border border-slate-200 p-3 bg-slate-50 mb-3">
-                            <div className="flex justify-between text-xs text-slate-500 mb-1">
-                                <span>Lüfterboost</span>
-                                <span>{fanBoost}%</span>
-                            </div>
-                            <input
-                                type="range"
-                                min={20}
-                                max={90}
-                                value={fanBoost}
-                                onChange={(e) => handleFanBoost(Number(e.target.value))}
-                                className="w-full accent-sky-600"
-                            />
-                        </label>
-
-                        <div className="grid sm:grid-cols-2 gap-2">
-                            {Object.entries(moduleStates).map(([moduleName, active]) => (
-                                <button
-                                    key={moduleName}
-                                    onClick={() => toggleModule(moduleName)}
-                                    className={`rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
-                                        active
-                                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                                    }`}
-                                >
-                                    {moduleName} · {active ? "ON" : "OFF"}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-                    <section className="rounded-xl border border-slate-200 p-4 bg-slate-50">
-                        <p className="font-bold text-slate-800 mb-3">Ereignis-Feed</p>
-                        <div className="space-y-1.5 font-mono text-xs text-slate-700">
-                            {eventFeed.map((line, index) => (
-                                <p key={`${line}_${index}`}>{line}</p>
-                            ))}
-                        </div>
-                    </section>
-                </div>
-
-                <div className="hidden 2xl:block mt-4 rounded-xl border border-slate-200 p-4">
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Erweiterte Leitstandmatrix (FullHD+)</p>
-                    <div className="grid grid-cols-6 gap-2 text-xs">
-                        {Array.from({ length: 42 }).map((_, idx) => (
-                            <div key={idx} className="rounded border border-slate-200 bg-slate-50 px-2 py-1 flex justify-between">
-                                <span>MOD-{idx + 1}</span>
-                                <span className={idx % 5 === 0 ? "text-amber-700" : "text-emerald-700"}>
-                                    {idx % 5 === 0 ? "WARN" : "OK"}
-                                </span>
-                            </div>
-                        ))}
                     </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                    <p className="text-xs sm:text-sm text-slate-600">
-                        Wenn du bereit bist, wechsle in den Kontrollraum.
-                    </p>
-                    <button
-                        onClick={handleStartRoutine}
-                        disabled={isLoading}
-                        className="w-full sm:w-auto rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 disabled:opacity-50"
-                    >
-                        {isLoading ? "Lade..." : "Routine starten"}
-                    </button>
+                <div className="p-6 lg:p-8">
+                    <div className="mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
+                        {metrics.map((metric) => {
+                            const classes = statusClasses[metric.status];
+
+                            return (
+                                <article key={metric.key} className={`rounded-xl border p-4 ${classes.card}`}>
+                                    <div className="mb-3 flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                                {metric.label}
+                                            </p>
+                                            <p className="mt-1 text-2xl font-black tabular-nums text-slate-950">
+                                                {metric.value}
+                                            </p>
+                                        </div>
+                                        <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide ${classes.badge}`}>
+                                            {classes.label}
+                                        </span>
+                                    </div>
+
+                                    <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-500 ${classes.bar}`}
+                                            style={{ width: `${metric.progress}%` }}
+                                        />
+                                    </div>
+                                    <p className="mt-2 text-xs text-slate-500">{metric.target}</p>
+                                </article>
+                            );
+                        })}
+                    </div>
+
+                    <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
+                        <section className="rounded-xl border border-slate-200 bg-white p-5">
+                            <div className="mb-5 flex items-start justify-between gap-4">
+                                <div>
+                                    <p className="font-bold text-slate-900">Manuelle Systemtests</p>
+                                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                                        Starte einzelne Plausibilitätsprüfungen. Die Diagnosen verändern die Anzeige nur
+                                        innerhalb realistischer Betriebsdriften.
+                                    </p>
+                                </div>
+                                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
+                                    5 Systeme
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <button
+                                    onClick={() => runDiagnostic("Hauptlüfter L-01")}
+                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm"
+                                >
+                                    <span className="block text-sm font-bold text-slate-800">Hauptlüfter L-01</span>
+                                    <span className="mt-1 block text-xs text-slate-500">Drehzahl, Lagerstatus, Rückmeldung FU</span>
+                                </button>
+
+                                <button
+                                    onClick={() => runDiagnostic("Gassensorik S04-GAS-2")}
+                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm"
+                                >
+                                    <span className="block text-sm font-bold text-slate-800">Gassensorik S04-GAS-2</span>
+                                    <span className="mt-1 block text-xs text-slate-500">CH₄, CO, O₂ — Plausibilitätsabgleich</span>
+                                </button>
+
+                                <button
+                                    onClick={() => runDiagnostic("Wettertür WT-04")}
+                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm"
+                                >
+                                    <span className="block text-sm font-bold text-slate-800">Wettertür WT-04</span>
+                                    <span className="mt-1 block text-xs text-slate-500">Endlage, Differenzdruck, Sperrkontakt</span>
+                                </button>
+
+                                <button
+                                    onClick={() => runDiagnostic("Pumpensumpf P-Delta")}
+                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm"
+                                >
+                                    <span className="block text-sm font-bold text-slate-800">Pumpensumpf P-Delta</span>
+                                    <span className="mt-1 block text-xs text-slate-500">Füllstand, Förderstrom, Motorschutz</span>
+                                </button>
+
+                                <button
+                                    onClick={() => runDiagnostic("Fluchtwegkennzeichnung")}
+                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm sm:col-span-2"
+                                >
+                                    <span className="block text-sm font-bold text-slate-800">Fluchtwegkennzeichnung / Notbeleuchtung</span>
+                                    <span className="mt-1 block text-xs text-slate-500">Batteriepuffer, Linienüberwachung, Sichtprüfung Rückmeldekontakte</span>
+                                </button>
+                            </div>
+                        </section>
+
+                        <section className="rounded-xl border border-slate-800 bg-slate-950 p-5 font-mono text-sm text-emerald-300 shadow-inner">
+                            <div className="mb-3 flex items-center justify-between border-b border-slate-800 pb-3">
+                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-300">Ereignis-Log</p>
+                                <p className="text-[10px] uppercase tracking-widest text-slate-500">statisch / scrollbar</p>
+                            </div>
+
+                            <div className="h-64 overflow-y-auto pr-2 text-xs leading-relaxed scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
+                                <div className="space-y-2">
+                                    {eventFeed.map((line, index) => (
+                                        <p key={`${line}-${index}`} className="whitespace-pre-wrap break-words text-emerald-300/90">
+                                            {line}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    {!isPhaseUnlocked && (
+                        <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
+                            Warte auf Freigabe durch das Assistenzsystem.
+                        </div>
+                    )}
+
+                    <div className="mt-8 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                        {/*<p className="max-w-2xl text-sm leading-relaxed text-slate-600">*/}
+                        {/*    Alle Precheck-Parameter liegen im betrieblichen Toleranzbereich. Für die Schichtübernahme*/}
+                        {/*    ist im nächsten Schritt eine operative Kalibrierung erforderlich.*/}
+                        {/*</p>*/}
+                        <button
+                            onClick={handleStartRoutine}
+                            disabled={isLoading || !isPhaseUnlocked}
+                            className="w-full rounded-xl bg-blue-700 px-8 py-3 font-bold text-white shadow-md transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none sm:w-auto"
+                        >
+                            {isLoading
+                                ? "Kalibrierung wird gestartet..."
+                                : isPhaseUnlocked
+                                    ? "Manuelle Kalibrierung"
+                                    : "Manuelle Kalibrierung..."}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
