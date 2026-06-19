@@ -1,7 +1,7 @@
 // app/experiment/run/page.tsx
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import AgentAida from '@/app/experiment/run/_components/AgentAida';
@@ -32,6 +32,21 @@ export default function ExperimentRunPage() {
         initializeExperiment();
     }, [initializeExperiment]);
 
+    const activeScript = useMemo(() => {
+        const currentScripts = dialogScripts[currentPhase as keyof typeof dialogScripts];
+        if (!currentScripts || !group) return null;
+
+        const rawScript = group === 'AVATAR' ? currentScripts.AVATAR : currentScripts.TERMINAL;
+
+        return {
+            ...rawScript,
+            options: rawScript.options?.map(opt => ({
+                ...opt,
+                action: () => setPhaseUnlocked(true)
+            }))
+        };
+    }, [currentPhase, group, setPhaseUnlocked]);
+
     // 2. Consent Check (greift erst, NACHDEM Recovery abgeschlossen ist)
     useEffect(() => {
         if (!isRecovering && !hasConsented && process.env.NODE_ENV !== 'development') {
@@ -52,7 +67,7 @@ export default function ExperimentRunPage() {
     }
 
     return (
-        <div className="min-h-[100dvh] w-full flex flex-col font-sans bg-slate-50 text-slate-800">
+        <div className="min-h-[100dvh] md:h-[100dvh] w-full flex flex-col font-sans bg-slate-50 text-slate-800 md:overflow-hidden">
 
             {process.env.NODE_ENV === 'development' && (
                 <div className="absolute top-0 left-0 w-full p-1 bg-red-600/90 text-white text-[10px] font-mono flex justify-between z-50">
@@ -84,7 +99,7 @@ export default function ExperimentRunPage() {
                     {/* RECHTE SEITE: Das Assistenz-Panel */}
                     {/* Solide, feste Breiten für den Chat. Niemals breiter als 450px! */}
                     {currentPhase !== 'INIT' && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
-                        <div className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[44dvh] min-h-[18rem] max-h-[30rem] md:h-auto md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
+                        <div className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[44dvh] min-h-[18rem] max-h-[30rem] md:h-full md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
                             group === 'TERMINAL' ? 'border-slate-800 bg-slate-950 text-emerald-500' : 'border-slate-200 bg-white text-slate-800'
                         }`}>
                             <div className={`p-3 md:p-4 border-b border-inherit z-10 shadow-sm shrink-0 ${group === 'TERMINAL' ? 'bg-slate-950' : 'bg-white'}`}>
@@ -94,26 +109,13 @@ export default function ExperimentRunPage() {
                             </div>
 
                             <div className="flex-1 min-h-0 overflow-hidden relative">
-                                {(() => {
-                                    const currentScripts = dialogScripts[currentPhase as keyof typeof dialogScripts];
-                                    if (!currentScripts || !group) return null;
-
-                                    const rawScript = group === 'AVATAR' ? currentScripts.AVATAR : currentScripts.TERMINAL;
-
-                                    const activeScript = {
-                                        ...rawScript,
-                                        options: rawScript.options?.map(opt => ({
-                                            ...opt,
-                                            action: () => setPhaseUnlocked(true)
-                                        }))
-                                    };
-
-                                    return group === 'AVATAR' ? (
+                                {activeScript && (
+                                    group === 'AVATAR' ? (
                                         <AgentAida script={activeScript} />
                                     ) : (
                                         <AgentTerminal script={activeScript} />
-                                    );
-                                })()}
+                                    )
+                                )}
                             </div>
                         </div>
                     )}

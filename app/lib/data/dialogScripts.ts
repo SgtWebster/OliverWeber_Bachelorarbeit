@@ -7,6 +7,13 @@ export type PhaseScripts = {
     TERMINAL: AgentScript;
 };
 
+export type DialogOption = {
+    id: string;
+    label: string;
+    action: () => void;
+    response?: string;
+};
+
 export const dialogScripts: Record<string, PhaseScripts> = {
     ONBOARDING: {
         AVATAR: {
@@ -17,10 +24,9 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 { id: "m3", mood: "smile", text: "Ich freue mich auf die Zusammenarbeit." },
                 { id: "m4", mood: "neutral", text: "Bist du bereit für die Schichtübergabe?" }
             ],
-            // Die Actions werden später in der page.tsx dynamisch injiziert!
             options: [
-                { id: "opt1", label: "Hi Aida, ja ich bin bereit.", action: () => {} },
-                { id: "opt2", label: "System starten.", action: () => {} }
+                { id: "opt1", label: "Hallo Aida, ja ich bin bereit.", action: () => {}, response: "Großartig! Dann starten wir die Systeminitialisierung." },
+                { id: "opt2", label: "System starten", action: () => {}, response: "Sehr gut. Das System wird jetzt hochgefahren." }
             ]
         },
         TERMINAL: {
@@ -33,15 +39,15 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 { id: "m5", mood: "neutral", text: "MÖCHTEST DU DIE LEITWARTE ÜBERNEHMEN?" },
             ],
             options: [
-                { id: "opt1", label: "Hi Aida, ja ich bin bereit.", action: () => {} },
-                { id: "opt2", label: "System starten.", action: () => {} }
+                { id: "opt1", label: "Hallo Aida, ja ich bin bereit.", action: () => {}, response: "INITIALIZATION SEQUENCE STARTING..." },
+                { id: "opt2", label: "System starten", action: () => {}, response: "BOOT SEQUENCE ENGAGED." }
             ]
         }
     },
     ROUTINE: {
         AVATAR: {
             phaseId: "phase_1",
-            messages: [{ id: "m1", mood: "neutral", text: "Bitte führe links die Systemdiagnose durch." }],
+            messages: [{ id: "m1", mood: "neutral", text: "Bitte führe die Systemdiagnose durch." }],
             options: [{ id: "opt1", label: "Wird gemacht.", action: () => {} }]
         },
         TERMINAL: {

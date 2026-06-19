@@ -1,7 +1,7 @@
 // app/experiment/run/_components/AgentAida.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 
 export type AidaMood = "neutral" | "smile" | "afraid";
 
@@ -9,12 +9,14 @@ export type AgentMessage = {
     id: string;
     mood: AidaMood;
     text: string;
+    speaker?: "assistant" | "user";
 };
 
 export type AgentOption = {
     id: string;
     label: string;
     action: () => void;
+    response?: string;
 };
 
 export type AgentScript = {
@@ -34,7 +36,9 @@ export default function AgentAida({ script }: { script: AgentScript }) {
     const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
-    const [userReply, setUserReply] = useState<string | null>(null);
+    const [hasAnsweredOptions, setHasAnsweredOptions] = useState(false);
+    const [isTypingResponse, setIsTypingResponse] = useState(false);
+    const [pendingResponse, setPendingResponse] = useState<AgentMessage | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -46,20 +50,38 @@ export default function AgentAida({ script }: { script: AgentScript }) {
 
     useEffect(() => {
         scrollToBottom();
-    }, [visibleMessages, isTyping, userReply, showOptions]);
+    }, [visibleMessages, isTyping, showOptions, isTypingResponse, pendingResponse]);
 
-    useEffect(() => {
-        setVisibleMessages([]);
+    useLayoutEffect(() => {
         setCurrentMsgIndex(0);
         setIsTyping(false);
         setShowOptions(false);
-        setUserReply(null);
+        setHasAnsweredOptions(false);
+        setIsTypingResponse(false);
+        setPendingResponse(null);
     }, [script.phaseId]);
 
     useEffect(() => {
+        if (pendingResponse) {
+            const typingDuration = Math.min(pendingResponse.text.length * 30 + 500, 3000);
+            setIsTypingResponse(true);
+
+            const timer = setTimeout(() => {
+                setIsTypingResponse(false);
+                setVisibleMessages((prev) => [...prev, pendingResponse]);
+                setPendingResponse(null);
+            }, typingDuration);
+
+            return () => clearTimeout(timer);
+        }
+    }, [pendingResponse]);
+
+    useEffect(() => {
         if (currentMsgIndex >= script.messages.length) {
-            if (script.options && script.options.length > 0 && !userReply) {
+            if (script.options && script.options.length > 0 && !hasAnsweredOptions && !isTypingResponse && !pendingResponse) {
                 setShowOptions(true);
+            } else {
+                setShowOptions(false);
             }
             return;
         }
@@ -71,17 +93,76 @@ export default function AgentAida({ script }: { script: AgentScript }) {
 
         const timer = setTimeout(() => {
             setIsTyping(false);
-            setVisibleMessages((prev) => [...prev, nextMsg]);
+            setVisibleMessages((prev) => [
+                ...prev,
+                {
+                    ...nextMsg,
+                    id: `${script.phaseId}_${nextMsg.id}_${currentMsgIndex}`,
+                    speaker: "assistant"
+                }
+            ]);
             setCurrentMsgIndex((prev) => prev + 1);
         }, typingDuration);
 
         return () => clearTimeout(timer);
-    }, [currentMsgIndex, script, userReply]);
+    }, [currentMsgIndex, script.phaseId, script.messages.length, pendingResponse, isTypingResponse, hasAnsweredOptions]);
 
     const handleOptionClick = (option: AgentOption) => {
+        if (hasAnsweredOptions) return;
+        setHasAnsweredOptions(true);
         setShowOptions(false);
-        setUserReply(option.label);
         option.action();
+
+        setVisibleMessages((prev) => [
+            ...prev,
+            {
+                id: `user_${option.id}_${Date.now()}`,
+                mood: "neutral",
+                text: option.label,
+                speaker: "user"
+            }
+        ]);
+
+        if (option.response) {
+            const responseText = option.response;
+            const responseId = `response_${option.id}_${Date.now()}`;
+            setTimeout(() => {
+                setPendingResponse({
+                    id: responseId,
+                    mood: "neutral",
+                    text: responseText,
+                    speaker: "assistant"
+                });
+            }, 180);
+        }
+    };
+
+    const renderMessage = (msg: AgentMessage) => {
+        if (msg.speaker === "user") {
+            return (
+                <div key={msg.id} className="flex justify-end mt-2 md:mt-3">
+                    <div className="max-w-[80%] md:max-w-[85%] rounded-3xl rounded-tr-sm bg-sky-600 text-white px-4 py-3 md:px-5 md:py-4 text-sm md:text-base shadow-sm">
+                        {msg.text}
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div key={msg.id} className="flex justify-start gap-3 md:gap-4">
+                <div className={`h-10 w-10 md:h-14 md:w-14 shrink-0 overflow-hidden rounded-full border bg-white shadow-sm ${
+                    msg.mood === "afraid" ? "border-red-200" : msg.mood === "smile" ? "border-sky-200" : "border-slate-200"
+                }`}>
+                    <img src={avatarByMood[msg.mood]} alt="Aida" className="h-full w-full object-cover object-top scale-[1.85] -translate-y-[12%] origin-top" draggable={false} />
+                </div>
+                <div className={`max-w-[80%] md:max-w-[85%] rounded-3xl rounded-tl-sm px-4 py-3 md:px-5 md:py-4 text-sm md:text-base leading-relaxed shadow-sm ${
+                    msg.mood === "afraid" ? "bg-red-50 text-red-950 border border-red-100" : "bg-white text-slate-800 border border-slate-100"
+                }`}>
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Aida</div>
+                    {msg.text}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -91,21 +172,7 @@ export default function AgentAida({ script }: { script: AgentScript }) {
                 {/* Scrollable content, aber hidden scrollbar */}
                 <div className="h-full overflow-y-auto scroll-smooth scrollbar-hide">
                     <div className="space-y-3 md:space-y-4">
-                        {visibleMessages.map((msg) => (
-                            <div key={msg.id} className="flex justify-start gap-3 md:gap-4">
-                                <div className={`h-10 w-10 md:h-14 md:w-14 shrink-0 overflow-hidden rounded-full border bg-white shadow-sm ${
-                                    msg.mood === "afraid" ? "border-red-200" : msg.mood === "smile" ? "border-sky-200" : "border-slate-200"
-                                }`}>
-                                    <img src={avatarByMood[msg.mood]} alt="Aida" className="h-full w-full object-cover object-top scale-[1.85] -translate-y-[12%] origin-top" draggable={false} />
-                                </div>
-                                <div className={`max-w-[80%] md:max-w-[85%] rounded-3xl rounded-tl-sm px-4 py-3 md:px-5 md:py-4 text-sm md:text-base leading-relaxed shadow-sm ${
-                                    msg.mood === "afraid" ? "bg-red-50 text-red-950 border border-red-100" : "bg-white text-slate-800 border border-slate-100"
-                                }`}>
-                                    <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Aida</div>
-                                    {msg.text}
-                                </div>
-                            </div>
-                        ))}
+                        {visibleMessages.map(renderMessage)}
 
                         {isTyping && (
                             <div className="flex justify-start gap-3 md:gap-4 opacity-70">
@@ -118,10 +185,13 @@ export default function AgentAida({ script }: { script: AgentScript }) {
                             </div>
                         )}
 
-                        {userReply && (
-                            <div className="flex justify-end mt-2 md:mt-3">
-                                <div className="max-w-[80%] md:max-w-[85%] rounded-3xl rounded-tr-sm bg-sky-600 text-white px-4 py-3 md:px-5 md:py-4 text-sm md:text-base shadow-sm">
-                                    {userReply}
+                        {isTypingResponse && (
+                            <div className="flex justify-start gap-3 md:gap-4 opacity-70">
+                                <div className="h-10 w-10 md:h-14 md:w-14 shrink-0 rounded-full border border-slate-200 bg-white" />
+                                <div className="rounded-3xl rounded-tl-sm bg-white border border-slate-100 px-4 py-3 md:px-5 md:py-4 shadow-sm flex items-center gap-1.5">
+                                    <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
+                                    <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400 [animation-delay:150ms]" />
+                                    <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400 [animation-delay:300ms]" />
                                 </div>
                             </div>
                         )}

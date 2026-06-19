@@ -1,7 +1,7 @@
 // app/experiment/run/_components/AgentTerminal.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import type { AgentScript, AgentOption, AgentMessage } from "./AgentAida";
 
 export default function AgentTerminal({ script }: { script: AgentScript }) {
@@ -9,7 +9,9 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
     const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
-    const [userReply, setUserReply] = useState<string | null>(null);
+    const [hasAnsweredOptions, setHasAnsweredOptions] = useState(false);
+    const [isTypingResponse, setIsTypingResponse] = useState(false);
+    const [pendingResponse, setPendingResponse] = useState<AgentMessage | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -21,20 +23,38 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
 
     useEffect(() => {
         scrollToBottom();
-    }, [visibleMessages, isTyping, userReply, showOptions]);
+    }, [visibleMessages, isTyping, showOptions, isTypingResponse, pendingResponse]);
 
-    useEffect(() => {
-        setVisibleMessages([]);
+    useLayoutEffect(() => {
         setCurrentMsgIndex(0);
         setIsTyping(false);
         setShowOptions(false);
-        setUserReply(null);
+        setHasAnsweredOptions(false);
+        setIsTypingResponse(false);
+        setPendingResponse(null);
     }, [script.phaseId]);
 
     useEffect(() => {
+        if (pendingResponse) {
+            const typingDuration = Math.min(pendingResponse.text.length * 30 + 400, 3000);
+            setIsTypingResponse(true);
+
+            const timer = setTimeout(() => {
+                setIsTypingResponse(false);
+                setVisibleMessages((prev) => [...prev, pendingResponse]);
+                setPendingResponse(null);
+            }, typingDuration);
+
+            return () => clearTimeout(timer);
+        }
+    }, [pendingResponse]);
+
+    useEffect(() => {
         if (currentMsgIndex >= script.messages.length) {
-            if (script.options && script.options.length > 0 && !userReply) {
+            if (script.options && script.options.length > 0 && !hasAnsweredOptions && !isTypingResponse && !pendingResponse) {
                 setShowOptions(true);
+            } else {
+                setShowOptions(false);
             }
             return;
         }
@@ -46,17 +66,48 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
 
         const timer = setTimeout(() => {
             setIsTyping(false);
-            setVisibleMessages((prev) => [...prev, nextMsg]);
+            setVisibleMessages((prev) => [
+                ...prev,
+                {
+                    ...nextMsg,
+                    id: `${script.phaseId}_${nextMsg.id}_${currentMsgIndex}`,
+                    speaker: "assistant"
+                }
+            ]);
             setCurrentMsgIndex((prev) => prev + 1);
         }, typingDuration);
 
         return () => clearTimeout(timer);
-    }, [currentMsgIndex, script, userReply]);
+    }, [currentMsgIndex, script.phaseId, script.messages.length, pendingResponse, isTypingResponse, hasAnsweredOptions]);
 
     const handleOptionClick = (option: AgentOption) => {
+        if (hasAnsweredOptions) return;
+        setHasAnsweredOptions(true);
         setShowOptions(false);
-        setUserReply(option.label);
         option.action();
+
+        setVisibleMessages((prev) => [
+            ...prev,
+            {
+                id: `user_${option.id}_${Date.now()}`,
+                mood: "neutral",
+                text: option.label,
+                speaker: "user"
+            }
+        ]);
+
+        if (option.response) {
+            const responseText = option.response;
+            const responseId = `response_${option.id}_${Date.now()}`;
+            setTimeout(() => {
+                setPendingResponse({
+                    id: responseId,
+                    mood: "neutral",
+                    text: responseText,
+                    speaker: "assistant"
+                });
+            }, 180);
+        }
     };
 
     return (
@@ -66,10 +117,17 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                 <div className="h-full overflow-y-auto scroll-smooth scrollbar-hide space-y-2 md:space-y-3 text-xs md:text-sm lg:text-base leading-relaxed">
 
                     {visibleMessages.map((msg) => (
-                        <div key={msg.id} className="flex gap-2 md:gap-3">
-                            <span className="opacity-50 shrink-0">[SYS]:</span>
-                            <span>{msg.text}</span>
-                        </div>
+                        msg.speaker === "user" ? (
+                            <div key={msg.id} className="flex gap-2 md:gap-3 mt-1 md:mt-2 text-sky-400 justify-end">
+                                <span className="opacity-50 shrink-0 text-sky-600">operator</span>
+                                <span>{msg.text}</span>
+                            </div>
+                        ) : (
+                            <div key={msg.id} className="flex gap-2 md:gap-3">
+                                <span className="opacity-50 shrink-0">[SYS]:</span>
+                                <span>{msg.text}</span>
+                            </div>
+                        )
                     ))}
 
                     {isTyping && (
@@ -82,10 +140,13 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                         </div>
                     )}
 
-                    {userReply && (
-                        <div className="flex gap-2 md:gap-3 mt-1 md:mt-2 text-sky-400">
-                            <span className="opacity-50 shrink-0 text-sky-600">operator@leitwarte:~$</span>
-                            <span>{userReply}</span>
+                    {isTypingResponse && (
+                        <div className="flex gap-2 md:gap-3 text-emerald-700">
+                            <span className="opacity-50 shrink-0">[SYS]:</span>
+                            <div className="flex items-center gap-2">
+                                <span className="animate-pulse">PROCESSING DATA</span>
+                                <span className="w-3 h-3 md:w-4 md:h-4 border-2 md:border-[3px] border-emerald-700 border-t-transparent rounded-full animate-spin" />
+                            </div>
                         </div>
                     )}
 

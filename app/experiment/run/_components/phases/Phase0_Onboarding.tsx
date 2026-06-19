@@ -200,12 +200,12 @@ export default function Phase0Onboarding() {
                     </div>
 
                     <h2 className="text-2xl md:text-3xl font-bold mb-6 text-slate-900">
-                        Schichtübergabe anfordern
+                        Schichtübergabe
                     </h2>
 
                     <div className="text-slate-600 space-y-4 leading-relaxed text-sm md:text-base mb-8">
                         <p>Die sichere Verbindung zur Zentralinstanz ist hergestellt.</p>
-                        <p>Bitte richte deine Aufmerksamkeit nun auf das <strong className="text-slate-900">Assistenz-Panel (rechts bzw. auf Smartphones unten)</strong>, um deine Identifikation zu bestätigen.</p>
+                        <p>Bitte richte deine Aufmerksamkeit nun auf das <strong className="text-slate-900">Assistenz-Panel</strong>, um deine Bereitschaft zu bestätigen.</p>
                         <p className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm shadow-inner">
                             Das System startet im Anschluss das offizielle Schichtübergabe-Protokoll und übermittelt dir die aktuellen Sensordaten der Schieferkamm-Anlage.
                         </p>
