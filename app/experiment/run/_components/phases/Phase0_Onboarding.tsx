@@ -73,11 +73,26 @@ export default function Phase0Onboarding() {
         }
     };
 
-    const StoryPage = ({ title, subTitle, image, children, onNext, onPrev }: any) => (
+    const StoryPage = ({ title, subTitle, image, children, onNext, onPrev, enableZoom = false }: any) => (
         <div className="min-h-[70dvh] flex items-center justify-center p-2 sm:p-4">
+            <style>{`
+                @keyframes zoomIn {
+                    from {
+                        transform: scale(1);
+                        opacity: 0.9;
+                    }
+                    to {
+                        transform: scale(1.6);
+                        opacity: 1;
+                    }
+                }
+                .image-zoom {
+                    animation: zoomIn 1.2s ease-out forwards;
+                }
+            `}</style>
             <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row transition-all duration-300">
-                <div className="md:w-1/2 bg-slate-100 relative min-h-[220px] sm:min-h-[300px] md:min-h-full border-b md:border-b-0 md:border-r border-slate-200">
-                    <img src={image} alt={title} className="absolute inset-0 w-full h-full object-cover object-center" />
+                <div className="md:w-1/2 bg-slate-100 relative min-h-[220px] sm:min-h-[300px] md:min-h-full border-b md:border-b-0 md:border-r border-slate-200 overflow-hidden">
+                    <img src={image} alt={title} className={`absolute inset-0 w-full h-full object-cover object-center ${enableZoom ? 'image-zoom' : ''}`} />
                 </div>
                 <div className="p-5 sm:p-8 md:p-12 flex-1 flex flex-col justify-between">
                     <div>
@@ -114,7 +129,7 @@ export default function Phase0Onboarding() {
 
     if (storyStep === 2) {
         return (
-            <StoryPage title="Lagezentrum & Aufgabenbereich" subTitle="Operator-Briefing" image="/images/onboarding/karte.png" onNext={() => setStoryStep(3)} onPrev={() => setStoryStep(1)}>
+            <StoryPage title="Lagezentrum & Aufgabenbereich" subTitle="Operator-Briefing" image="/images/onboarding/karte.png" onNext={() => setStoryStep(3)} onPrev={() => setStoryStep(1)} enableZoom={true}>
                 <p>Als <strong>Operator</strong> in dieser Leitwarte überwachst du den laufenden Sicherheitsbetrieb der gesamten Anlage.</p>
                 <p>Zu deinen Aufgaben gehören die Kontrolle der Grubenbewetterung (Lüftung), die Beobachtung von Gas- und Druckwerten sowie die Durchführung von Routinediagnosen.</p>
                 <p className="border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 rounded-r-lg">Im Störfall musst du die bereitgestellten Informationen bewerten und operative Entscheidungen treffen.</p>
