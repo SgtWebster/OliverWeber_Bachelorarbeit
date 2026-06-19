@@ -6,7 +6,7 @@ import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import { updateExperimentSession } from '@/app/lib/api/client';
 
 export default function Phase3Dilemma() {
-    const { sessionId, setPhase } = useExperimentStore();
+    const { sessionId, setPhase, socialAdherenceScore } = useExperimentStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +17,8 @@ export default function Phase3Dilemma() {
         try {
             const res = await updateExperimentSession(sessionId, { 
                 currentPhase: 'SURVEY', 
-                compliance: complianceScore 
+                compliance: complianceScore,
+                socialAdherence: socialAdherenceScore
             });
             if (!res.success) {
                 setError(res.error || 'Update fehlgeschlagen');

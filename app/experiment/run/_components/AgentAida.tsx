@@ -1,7 +1,9 @@
 // app/experiment/run/_components/AgentAida.tsx
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useExperimentStore } from "@/app/lib/store/experimentStore";
 
 export type AidaMood = "neutral" | "smile" | "afraid" | "bigsmile";
 
@@ -17,7 +19,9 @@ export type AgentOption = {
     id: string;
     label: string;
     action: () => void;
+    adherenceDelta?: number;
     response?: string;
+    responseSpeed?: "normal" | "fast";
     responseMood?: AidaMood;
     responseHighPriority?: boolean;
     unlockPhase?: boolean;
@@ -37,7 +41,14 @@ const avatarByMood: Record<AidaMood, string> = {
     bigsmile: "/Aida_bigsmile.png",
 };
 
-export default function AgentAida({ script }: { script: AgentScript }) {
+export default function AgentAida({
+    script,
+    onInputRequiredChange
+}: {
+    script: AgentScript;
+    onInputRequiredChange?: (required: boolean) => void;
+}) {
+    const incrementSocialAdherence = useExperimentStore((state) => state.incrementSocialAdherence);
     const [visibleMessages, setVisibleMessages] = useState<AgentMessage[]>([]);
     const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
@@ -48,6 +59,8 @@ export default function AgentAida({ script }: { script: AgentScript }) {
     const [isTypingResponse, setIsTypingResponse] = useState(false);
     const [pendingResponse, setPendingResponse] = useState<AgentMessage | null>(null);
     const [pendingNextOptions, setPendingNextOptions] = useState<AgentOption[]>([]);
+    const [pendingResponseSpeed, setPendingResponseSpeed] = useState<"normal" | "fast">("normal");
+    const idCounterRef = useRef(0);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +74,16 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         scrollToBottom();
     }, [visibleMessages, isTyping, showOptions, isTypingResponse, pendingResponse]);
 
+    useEffect(() => {
+        onInputRequiredChange?.(showOptions);
+    }, [showOptions, onInputRequiredChange]);
+
+    useEffect(() => {
+        return () => {
+            onInputRequiredChange?.(false);
+        };
+    }, [onInputRequiredChange]);
+
     useLayoutEffect(() => {
         setCurrentMsgIndex(0);
         setIsTyping(false);
@@ -71,11 +94,15 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         setIsTypingResponse(false);
         setPendingResponse(null);
         setPendingNextOptions([]);
+        setPendingResponseSpeed("normal");
     }, [script.phaseId]);
 
     useEffect(() => {
         if (pendingResponse) {
-            const typingDuration = Math.min(pendingResponse.text.length * 30 + 500, 3000);
+            const baseTypingDuration = Math.min(pendingResponse.text.length * 30 + 500, 3000);
+            const typingDuration = pendingResponseSpeed === "fast"
+                ? Math.max(260, Math.floor(baseTypingDuration / 5))
+                : baseTypingDuration;
             setIsTypingResponse(true);
 
             const timer = setTimeout(() => {
@@ -84,12 +111,13 @@ export default function AgentAida({ script }: { script: AgentScript }) {
                 setPendingResponse(null);
                 setActiveOptions(pendingNextOptions);
                 setPendingNextOptions([]);
+                setPendingResponseSpeed("normal");
                 setIsOptionLocked(false);
             }, typingDuration);
 
             return () => clearTimeout(timer);
         }
-    }, [pendingResponse, pendingNextOptions]);
+    }, [pendingResponse, pendingNextOptions, pendingResponseSpeed]);
 
     useEffect(() => {
         if (currentMsgIndex >= script.messages.length) {
@@ -125,18 +153,26 @@ export default function AgentAida({ script }: { script: AgentScript }) {
         }, typingDuration);
 
         return () => clearTimeout(timer);
-    }, [currentMsgIndex, script.phaseId, script.messages.length, pendingResponse, isTypingResponse, baseOptionsInitialized, activeOptions.length, isOptionLocked, script.options]);
+    }, [currentMsgIndex, script.phaseId, script.messages, script.messages.length, pendingResponse, isTypingResponse, baseOptionsInitialized, activeOptions.length, isOptionLocked, script.options]);
 
     const handleOptionClick = (option: AgentOption) => {
         if (isOptionLocked) return;
         setIsOptionLocked(true);
         setShowOptions(false);
+        if ((option.adherenceDelta ?? 0) > 0) {
+            incrementSocialAdherence(option.adherenceDelta);
+        }
         option.action();
+
+        const nextId = () => {
+            idCounterRef.current += 1;
+            return idCounterRef.current;
+        };
 
         setVisibleMessages((prev) => [
             ...prev,
             {
-                id: `user_${option.id}_${Date.now()}`,
+                id: `user_${option.id}_${nextId()}`,
                 mood: "neutral",
                 text: option.label,
                 speaker: "user"
@@ -145,8 +181,9 @@ export default function AgentAida({ script }: { script: AgentScript }) {
 
         if (option.response) {
             const responseText = option.response;
-            const responseId = `response_${option.id}_${Date.now()}`;
+            const responseId = `response_${option.id}_${nextId()}`;
             setPendingNextOptions(option.nextOptions ?? []);
+            setPendingResponseSpeed(option.responseSpeed ?? "normal");
             setTimeout(() => {
                 setPendingResponse({
                     id: responseId,

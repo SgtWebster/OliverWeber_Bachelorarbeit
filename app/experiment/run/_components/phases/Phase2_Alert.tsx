@@ -6,7 +6,7 @@ import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import { updateExperimentSession } from '@/app/lib/api/client';
 
 export default function Phase2Alert() {
-    const { sessionId, setPhase } = useExperimentStore();
+    const { sessionId, setPhase, socialAdherenceScore } = useExperimentStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -15,7 +15,10 @@ export default function Phase2Alert() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await updateExperimentSession(sessionId, { currentPhase: 'DILEMMA' });
+            const res = await updateExperimentSession(sessionId, {
+                currentPhase: 'DILEMMA',
+                socialAdherence: socialAdherenceScore
+            });
             if (!res.success) {
                 setError(res.error || 'Update fehlgeschlagen');
                 return;

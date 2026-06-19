@@ -23,7 +23,7 @@ export default function BachelorarbeitLandingPage() {
                         </p>
                         <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-5 rounded-xl mt-6 shadow-sm">
                             <strong className="block mb-2 text-emerald-800 text-lg">🎁 Als Dankeschön:</strong>
-                            Unter allen Teilnehmenden verlose ich am Ende <strong>4x 25,- Euro Amazon Gutscheine</strong>.
+                            Unter allen Teilnehmenden verlose ich am Ende <strong>1x 50,- Euro und 2x 25,- Euro Amazon Gutscheine</strong>.
                             Die Teilnahme am Gewinnspiel ist völlig freiwillig und wird strikt von deinen Testdaten getrennt.
                         </div>
                     </div>

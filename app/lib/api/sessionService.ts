@@ -14,6 +14,7 @@ export interface SessionRecovery {
   sessionId: string;
   group: 'AVATAR' | 'TERMINAL';
   currentPhase: string;
+  socialAdherence: number;
   wasRecovered: boolean;
 }
 
@@ -127,6 +128,7 @@ export async function attemptSessionRecovery(): Promise<SessionRecovery | null> 
     sessionId: savedSessionId,
     group: savedGroup,
     currentPhase: sessionData.currentPhase,
+    socialAdherence: sessionData.socialAdherence ?? 0,
     wasRecovered: true
   };
 }

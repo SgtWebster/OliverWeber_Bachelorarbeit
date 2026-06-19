@@ -6,6 +6,7 @@ import { saveSessionLocally, clearSavedSession, attemptSessionRecovery } from '@
 export type ExperimentPhase =
     | 'INIT'        // Verdeckte Zuweisung & Generierung der Session
     | 'ONBOARDING'  // Intro & Briefing in die Leitwarte
+    | 'PRECHECK'    // Vorschau auf Leitwarte-Dashboard vor Routine
     | 'ROUTINE'     // Phase 1: Kalibrierung & erste Interaktion (Soziale Adhärenz)
     | 'ALERT'       // Phase 2: Der Störfall & Lock-out Sektor 04
     | 'DILEMMA'     // Phase 3: Die utilitaristische Entscheidung (Compliance)
@@ -23,12 +24,15 @@ interface ExperimentState {
     isPhaseUnlocked: boolean;
     hasConsented: boolean;
     isRecovering: boolean; // Flag: Aktuell wird die Session wiederhergestellt
+    socialAdherenceScore: number;
 
     setSessionId: (id: string) => void;
     setPhase: (phase: ExperimentPhase) => void;
     setGroup: (group: ExperimentGroup) => void;
     setPhaseUnlocked: (unlocked: boolean) => void;
     setConsented: (val: boolean) => void;
+    incrementSocialAdherence: (delta?: number) => void;
+    resetSocialAdherence: () => void;
     
     // NEU: Recovery & Reset Actions
     initializeExperiment: () => Promise<void>;
@@ -44,6 +48,7 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
     isPhaseUnlocked: false, // Default: Jede Phase startet gesperrt
     hasConsented: false,
     isRecovering: true, // Default auf true, bis der Check durch ist
+    socialAdherenceScore: 0,
 
     // Funktionen zum Updaten der Werte
     setSessionId: (id) => {
@@ -72,6 +77,10 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
     setPhaseUnlocked: (unlocked) => set({ isPhaseUnlocked: unlocked }),
 
     setConsented: (val) => set({ hasConsented: val }),
+    incrementSocialAdherence: (delta = 1) => set((state) => ({
+        socialAdherenceScore: state.socialAdherenceScore + Math.max(0, delta)
+    })),
+    resetSocialAdherence: () => set({ socialAdherenceScore: 0 }),
 
     /**
      * Hauptinitialisierungsfunktion: Wird beim App-Mount aufgerufen
@@ -91,11 +100,15 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
                 currentPhase: recoveredSession.currentPhase as ExperimentPhase,
                 hasConsented: true, // Wer eine Session hat, hat bereits zugestimmt
                 isPhaseUnlocked: false, // Phasen sind bei Reload erstmal sicherheitshalber gelockt
-                isRecovering: false
+                isRecovering: false,
+                socialAdherenceScore: recoveredSession.socialAdherence ?? 0
             });
         } else {
             // Kein bestehendes Experiment gefunden -> Frischer Start
-            set({ isRecovering: false });
+            set({
+                isRecovering: false,
+                socialAdherenceScore: 0
+            });
         }
     },
 
@@ -111,7 +124,8 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
             group: null,
             isPhaseUnlocked: false,
             hasConsented: false,
-            isRecovering: false
+            isRecovering: false,
+            socialAdherenceScore: 0
         });
     }
 }));

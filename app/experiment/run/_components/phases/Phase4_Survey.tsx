@@ -52,7 +52,7 @@ const LikertSlider = ({
 );
 
 export default function Phase4Survey() {
-    const { sessionId, setPhase } = useExperimentStore();
+    const { sessionId, setPhase, socialAdherenceScore } = useExperimentStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +97,7 @@ export default function Phase4Survey() {
         try {
             const res = await updateExperimentSession(sessionId, {
                 currentPhase: 'DEBRIEFING',
+                socialAdherence: socialAdherenceScore,
                 ...formData
             });
 

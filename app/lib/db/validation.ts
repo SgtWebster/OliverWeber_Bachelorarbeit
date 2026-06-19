@@ -8,6 +8,7 @@ export type ExperimentGroup = z.infer<typeof ExperimentGroupSchema>;
 export const ExperimentPhaseSchema = z.enum([
   'INIT',
   'ONBOARDING',
+  'PRECHECK',
   'ROUTINE',
   'ALERT',
   'DILEMMA',

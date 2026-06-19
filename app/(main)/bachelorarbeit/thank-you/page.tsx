@@ -74,7 +74,7 @@ export default function ThankYouPage() {
                             <div>
                                 <h2 className="text-xl font-bold text-slate-900 mb-2">Gewinnspiel & Ergebnisse</h2>
                                 <p className="text-sm text-slate-600 mb-6">
-                                    Unter allen Teilnehmern werden 4x 25,- Euro Amazon Gutscheine verlost. Deine E-Mail-Adresse wird <strong>strikt getrennt</strong> von deinen Experiment-Daten gespeichert und nach der Auslosung unwiderruflich gelöscht.
+                                    Unter allen Teilnehmern werden 1x 50,- Euro und 2x 25,- Euro Amazon Gutscheine verlost. Deine E-Mail-Adresse wird <strong>strikt getrennt</strong> von deinen Experiment-Daten gespeichert und nach der Auslosung unwiderruflich gelöscht.
                                 </p>
                             </div>
 

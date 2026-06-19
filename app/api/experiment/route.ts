@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
                 id: true,
                 group: true,
                 currentPhase: true,
+                socialAdherence: true,
                 createdAt: true,
                 updatedAt: true
             }

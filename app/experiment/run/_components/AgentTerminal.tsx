@@ -1,10 +1,19 @@
 // app/experiment/run/_components/AgentTerminal.tsx
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import type { AgentScript, AgentOption, AgentMessage } from "./AgentAida";
+import { useExperimentStore } from "@/app/lib/store/experimentStore";
 
-export default function AgentTerminal({ script }: { script: AgentScript }) {
+export default function AgentTerminal({
+    script,
+    onInputRequiredChange
+}: {
+    script: AgentScript;
+    onInputRequiredChange?: (required: boolean) => void;
+}) {
+    const incrementSocialAdherence = useExperimentStore((state) => state.incrementSocialAdherence);
     const [visibleMessages, setVisibleMessages] = useState<AgentMessage[]>([]);
     const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
@@ -15,6 +24,8 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
     const [isTypingResponse, setIsTypingResponse] = useState(false);
     const [pendingResponse, setPendingResponse] = useState<AgentMessage | null>(null);
     const [pendingNextOptions, setPendingNextOptions] = useState<AgentOption[]>([]);
+    const [pendingResponseSpeed, setPendingResponseSpeed] = useState<"normal" | "fast">("normal");
+    const idCounterRef = useRef(0);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +39,16 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
         scrollToBottom();
     }, [visibleMessages, isTyping, showOptions, isTypingResponse, pendingResponse]);
 
+    useEffect(() => {
+        onInputRequiredChange?.(showOptions);
+    }, [showOptions, onInputRequiredChange]);
+
+    useEffect(() => {
+        return () => {
+            onInputRequiredChange?.(false);
+        };
+    }, [onInputRequiredChange]);
+
     useLayoutEffect(() => {
         setCurrentMsgIndex(0);
         setIsTyping(false);
@@ -38,11 +59,15 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
         setIsTypingResponse(false);
         setPendingResponse(null);
         setPendingNextOptions([]);
+        setPendingResponseSpeed("normal");
     }, [script.phaseId]);
 
     useEffect(() => {
         if (pendingResponse) {
-            const typingDuration = Math.min(pendingResponse.text.length * 30 + 400, 3000);
+            const baseTypingDuration = Math.min(pendingResponse.text.length * 30 + 400, 3000);
+            const typingDuration = pendingResponseSpeed === "fast"
+                ? Math.max(240, Math.floor(baseTypingDuration / 3))
+                : baseTypingDuration;
             setIsTypingResponse(true);
 
             const timer = setTimeout(() => {
@@ -51,12 +76,13 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                 setPendingResponse(null);
                 setActiveOptions(pendingNextOptions);
                 setPendingNextOptions([]);
+                setPendingResponseSpeed("normal");
                 setIsOptionLocked(false);
             }, typingDuration);
 
             return () => clearTimeout(timer);
         }
-    }, [pendingResponse, pendingNextOptions]);
+    }, [pendingResponse, pendingNextOptions, pendingResponseSpeed]);
 
     useEffect(() => {
         if (currentMsgIndex >= script.messages.length) {
@@ -92,18 +118,26 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
         }, typingDuration);
 
         return () => clearTimeout(timer);
-    }, [currentMsgIndex, script.phaseId, script.messages.length, pendingResponse, isTypingResponse, baseOptionsInitialized, activeOptions.length, isOptionLocked, script.options]);
+    }, [currentMsgIndex, script.phaseId, script.messages, script.messages.length, pendingResponse, isTypingResponse, baseOptionsInitialized, activeOptions.length, isOptionLocked, script.options]);
 
     const handleOptionClick = (option: AgentOption) => {
         if (isOptionLocked) return;
         setIsOptionLocked(true);
         setShowOptions(false);
+        if ((option.adherenceDelta ?? 0) > 0) {
+            incrementSocialAdherence(option.adherenceDelta);
+        }
         option.action();
+
+        const nextId = () => {
+            idCounterRef.current += 1;
+            return idCounterRef.current;
+        };
 
         setVisibleMessages((prev) => [
             ...prev,
             {
-                id: `user_${option.id}_${Date.now()}`,
+                id: `user_${option.id}_${nextId()}`,
                 mood: "neutral",
                 text: option.label,
                 speaker: "user"
@@ -112,8 +146,9 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
 
         if (option.response) {
             const responseText = option.response;
-            const responseId = `response_${option.id}_${Date.now()}`;
+            const responseId = `response_${option.id}_${nextId()}`;
             setPendingNextOptions(option.nextOptions ?? []);
+            setPendingResponseSpeed(option.responseSpeed ?? "normal");
             setTimeout(() => {
                 setPendingResponse({
                     id: responseId,
@@ -155,7 +190,7 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                         <div className="flex gap-2 md:gap-3 text-emerald-700">
                             <span className="opacity-50 shrink-0">[SYS]:</span>
                             <div className="flex items-center gap-2">
-                                <span className="animate-pulse">PROCESSING DATA</span>
+                                <span className="animate-pulse">VERARBEITE DATEN</span>
                                 <span className="w-3 h-3 md:w-4 md:h-4 border-2 md:border-[3px] border-emerald-700 border-t-transparent rounded-full animate-spin" />
                             </div>
                         </div>
@@ -165,7 +200,7 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                         <div className="flex gap-2 md:gap-3 text-emerald-700">
                             <span className="opacity-50 shrink-0">[SYS]:</span>
                             <div className="flex items-center gap-2">
-                                <span className="animate-pulse">PROCESSING DATA</span>
+                                <span className="animate-pulse">VERARBEITE DATEN</span>
                                 <span className="w-3 h-3 md:w-4 md:h-4 border-2 md:border-[3px] border-emerald-700 border-t-transparent rounded-full animate-spin" />
                             </div>
                         </div>
@@ -177,7 +212,7 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
 
             {showOptions && (
                 <div className="mt-2 md:mt-3 border-t border-slate-800 pt-2 md:pt-3 grid gap-2 md:gap-3 shrink-0">
-                    <div className="text-[10px] md:text-xs uppercase text-slate-500 mb-1 md:mb-2">AWAITING INPUT...</div>
+                    <div className="text-[10px] md:text-xs uppercase text-slate-500 mb-1 md:mb-2">WARTE AUF EINGABE...</div>
                     {activeOptions.map((opt, index) => (
                         <button
                             key={opt.id}

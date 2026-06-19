@@ -1,7 +1,7 @@
 // app/experiment/run/_components/phases/Phase0_Onboarding.tsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import { createExperimentSession, updateExperimentSession } from '@/app/lib/api/client';
 
@@ -14,7 +14,8 @@ export default function Phase0Onboarding() {
         setSessionId,
         setGroup,
         isPhaseUnlocked,
-        setPhaseUnlocked
+        setPhaseUnlocked,
+        socialAdherenceScore
     } = useExperimentStore();
 
     const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +69,10 @@ export default function Phase0Onboarding() {
         setError(null);
 
         try {
-            const res = await updateExperimentSession(sessionId, { currentPhase: 'ROUTINE' });
+            const res = await updateExperimentSession(sessionId, {
+                currentPhase: 'PRECHECK',
+                socialAdherence: socialAdherenceScore
+            });
 
             if (!res.success) {
                 setError(res.error || 'DB Update fehlgeschlagen');
@@ -76,7 +80,7 @@ export default function Phase0Onboarding() {
                 return;
             }
 
-            setPhase('ROUTINE');
+            setPhase('PRECHECK');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Update Fehler';
             setError(message);
@@ -86,21 +90,31 @@ export default function Phase0Onboarding() {
         }
     };
 
-    const StoryPage = ({ title, subTitle, image, children, onNext, onPrev, enableZoom = false }: any) => (
+    type StoryPageProps = {
+        title: string;
+        subTitle: string;
+        image: string;
+        children: ReactNode;
+        onNext: () => void;
+        onPrev?: () => void;
+        enableZoom?: boolean;
+    };
+
+    const StoryPage = ({ title, subTitle, image, children, onNext, onPrev, enableZoom = false }: StoryPageProps) => (
         <div className="min-h-[70dvh] flex items-center justify-center p-2 sm:p-4">
             <style>{`
                 @keyframes zoomIn {
                     from {
-                        transform: scale(1);
+                        transform: translateY(0) scale(1);
                         opacity: 0.9;
                     }
                     to {
-                        transform: scale(1.6);
+                        transform: translateY(35%) scale(1.8);
                         opacity: 1;
                     }
                 }
                 .image-zoom {
-                    animation: zoomIn 1.2s ease-out forwards;
+                    animation: zoomIn 1.5s ease-out forwards;
                 }
             `}</style>
             <div className="w-full max-w-5xl">
@@ -205,7 +219,7 @@ export default function Phase0Onboarding() {
 
                     <div className="text-slate-600 space-y-4 leading-relaxed text-sm md:text-base mb-8">
                         <p>Die sichere Verbindung zur Zentralinstanz ist hergestellt.</p>
-                        <p>Bitte richte deine Aufmerksamkeit nun auf das <strong className="text-slate-900">Assistenz-Panel</strong>, um deine Bereitschaft zu bestätigen.</p>
+                        <p>Bitte bestätige nun deine Bereitschaft über die KI-Kommunikation.</p>
                         <p className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm shadow-inner">
                             Das System startet im Anschluss das offizielle Schichtübergabe-Protokoll und übermittelt dir die aktuellen Sensordaten der Schieferkamm-Anlage.
                         </p>
@@ -231,7 +245,7 @@ export default function Phase0Onboarding() {
                                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                             }`}
                         >
-                            {isLoading ? 'Lade Daten...' : 'Schicht antreten'}
+                            {isLoading ? 'Lade Daten...' : 'Zum Leitwarten-Dashboard'}
                         </button>
                     </div>
                 </div>

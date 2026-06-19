@@ -1,7 +1,7 @@
 // app/experiment/run/page.tsx
 "use client";
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import AgentAida from '@/app/experiment/run/_components/AgentAida';
@@ -9,6 +9,7 @@ import AgentTerminal from '@/app/experiment/run/_components/AgentTerminal';
 import { dialogScripts } from '@/app/lib/data/dialogScripts';
 
 import Phase0Onboarding from './_components/phases/Phase0_Onboarding';
+import Phase1aPrecheck from './_components/phases/Phase1a_Precheck';
 import Phase1Routine from './_components/phases/Phase1_Routine';
 import Phase2Alert from './_components/phases/Phase2_Alert';
 import Phase3Dilemma from './_components/phases/Phase3_Dilemma';
@@ -17,6 +18,8 @@ import Phase5Debriefing from './_components/phases/Phase5_Debriefing';
 
 export default function ExperimentRunPage() {
     const router = useRouter();
+    const [chatNeedsInput, setChatNeedsInput] = useState(false);
+    const chatPanelRef = useRef<HTMLDivElement>(null);
     const {
         currentPhase,
         group,
@@ -63,6 +66,10 @@ export default function ExperimentRunPage() {
         }
     }, [isRecovering, hasConsented, router]);
 
+    const scrollToChatPanel = () => {
+        chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
     // 3. Fallback UI während wir den State aus der Datenbank holen
     if (isRecovering) {
         return (
@@ -97,6 +104,7 @@ export default function ExperimentRunPage() {
                         {/* Sanftes Max-Width Limit für perfekte Lesbarkeit auf großen Screens */}
                         <div className="max-w-4xl xl:max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
                             {(currentPhase === 'INIT' || currentPhase === 'ONBOARDING') && <Phase0Onboarding />}
+                            {currentPhase === 'PRECHECK' && <Phase1aPrecheck />}
                             {currentPhase === 'ROUTINE' && <Phase1Routine />}
                             {currentPhase === 'ALERT' && <Phase2Alert />}
                             {currentPhase === 'DILEMMA' && <Phase3Dilemma />}
@@ -108,21 +116,21 @@ export default function ExperimentRunPage() {
                     {/* RECHTE SEITE: Das Assistenz-Panel */}
                     {/* Solide, feste Breiten für den Chat. Niemals breiter als 450px! */}
                     {currentPhase !== 'INIT' && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
-                        <div className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[44dvh] min-h-[18rem] max-h-[30rem] md:h-full md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
+                        <div ref={chatPanelRef} className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[44dvh] min-h-[18rem] max-h-[30rem] md:h-full md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
                             group === 'TERMINAL' ? 'border-slate-800 bg-slate-950 text-emerald-500' : 'border-slate-200 bg-white text-slate-800'
                         }`}>
                             <div className={`p-3 md:p-4 border-b border-inherit z-10 shadow-sm shrink-0 ${group === 'TERMINAL' ? 'bg-slate-950' : 'bg-white'}`}>
                                 <h3 className={`font-bold tracking-wider text-xs md:text-sm uppercase ${group === 'TERMINAL' ? 'text-emerald-700 opacity-80' : 'text-slate-500 opacity-50'}`}>
-                                    {group === 'TERMINAL' ? 'System Terminal' : 'A.I.D.A. Interface'}
+                                    {group === 'TERMINAL' ? 'System Terminal' : 'Aida Interface'}
                                 </h3>
                             </div>
 
                             <div className="flex-1 min-h-0 overflow-hidden relative">
                                 {activeScript && (
                                     group === 'AVATAR' ? (
-                                        <AgentAida script={activeScript} />
+                                        <AgentAida script={activeScript} onInputRequiredChange={setChatNeedsInput} />
                                     ) : (
-                                        <AgentTerminal script={activeScript} />
+                                        <AgentTerminal script={activeScript} onInputRequiredChange={setChatNeedsInput} />
                                     )
                                 )}
                             </div>
@@ -138,8 +146,8 @@ export default function ExperimentRunPage() {
                 </div>
 
                 <div className="flex gap-1 md:gap-2 mx-auto sm:mx-0">
-                    {['ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY'].map((phase) => {
-                        const phases = ['INIT', 'ONBOARDING', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY', 'DEBRIEFING'];
+                    {['ONBOARDING', 'PRECHECK', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY'].map((phase) => {
+                        const phases = ['INIT', 'ONBOARDING', 'PRECHECK', 'ROUTINE', 'ALERT', 'DILEMMA', 'SURVEY', 'DEBRIEFING'];
                         const currentIndex = phases.indexOf(currentPhase);
                         const phaseIndex = phases.indexOf(phase);
 
@@ -154,6 +162,15 @@ export default function ExperimentRunPage() {
                     })}
                 </div>
             </div>
+
+            {chatNeedsInput && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
+                <button
+                    onClick={scrollToChatPanel}
+                    className="fixed md:hidden right-3 bottom-16 z-40 rounded-full border border-amber-300 bg-amber-400 text-slate-900 shadow-lg px-4 py-2.5 font-bold text-xs animate-pulse"
+                >
+                    ⚠️ KI wartet auf Eingabe
+                </button>
+            )}
 
         </div>
     );
