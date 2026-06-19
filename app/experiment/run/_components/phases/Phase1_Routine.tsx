@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useExperimentStore } from "@/app/lib/store/experimentStore";
-import { updateExperimentSession } from "@/app/lib/api/client";
+import {useMemo, useState} from "react";
+import {useExperimentStore} from "@/app/lib/store/experimentStore";
+import {updateExperimentSession} from "@/app/lib/api/client";
 
 type MixtureState = {
     co2: number;
@@ -19,9 +19,9 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 
 const targetBands: Record<keyof MixtureState, [number, number]> = {
     co2: [46, 58],
-    nutri: [24, 36],
+    nutri: [34, 56],
     rad: [72, 84],
-    water: [14, 26]
+    water: [84, 88]
 };
 
 const colorStyles: Record<keyof MixtureState, string> = {
@@ -60,7 +60,7 @@ export default function Phase1Routine() {
     const [selectedWire, setSelectedWire] = useState<"red" | "blue" | "green" | null>(null);
     const [panelKnobs, setPanelKnobs] = useState({
         bypass: 38,
-        cctv: 22,
+        fb42: 22,
         pulse: 65
     });
 
@@ -78,7 +78,7 @@ export default function Phase1Routine() {
         const honeyScore = (honeyActivated.length / HONEY_TARGETS.length) * 100;
         const wireScore =
             (Object.entries(wireConnect).filter(([wire, target]) => target === WIRE_TARGETS[wire as keyof typeof WIRE_TARGETS]).length / 3) * 100;
-        const knobScore = (panelKnobs.bypass + panelKnobs.cctv + panelKnobs.pulse) / 3;
+        const knobScore = (panelKnobs.bypass + panelKnobs.fb42 + panelKnobs.pulse) / 3;
 
         return {
             pressure: clamp(Math.round((mixtureScore + knobScore) / 2), 0, 100),
@@ -87,7 +87,7 @@ export default function Phase1Routine() {
             stability: clamp(Math.round((mixtureScore + honeyScore + wireScore + knobScore) / 4), 0, 100),
             anomaly: clamp(Math.round(100 - (honeyScore * 0.35 + wireScore * 0.35 + mixtureScore * 0.3)), 0, 100)
         };
-    }, [mixture, honeyActivated.length, wireConnect, panelKnobs.bypass, panelKnobs.cctv, panelKnobs.pulse]);
+    }, [mixture, honeyActivated.length, wireConnect, panelKnobs.bypass, panelKnobs.fb42, panelKnobs.pulse]);
 
     const setMixtureValue = (key: keyof MixtureState, value: number) => {
         if (!controlsEnabled) return;
@@ -98,8 +98,7 @@ export default function Phase1Routine() {
     const toggleHoneyCell = (cellId: string) => {
         if (!controlsEnabled) return;
         setHoneyActivated((prev) => {
-            const next = prev.includes(cellId) ? prev.filter((id) => id !== cellId) : [...prev, cellId];
-            return next;
+            return prev.includes(cellId) ? prev.filter((id) => id !== cellId) : [...prev, cellId];
         });
         setPanelKnobs((prev) => ({
             ...prev,
@@ -120,7 +119,7 @@ export default function Phase1Routine() {
         setSelectedWire(null);
         setPanelKnobs((prev) => ({
             ...prev,
-            cctv: clamp(prev.cctv + (target === WIRE_TARGETS[selectedWire] ? 4 : -5), 0, 100)
+            fb42: clamp(prev.fb42 + (target === WIRE_TARGETS[selectedWire] ? 4 : -5), 0, 100)
         }));
         bumpActivity();
     };
@@ -189,16 +188,16 @@ export default function Phase1Routine() {
 
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6 lg:p-8">
                 <div className="mb-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-2">Phase 1 · Routinebetrieb</p>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Operator-Spielkonsole</h2>
-                    <p className="text-sm text-slate-600">
-                        Mini-Spiele im Among-Us-Stil: klar markierte Zielzonen, bunte Interaktion und live reagierende Systemwerte.
-                    </p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-2">Systemkalibrierung</p>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Operator Controll Room</h2>
+                    {/*<p className="text-sm text-slate-600">*/}
+                    {/*    Mini-Spiele im Among-Us-Stil: klar markierte Zielzonen, bunte Interaktion und live reagierende Systemwerte.*/}
+                    {/*</p>*/}
                 </div>
 
                 {!isPhaseUnlocked && (
                     <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
-                        KI-Freigabe ausstehend. Danach sind die Spiele aktiv.
+                        KI-Freigabe ausstehend ⚠️
                     </div>
                 )}
 
@@ -226,7 +225,7 @@ export default function Phase1Routine() {
                             <p className="font-bold text-slate-800">1) Mischkammer</p>
                             <p className="text-xs text-slate-500">{mixtureReady ? "Ziel erreicht" : "Regler einstellen"}</p>
                         </div>
-                        <p className="text-xs text-slate-500 mb-4">Ziehe jeden Regler in den farbig markierten Zielbereich.</p>
+                        <p className="text-xs text-slate-500 mb-4">Kalibriere die Sensorik.</p>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {(Object.keys(mixture) as Array<keyof MixtureState>).map((key) => {
@@ -261,10 +260,10 @@ export default function Phase1Routine() {
 
                     <section className={`rounded-xl border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-100/70 opacity-70"}`}>
                         <div className="flex items-center justify-between mb-3">
-                            <p className="font-bold text-slate-800">2) Waben-Freischaltung</p>
+                            <p className="font-bold text-slate-800">2) Ventil Reset</p>
                             <p className="text-xs text-slate-500">{honeyActivated.length}/{HONEY_TARGETS.length} Zielwaben</p>
                         </div>
-                        <p className="text-xs text-slate-500 mb-4">Aktiviere die markierten Waben: {HONEY_TARGETS.join(", ")}</p>
+                        <p className="text-xs text-slate-500 mb-4">Starte die Regelsysteme für diese Ventile neu: {HONEY_TARGETS.join(", ")}</p>
 
                         <div className="grid grid-cols-4 gap-2">
                             {["A1", "A2", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "D2", "D3", "E2"].map((cell) => {
@@ -292,8 +291,8 @@ export default function Phase1Routine() {
 
                     <section className={`rounded-xl border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-100/70 opacity-70"}`}>
                         <div className="flex items-center justify-between mb-3">
-                            <p className="font-bold text-slate-800">3) Verdrahtung + Panel</p>
-                            <p className="text-xs text-slate-500">{wiresReady ? "Verdrahtung korrekt" : "Verdrahtung offen"}</p>
+                            <p className="font-bold text-slate-800">3) Systemleitungen</p>
+                            <p className="text-xs text-slate-500">{wiresReady ? "Leitungen korrekt" : "Routine Prüfung der Leitungen einleiten"}</p>
                         </div>
 
                         <div className="space-y-2 mb-3">
@@ -353,18 +352,15 @@ export default function Phase1Routine() {
                     </section>
                 </div>
 
-                <div className="hidden 2xl:block mt-4 rounded-xl border border-slate-200 p-4">
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Erweiterte Telemetrie (FullHD+)</p>
-                    <div className="grid grid-cols-6 gap-2 text-xs">
+                <div className="hidden 2xl:block mt-4 rounded-xl border border-slate-200 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-2">Telemetrie</p>
+                    <div className="grid grid-cols-18 gap-1 text-[9px] leading-none">
                         {Array.from({ length: 54 }).map((_, idx) => {
                             const value = clamp(30 + ((idx * 13 + activityCount * 5) % 70), 0, 100);
                             return (
-                                <div key={idx} className="rounded border border-slate-200 bg-slate-50 p-2">
-                                    <p className="font-semibold text-slate-700 mb-1">CH-{idx + 1}</p>
-                                    <div className="h-1.5 rounded bg-slate-200 overflow-hidden">
-                                        <div className={`h-full ${scaleColor(value)}`} style={{ width: `${value}%` }} />
-                                    </div>
-                                    <p className="mt-1 text-slate-500">{value}%</p>
+                                <div key={idx} className="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 flex items-center justify-between">
+                                    <p className="font-semibold text-slate-700">CH-{idx + 1}</p>
+                                    <span className={`inline-block h-1.5 w-1.5 rounded-full ${scaleColor(value)}`} />
                                 </div>
                             );
                         })}

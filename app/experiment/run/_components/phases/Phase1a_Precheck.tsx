@@ -189,11 +189,11 @@ export default function Phase1aPrecheck() {
 
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6 lg:p-8">
                 <div className="mb-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-2">Pre-Phase · Operator Dashboard</p>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Systemübersicht vor Routinebetrieb</h2>
-                    <p className="text-sm text-slate-600">
-                        Viele Anzeigen sind absichtlich überladen. Jede Aktion verändert Werte und Event-Logs.
-                    </p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-2">Allgemeines Operator Dashboard</p>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Systemübersicht</h2>
+                    {/*<p className="text-sm text-slate-600">*/}
+                    {/*    Viele Anzeigen sind absichtlich überladen. Jede Aktion verändert Werte und Event-Logs.*/}
+                    {/*</p>*/}
                 </div>
 
                 <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
@@ -291,7 +291,7 @@ export default function Phase1aPrecheck() {
 
                 <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                     <p className="text-xs sm:text-sm text-slate-600">
-                        Wenn du bereit bist, wechsle in die Routinephase mit den Mini-Spielen.
+                        Wenn du bereit bist, wechsle in den Kontrollraum.
                     </p>
                     <button
                         onClick={handleStartRoutine}

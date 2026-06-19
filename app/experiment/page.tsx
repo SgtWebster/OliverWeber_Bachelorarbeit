@@ -230,19 +230,19 @@ export default function BachelorarbeitConsentPage() {
                 {/* 🚨 DEV CHEAT BUTTONS (Werden in PROD ignoriert) 🚨 */}
                 {process.env.NODE_ENV === 'development' && (
                     <div className="mt-12 rounded-lg border-2 border-red-500 bg-red-50 p-6">
-                        <h3 className="text-red-800 font-bold tracking-widest text-xs uppercase mb-4">🧪 Developer Controls (Nur Lokal)</h3>
+                        <h3 className="text-red-800 font-bold tracking-widest text-xs uppercase mb-4">Developer Controls (Einverständniserklärung überspringen, Variante wählen, statt Zufallszulosung)</h3>
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={() => handleCheatStart('AVATAR')}
                                 className="flex-1 bg-white border-2 border-red-300 text-red-700 font-bold py-2 rounded hover:bg-red-100"
                             >
-                                ⏩ Force AVATAR
+                                ⏩ Mit Variante AVATAR starten
                             </button>
                             <button
                                 onClick={() => handleCheatStart('TERMINAL')}
                                 className="flex-1 bg-white border-2 border-red-300 text-red-700 font-bold py-2 rounded hover:bg-red-100"
                             >
-                                ⏩ Force TERMINAL
+                                ⏩ Mit Variante TERMINAL starten
                             </button>
                         </div>
                     </div>

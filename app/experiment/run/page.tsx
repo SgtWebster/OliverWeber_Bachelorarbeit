@@ -19,6 +19,8 @@ import Phase5Debriefing from './_components/phases/Phase5_Debriefing';
 export default function ExperimentRunPage() {
     const router = useRouter();
     const [chatNeedsInput, setChatNeedsInput] = useState(false);
+    const [chatInputHintDismissed, setChatInputHintDismissed] = useState(false);
+    const [isAtPageBottom, setIsAtPageBottom] = useState(false);
     const chatPanelRef = useRef<HTMLDivElement>(null);
     const {
         currentPhase,
@@ -66,7 +68,35 @@ export default function ExperimentRunPage() {
         }
     }, [isRecovering, hasConsented, router]);
 
+    const handleChatInputRequiredChange = (required: boolean) => {
+        setChatNeedsInput((previousRequired) => {
+            if (!previousRequired && required) {
+                setChatInputHintDismissed(false);
+            }
+            return required;
+        });
+    };
+
+    useEffect(() => {
+        const updatePageBottomState = () => {
+            const pageBottomOffset = 24;
+            setIsAtPageBottom(
+                window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - pageBottomOffset
+            );
+        };
+
+        updatePageBottomState();
+        window.addEventListener('scroll', updatePageBottomState, { passive: true });
+        window.addEventListener('resize', updatePageBottomState);
+
+        return () => {
+            window.removeEventListener('scroll', updatePageBottomState);
+            window.removeEventListener('resize', updatePageBottomState);
+        };
+    }, []);
+
     const scrollToChatPanel = () => {
+        setChatInputHintDismissed(true);
         chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
@@ -128,9 +158,9 @@ export default function ExperimentRunPage() {
                             <div className="flex-1 min-h-0 overflow-hidden relative">
                                 {activeScript && (
                                     group === 'AVATAR' ? (
-                                        <AgentAida script={activeScript} onInputRequiredChange={setChatNeedsInput} />
+                                        <AgentAida script={activeScript} onInputRequiredChange={handleChatInputRequiredChange} />
                                     ) : (
-                                        <AgentTerminal script={activeScript} onInputRequiredChange={setChatNeedsInput} />
+                                        <AgentTerminal script={activeScript} onInputRequiredChange={handleChatInputRequiredChange} />
                                     )
                                 )}
                             </div>
@@ -163,12 +193,12 @@ export default function ExperimentRunPage() {
                 </div>
             </div>
 
-            {chatNeedsInput && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
+            {chatNeedsInput && !chatInputHintDismissed && !isAtPageBottom && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
                 <button
                     onClick={scrollToChatPanel}
                     className="fixed md:hidden right-3 bottom-16 z-40 rounded-full border border-amber-300 bg-amber-400 text-slate-900 shadow-lg px-4 py-2.5 font-bold text-xs animate-pulse"
                 >
-                    ⚠️ KI wartet auf Eingabe
+                    ⚠️ Eingabe notwendig
                 </button>
             )}
 
