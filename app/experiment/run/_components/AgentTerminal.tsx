@@ -60,45 +60,47 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-950 font-mono text-emerald-500 p-4 md:p-6 overflow-hidden">
-            <div className="flex-grow overflow-y-auto space-y-3 md:space-y-4 text-sm md:text-base 2xl:text-lg leading-relaxed">
+        <div className="flex flex-col h-full bg-slate-950 font-mono text-emerald-500 p-3 md:p-4 overflow-hidden">
+            {/* Terminal Output - NO SCROLLBAR, letzte Nachricht sichtbar */}
+            <div className="flex-grow overflow-hidden relative">
+                <div className="h-full overflow-y-auto scroll-smooth scrollbar-hide space-y-2 md:space-y-3 text-xs md:text-sm lg:text-base leading-relaxed">
 
-                {visibleMessages.map((msg) => (
-                    <div key={msg.id} className="flex gap-3 md:gap-4">
-                        <span className="opacity-50 shrink-0">[SYS]:</span>
-                        <span>{msg.text}</span>
-                    </div>
-                ))}
-
-                {isTyping && (
-                    <div className="flex gap-3 md:gap-4 text-emerald-700">
-                        <span className="opacity-50 shrink-0">[SYS]:</span>
-                        <div className="flex items-center gap-3">
-                            <span className="animate-pulse">PROCESSING DATA</span>
-                            <span className="w-4 h-4 md:w-5 md:h-5 border-[3px] border-emerald-700 border-t-transparent rounded-full animate-spin" />
+                    {visibleMessages.map((msg) => (
+                        <div key={msg.id} className="flex gap-2 md:gap-3">
+                            <span className="opacity-50 shrink-0">[SYS]:</span>
+                            <span>{msg.text}</span>
                         </div>
-                    </div>
-                )}
+                    ))}
 
-                {userReply && (
-                    <div className="flex gap-3 md:gap-4 mt-8 text-sky-400">
-                        <span className="opacity-50 shrink-0 text-sky-600">operator@leitwarte:~$</span>
-                        <span>{userReply}</span>
-                    </div>
-                )}
+                    {isTyping && (
+                        <div className="flex gap-2 md:gap-3 text-emerald-700">
+                            <span className="opacity-50 shrink-0">[SYS]:</span>
+                            <div className="flex items-center gap-2">
+                                <span className="animate-pulse">PROCESSING DATA</span>
+                                <span className="w-3 h-3 md:w-4 md:h-4 border-2 md:border-[3px] border-emerald-700 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                        </div>
+                    )}
 
-                <div className="h-8 md:h-12 shrink-0" />
-                <div ref={messagesEndRef} />
+                    {userReply && (
+                        <div className="flex gap-2 md:gap-3 mt-1 md:mt-2 text-sky-400">
+                            <span className="opacity-50 shrink-0 text-sky-600">operator@leitwarte:~$</span>
+                            <span>{userReply}</span>
+                        </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
+                </div>
             </div>
 
             {showOptions && (
-                <div className="mt-4 md:mt-6 border-t border-slate-800 pt-4 md:pt-6 grid gap-3 md:gap-4 shrink-0">
-                    <div className="text-xs md:text-sm uppercase text-slate-500 mb-2 md:mb-3">AWAITING INPUT...</div>
+                <div className="mt-2 md:mt-3 border-t border-slate-800 pt-2 md:pt-3 grid gap-2 md:gap-3 shrink-0">
+                    <div className="text-[10px] md:text-xs uppercase text-slate-500 mb-1 md:mb-2">AWAITING INPUT...</div>
                     {script.options?.map((opt, index) => (
                         <button
                             key={opt.id}
                             onClick={() => handleOptionClick(opt)}
-                            className="text-left w-full hover:bg-slate-900 hover:text-emerald-300 p-4 md:p-5 border border-slate-800 rounded-lg transition-colors text-sm md:text-base 2xl:text-lg flex gap-3 md:gap-4 font-bold"
+                            className="text-left w-full hover:bg-slate-900 hover:text-emerald-300 p-2 md:p-3 border border-slate-800 rounded transition-colors text-xs md:text-sm lg:text-base flex gap-2 md:gap-3 font-bold"
                         >
                             <span className="opacity-50">[{index + 1}]</span>
                             {opt.label}
@@ -106,6 +108,16 @@ export default function AgentTerminal({ script }: { script: AgentScript }) {
                     ))}
                 </div>
             )}
+
+            <style>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                    display: none;
+                }
+                .scrollbar-hide {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
         </div>
     );
 }

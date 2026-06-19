@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
+import { updateExperimentSession } from '@/app/lib/api/client';
 
 // 🚨 BUGFIX: Komponente nach außen verlagert!
 // Wenn sie innen liegt, zerstört React beim Ziehen des Sliders den DOM-Knoten.
@@ -53,6 +54,7 @@ const LikertSlider = ({
 export default function Phase4Survey() {
     const { sessionId, setPhase } = useExperimentStore();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         perceivedHumanlikeness: 4,
@@ -90,21 +92,24 @@ export default function Phase4Survey() {
         e.preventDefault();
         if (!sessionId) return;
         setIsLoading(true);
+        setError(null);
 
         try {
-            const res = await fetch('/api/experiment', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sessionId,
-                    currentPhase: 'DEBRIEFING',
-                    ...formData
-                }),
+            const res = await updateExperimentSession(sessionId, {
+                currentPhase: 'DEBRIEFING',
+                ...formData
             });
 
-            if (!res.ok) throw new Error('DB Update fehlgeschlagen');
+            if (!res.success) {
+                setError(res.error || 'DB Update fehlgeschlagen');
+                console.error("Survey submission failed:", res);
+                return;
+            }
+
             setPhase('DEBRIEFING');
         } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+            setError(message);
             console.error("Fehler beim Senden des Fragebogens:", error);
         } finally {
             setIsLoading(false);
@@ -113,6 +118,13 @@ export default function Phase4Survey() {
 
     return (
         <div className="bg-white border border-slate-200 p-6 md:p-10 rounded-xl shadow-sm text-slate-800 max-w-4xl mx-auto w-full">
+            {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    <p className="font-semibold">❌ Fehler:</p>
+                    <p>{error}</p>
+                </div>
+            )}
+            
             <div className="mb-8 border-b border-slate-100 pb-6">
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Abschließende Evaluierung</p>
                 <h2 className="text-2xl font-bold mb-2 text-slate-900">Fragebogen zum System</h2>

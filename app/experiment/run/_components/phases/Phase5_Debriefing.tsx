@@ -2,11 +2,15 @@
 
 "use client";
 import { useRouter } from 'next/navigation';
+import { useExperimentStore } from '@/app/lib/store/experimentStore';
 
 export default function Phase5Debriefing() {
     const router = useRouter();
+    const { resetSession } = useExperimentStore();
 
     const handleExit = () => {
+        // Cleanup: Lösche Session aus Browser & Store
+        resetSession();
         router.push('/bachelorarbeit/thank-you');
     };
 

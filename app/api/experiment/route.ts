@@ -1,87 +1,193 @@
 // app/api/experiment/route.ts
-import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/app/lib/db/prisma';
+import { CreateSessionSchema, UpdateSessionSchema } from '@/app/lib/db/validation';
+import { handleError, generateRequestId, validatePrismaClient } from '@/app/lib/db/errors';
 
 export const dynamic = 'force-dynamic';
+const REQUEST_TIMEOUT = 10000; // 10 Sekunden
 
-export async function POST(request: Request) {
-    console.log("--> [POST] /api/experiment aufgerufen");
-
-    if (!prisma) {
-        console.error("🚨 FEHLER: Das 'prisma' Objekt ist undefined!");
-        return NextResponse.json({ error: 'DB Client missing' }, { status: 500 });
-    }
-
+/**
+ * GET /api/experiment/:sessionId - Hole Session-Status ab
+ */
+export async function GET(request: NextRequest) {
+    const requestId = generateRequestId();
+    
     try {
-        const body = await request.json();
+        validatePrismaClient(prisma);
 
-        const { sessionId, group } = body;
-        if (!sessionId || !group) {
-            return NextResponse.json({ error: 'Missing sessionId or group' }, { status: 400 });
+        // Extrahiere sessionId aus URL
+        const pathname = request.nextUrl.pathname;
+        const sessionId = pathname.replace('/api/experiment/', '');
+
+        if (!sessionId) {
+            return NextResponse.json(
+                { 
+                    error: 'Session ID erforderlich',
+                    code: 'MISSING_SESSION_ID',
+                    requestId 
+                },
+                { status: 400 }
+            );
         }
 
+        console.log(`[${requestId}] GET /api/experiment/${sessionId}`);
+
+        // Hole Session aus DB
+        const session = await prisma.participantSession.findUnique({
+            where: { id: sessionId },
+            select: {
+                id: true,
+                group: true,
+                currentPhase: true,
+                createdAt: true,
+                updatedAt: true
+            }
+        });
+
+        if (!session) {
+            console.log(`[${requestId}] Session ${sessionId} not found`);
+            return NextResponse.json(
+                { 
+                    error: 'Session nicht gefunden',
+                    code: 'SESSION_NOT_FOUND',
+                    requestId 
+                },
+                { status: 404 }
+            );
+        }
+
+        console.log(`[${requestId}] ✅ Session loaded`);
+        return NextResponse.json(
+            { 
+                success: true,
+                data: session,
+                requestId
+            },
+            { status: 200 }
+        );
+
+    } catch (error) {
+        const { status, body } = handleError(error, requestId);
+        return NextResponse.json(body, { status });
+    }
+}
+
+export async function POST(request: Request) {
+    const requestId = generateRequestId();
+    console.log(`[${requestId}] POST /api/experiment`);
+
+    try {
+        // Validiere Prisma Client
+        validatePrismaClient(prisma);
+
+        // Parse und Validiere Request Body mit Timeout
+        const bodyPromise = request.json();
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), REQUEST_TIMEOUT)
+        );
+        
+        const body = await Promise.race([bodyPromise, timeoutPromise]);
+        const validatedData = CreateSessionSchema.parse(body);
+
+        // Prüfe: Session existiert nicht bereits
+        const existingSession = await prisma.participantSession.findUnique({
+            where: { id: validatedData.sessionId },
+            select: { id: true }
+        });
+
+        if (existingSession) {
+            console.warn(`[${requestId}] Session ${validatedData.sessionId} already exists`);
+            return NextResponse.json(
+                { 
+                    error: 'Session existiert bereits', 
+                    code: 'SESSION_EXISTS',
+                    requestId 
+                }, 
+                { status: 409 }
+            );
+        }
+
+        // Erstelle neue Session
         const newSession = await prisma.participantSession.create({
             data: {
-                id: sessionId,
-                group: group,
+                id: validatedData.sessionId,
+                group: validatedData.group,
                 currentPhase: 'ONBOARDING',
             },
         });
 
-        console.log("--> ✅ ERFOLG! Datensatz in DB erstellt.");
-        return NextResponse.json(newSession, { status: 201 });
+        console.log(`[${requestId}] ✅ Session ${validatedData.sessionId} created`);
+        return NextResponse.json(
+            { 
+                success: true, 
+                data: newSession,
+                requestId
+            }, 
+            { status: 201 }
+        );
 
     } catch (error) {
-        console.error('🚨 KRITISCHER DATENBANK-FEHLER BEIM POST:', error);
-        return NextResponse.json({ error: 'Datenbankfehler beim Erstellen' }, { status: 500 });
+        const { status, body } = handleError(error, requestId);
+        return NextResponse.json(body, { status });
     }
 }
 
 export async function PATCH(request: Request) {
-    console.log("--> [PATCH] /api/experiment aufgerufen");
-
-    if (!prisma) return NextResponse.json({ error: 'DB Client missing' }, { status: 500 });
+    const requestId = generateRequestId();
+    console.log(`[${requestId}] PATCH /api/experiment`);
 
     try {
-        const body = await request.json();
+        // Validiere Prisma Client
+        validatePrismaClient(prisma);
 
-        // sessionId abtrennen, der Rest sind potenzielle Update-Felder
-        const { sessionId, ...updateFields } = body;
-        if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+        // Parse und Validiere Request Body mit Timeout
+        const bodyPromise = request.json();
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), REQUEST_TIMEOUT)
+        );
+        
+        const body = await Promise.race([bodyPromise, timeoutPromise]);
+        const validatedData = UpdateSessionSchema.parse(body);
 
-        // DYNAMISCHE ALLOWLIST: Nur diese Felder dürfen in die DB geschrieben werden!
-        const allowedFields = [
-            'currentPhase', 'socialAdherence', 'compliance',
-            'mReliable', 'mCapable', 'mCompetent', 'mMeticulous',
-            'mEthical', 'mRespectable', 'mSincere', 'mBenevolent',
-            'performanceTrust', 'moralTrust', 'perceivedHumanlikeness',
-            'age', 'gender', 'education', 'techAffinity', 'aiExperience', 'criticalSystemExp'
-        ];
+        const { sessionId, ...updateFields } = validatedData;
 
-        const updateData: any = {};
-
-        // Wir iterieren über die Allowlist und packen nur mitgeschickte Werte ins Update
-        for (const key of allowedFields) {
-            if (updateFields[key] !== undefined) {
-                updateData[key] = updateFields[key];
-            }
-        }
-
-        const updatedSession = await prisma.participantSession.update({
+        // Prüfe: Session existiert
+        const existingSession = await prisma.participantSession.findUnique({
             where: { id: sessionId },
-            data: updateData,
+            select: { id: true, updatedAt: true }
         });
 
-        console.log("--> ✅ ERFOLG! Update gespeichert in Phase:", updateData.currentPhase || "Unverändert");
-        return NextResponse.json(updatedSession, { status: 200 });
+        if (!existingSession) {
+            console.warn(`[${requestId}] Session ${sessionId} not found`);
+            return NextResponse.json(
+                { 
+                    error: 'Session nicht gefunden', 
+                    code: 'SESSION_NOT_FOUND',
+                    requestId 
+                }, 
+                { status: 404 }
+            );
+        }
+
+        // Update mit typisierten Feldern
+        const updatedSession = await prisma.participantSession.update({
+            where: { id: sessionId },
+            data: updateFields,
+        });
+
+        console.log(`[${requestId}] ✅ Session ${sessionId} updated`);
+        return NextResponse.json(
+            { 
+                success: true,
+                data: updatedSession,
+                requestId
+            }, 
+            { status: 200 }
+        );
 
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            console.error('🚨 Prisma Fehler beim PATCH:', error.code, error.message);
-            return NextResponse.json({ error: 'Datenbankfehler beim Update', code: error.code }, { status: 500 });
-        }
-        console.error('🚨 KRITISCHER DATENBANK-FEHLER BEIM PATCH:', error);
-        return NextResponse.json({ error: 'Datenbankfehler beim Update' }, { status: 500 });
+        const { status, body } = handleError(error, requestId);
+        return NextResponse.json(body, { status });
     }
 }

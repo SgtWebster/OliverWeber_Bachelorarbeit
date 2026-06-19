@@ -42,61 +42,66 @@ export default function ExperimentRunPage() {
                 </div>
             )}
 
-            <div className="flex-1 min-h-0 flex flex-col md:flex-row pt-6">
+            {/* Main Content - mit pb um Footer-Platz zu reservieren */}
+            <div className="flex-1 min-h-0 flex flex-col md:pb-20">
 
-                {/* LINKE SEITE: Die Leitwarte */}
-                <div className="flex-1 min-h-0 flex flex-col p-4 md:p-8 overflow-y-auto order-1">
-                    {/* Sanftes Max-Width Limit für perfekte Lesbarkeit auf großen Screens */}
-                    <div className="max-w-4xl xl:max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
-                        {(currentPhase === 'INIT' || currentPhase === 'ONBOARDING') && <Phase0Onboarding />}
-                        {currentPhase === 'ROUTINE' && <Phase1Routine />}
-                        {currentPhase === 'ALERT' && <Phase2Alert />}
-                        {currentPhase === 'DILEMMA' && <Phase3Dilemma />}
-                        {currentPhase === 'SURVEY' && <Phase4Survey />}
-                        {currentPhase === 'DEBRIEFING' && <Phase5Debriefing />}
+                {/* LINKE SEITE & CHAT: Die Leitwarte */}
+                <div className="flex-1 min-h-0 flex flex-col md:flex-row pt-6">
+
+                    {/* LINKE SEITE: Die Leitwarte */}
+                    <div className="flex-1 min-h-0 flex flex-col p-4 md:p-8 overflow-y-auto order-1">
+                        {/* Sanftes Max-Width Limit für perfekte Lesbarkeit auf großen Screens */}
+                        <div className="max-w-4xl xl:max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
+                            {(currentPhase === 'INIT' || currentPhase === 'ONBOARDING') && <Phase0Onboarding />}
+                            {currentPhase === 'ROUTINE' && <Phase1Routine />}
+                            {currentPhase === 'ALERT' && <Phase2Alert />}
+                            {currentPhase === 'DILEMMA' && <Phase3Dilemma />}
+                            {currentPhase === 'SURVEY' && <Phase4Survey />}
+                            {currentPhase === 'DEBRIEFING' && <Phase5Debriefing />}
+                        </div>
                     </div>
+
+                    {/* RECHTE SEITE: Das Assistenz-Panel */}
+                    {/* Solide, feste Breiten für den Chat. Niemals breiter als 450px! */}
+                    {currentPhase !== 'INIT' && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
+                        <div className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[44dvh] min-h-[18rem] max-h-[30rem] md:h-auto md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
+                            group === 'TERMINAL' ? 'border-slate-800 bg-slate-950 text-emerald-500' : 'border-slate-200 bg-white text-slate-800'
+                        }`}>
+                            <div className={`p-3 md:p-4 border-b border-inherit z-10 shadow-sm shrink-0 ${group === 'TERMINAL' ? 'bg-slate-950' : 'bg-white'}`}>
+                                <h3 className={`font-bold tracking-wider text-xs md:text-sm uppercase ${group === 'TERMINAL' ? 'text-emerald-700 opacity-80' : 'text-slate-500 opacity-50'}`}>
+                                    {group === 'TERMINAL' ? 'System Terminal' : 'A.I.D.A. Interface'}
+                                </h3>
+                            </div>
+
+                            <div className="flex-1 min-h-0 overflow-hidden relative">
+                                {(() => {
+                                    const currentScripts = dialogScripts[currentPhase as keyof typeof dialogScripts];
+                                    if (!currentScripts || !group) return null;
+
+                                    const rawScript = group === 'AVATAR' ? currentScripts.AVATAR : currentScripts.TERMINAL;
+
+                                    const activeScript = {
+                                        ...rawScript,
+                                        options: rawScript.options?.map(opt => ({
+                                            ...opt,
+                                            action: () => setPhaseUnlocked(true)
+                                        }))
+                                    };
+
+                                    return group === 'AVATAR' ? (
+                                        <AgentAida script={activeScript} />
+                                    ) : (
+                                        <AgentTerminal script={activeScript} />
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    )}
                 </div>
-
-                {/* RECHTE SEITE: Das Assistenz-Panel */}
-                {/* Solide, feste Breiten für den Chat. Niemals breiter als 450px! */}
-                {currentPhase !== 'INIT' && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
-                    <div className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[44dvh] min-h-[18rem] max-h-[30rem] md:h-auto md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
-                        group === 'TERMINAL' ? 'border-slate-800 bg-slate-950 text-emerald-500' : 'border-slate-200 bg-white text-slate-800'
-                    }`}>
-                        <div className={`p-3 md:p-4 border-b border-inherit z-10 shadow-sm shrink-0 ${group === 'TERMINAL' ? 'bg-slate-950' : 'bg-white'}`}>
-                            <h3 className={`font-bold tracking-wider text-xs md:text-sm uppercase ${group === 'TERMINAL' ? 'text-emerald-700 opacity-80' : 'text-slate-500 opacity-50'}`}>
-                                {group === 'TERMINAL' ? 'System Terminal' : 'A.I.D.A. Interface'}
-                            </h3>
-                        </div>
-
-                        <div className="flex-1 min-h-0 overflow-hidden relative">
-                            {(() => {
-                                const currentScripts = dialogScripts[currentPhase as keyof typeof dialogScripts];
-                                if (!currentScripts || !group) return null;
-
-                                const rawScript = group === 'AVATAR' ? currentScripts.AVATAR : currentScripts.TERMINAL;
-
-                                const activeScript = {
-                                    ...rawScript,
-                                    options: rawScript.options?.map(opt => ({
-                                        ...opt,
-                                        action: () => setPhaseUnlocked(true)
-                                    }))
-                                };
-
-                                return group === 'AVATAR' ? (
-                                    <AgentAida script={activeScript} />
-                                ) : (
-                                    <AgentTerminal script={activeScript} />
-                                );
-                            })()}
-                        </div>
-                    </div>
-                )}
             </div>
 
-            {/* FOOTER */}
-            <div className="h-12 md:h-16 border-t border-slate-200 bg-white flex items-center justify-between px-3 sm:px-4 md:px-8 shrink-0 z-10">
+            {/* FOOTER - Fixed auf Desktop, Normal auf Mobile */}
+            <div className="h-12 md:h-16 md:fixed md:bottom-0 md:left-0 md:right-0 border-t border-slate-200 bg-white flex items-center justify-between px-3 sm:px-4 md:px-8 shrink-0 z-10">
                 <div className="text-[10px] md:text-xs uppercase tracking-widest text-slate-400 hidden sm:block">
                     Experiment Status
                 </div>

@@ -1,42 +1,69 @@
 // app/api/leads/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/db/prisma';
+import { CreateLeadSchema } from '@/app/lib/db/validation';
+import { handleError, generateRequestId, validatePrismaClient } from '@/app/lib/db/errors';
 
 export const dynamic = 'force-dynamic';
+const REQUEST_TIMEOUT = 10000; // 10 Sekunden
 
 export async function POST(request: Request) {
-    if (!prisma) return NextResponse.json({ error: 'DB Client missing' }, { status: 500 });
+    const requestId = generateRequestId();
+    console.log(`[${requestId}] POST /api/leads`);
 
     try {
-        const body = await request.json();
-        const { email, wantsRaffle, wantsNewsletter } = body;
+        // Validiere Prisma Client
+        validatePrismaClient(prisma);
 
-        if (!email) {
-            return NextResponse.json({ error: 'Email fehlt' }, { status: 400 });
-        }
+        // Parse und Validiere Request Body mit Timeout
+        const bodyPromise = request.json();
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), REQUEST_TIMEOUT)
+        );
+        
+        const body = await Promise.race([bodyPromise, timeoutPromise]);
+        const validatedData = CreateLeadSchema.parse(body);
 
-        // Check: Gibt es die Mail schon? (Keine doppelten Gutscheine abgreifen!)
+        // Prüfe: Gibt es die Mail schon? (Keine doppelten Einträge)
         const existingLead = await prisma.participantLead.findUnique({
-            where: { email }
+            where: { email: validatedData.email },
+            select: { id: true, createdAt: true }
         });
 
         if (existingLead) {
-            return NextResponse.json({ message: 'Bereits registriert' }, { status: 200 });
+            console.log(`[${requestId}] Lead ${validatedData.email} already exists`);
+            return NextResponse.json(
+                { 
+                    success: true,
+                    message: 'Email bereits registriert',
+                    code: 'ALREADY_REGISTERED',
+                    requestId
+                }, 
+                { status: 200 }
+            );
         }
 
-        // Neuen Lead in die isolierte Tabelle schreiben
-        await prisma.participantLead.create({
+        // Neuer Lead erstellen
+        const newLead = await prisma.participantLead.create({
             data: {
-                email,
-                wantsRaffle: wantsRaffle ?? false,
-                wantsNewsletter: wantsNewsletter ?? false,
+                email: validatedData.email,
+                wantsRaffle: validatedData.wantsRaffle,
+                wantsNewsletter: validatedData.wantsNewsletter,
             }
         });
 
-        return NextResponse.json({ success: true }, { status: 201 });
+        console.log(`[${requestId}] ✅ Lead ${validatedData.email} created`);
+        return NextResponse.json(
+            { 
+                success: true,
+                data: { id: newLead.id },
+                requestId
+            }, 
+            { status: 201 }
+        );
 
     } catch (error) {
-        console.error('🚨 Fehler beim Lead-Speichern:', error);
-        return NextResponse.json({ error: 'Datenbankfehler beim Lead' }, { status: 500 });
+        const { status, body } = handleError(error, requestId);
+        return NextResponse.json(body, { status });
     }
 }
