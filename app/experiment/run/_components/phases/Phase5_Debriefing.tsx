@@ -6,11 +6,11 @@ import { useExperimentStore } from '@/app/lib/store/experimentStore';
 
 export default function Phase5Debriefing() {
     const router = useRouter();
-    const { resetSession } = useExperimentStore();
+    const { resetExperiment } = useExperimentStore();
 
     const handleExit = () => {
         // Cleanup: Lösche Session aus Browser & Store
-        resetSession();
+        resetExperiment();
         router.push('/bachelorarbeit/thank-you');
     };
 

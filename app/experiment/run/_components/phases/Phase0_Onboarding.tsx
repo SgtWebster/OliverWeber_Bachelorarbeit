@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import { createExperimentSession, updateExperimentSession } from '@/app/lib/api/client';
-import { attemptSessionRecovery } from '@/app/lib/api/sessionService';
 
 export default function Phase0Onboarding() {
     const {
@@ -15,33 +14,22 @@ export default function Phase0Onboarding() {
         setSessionId,
         setGroup,
         isPhaseUnlocked,
-        setPhaseUnlocked,
-        wasRecovered,
-        restoreFromSession
+        setPhaseUnlocked
     } = useExperimentStore();
 
     const [isLoading, setIsLoading] = useState(false);
     const [storyStep, setStoryStep] = useState(1);
     const [error, setError] = useState<string | null>(null);
-    const [recoveryAttempted, setRecoveryAttempted] = useState(false);
+    const [groupAssigned, setGroupAssigned] = useState(!!group);
 
-    // Phase 1: Beim App-Start versuchen, alte Session wiederherzustellen
+    // Phase 1: Bei Mount -> Wenn noch keine Group, zufällig zuweisen
     useEffect(() => {
-        if (recoveryAttempted || sessionId) return; // Nur einmal
-        
-        setRecoveryAttempted(true);
-        attemptSessionRecovery().then(recovery => {
-            if (recovery) {
-                console.log(`♻️ Session ${recovery.sessionId} recovered!`);
-                restoreFromSession(recovery.sessionId, recovery.group, recovery.currentPhase as any);
-                // Springe direkt zur richtigen Phase
-                setStoryStep(recovery.currentPhase === 'ONBOARDING' ? 4 : 1);
-            } else {
-                // Keine alte Session, new group assignment
-                setGroup(Math.random() < 0.5 ? 'AVATAR' : 'TERMINAL');
-            }
-        });
-    }, [recoveryAttempted, sessionId, restoreFromSession, setGroup]);
+        if (!group && !groupAssigned) {
+            const assignedGroup = Math.random() < 0.5 ? 'AVATAR' : 'TERMINAL';
+            setGroup(assignedGroup);
+            setGroupAssigned(true);
+        }
+    }, [group, groupAssigned, setGroup]);
 
     const activateCommunication = async () => {
         if (isLoading || !group) return;

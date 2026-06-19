@@ -22,14 +22,34 @@ export default function ExperimentRunPage() {
         group,
         sessionId,
         hasConsented,
-        setPhaseUnlocked
+        setPhaseUnlocked,
+        isRecovering,
+        initializeExperiment
     } = useExperimentStore();
 
+    // 1. Trigger Recovery beim Mounten der Component
     useEffect(() => {
-        if (!hasConsented && process.env.NODE_ENV !== 'development') {
+        initializeExperiment();
+    }, [initializeExperiment]);
+
+    // 2. Consent Check (greift erst, NACHDEM Recovery abgeschlossen ist)
+    useEffect(() => {
+        if (!isRecovering && !hasConsented && process.env.NODE_ENV !== 'development') {
             router.replace('/bachelorarbeit');
         }
-    }, [hasConsented, router]);
+    }, [isRecovering, hasConsented, router]);
+
+    // 3. Fallback UI während wir den State aus der Datenbank holen
+    if (isRecovering) {
+        return (
+            <div className="min-h-[100dvh] w-full flex items-center justify-center bg-slate-900 text-slate-400 font-mono text-sm">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p>RESTORING SYSTEM STATE...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-[100dvh] w-full flex flex-col font-sans bg-slate-50 text-slate-800">

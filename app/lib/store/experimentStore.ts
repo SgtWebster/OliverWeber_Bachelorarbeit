@@ -1,6 +1,6 @@
 // app/lib/store/experimentStore.ts
 import { create } from 'zustand';
-import { saveSessionLocally, clearSavedSession } from '@/app/lib/api/sessionService';
+import { saveSessionLocally, clearSavedSession, attemptSessionRecovery } from '@/app/lib/api/sessionService';
 
 // 1. Definition der strikten Phasen (State-Machine)
 export type ExperimentPhase =
@@ -22,33 +22,34 @@ interface ExperimentState {
     group: ExperimentGroup;
     isPhaseUnlocked: boolean;
     hasConsented: boolean;
-    wasRecovered: boolean; // Flag: Session wurde vom Browser wiederhergestellt
+    isRecovering: boolean; // Flag: Aktuell wird die Session wiederhergestellt
 
     setSessionId: (id: string) => void;
     setPhase: (phase: ExperimentPhase) => void;
     setGroup: (group: ExperimentGroup) => void;
     setPhaseUnlocked: (unlocked: boolean) => void;
     setConsented: (val: boolean) => void;
-    setWasRecovered: (recovered: boolean) => void;
-    restoreFromSession: (sessionId: string, group: ExperimentGroup, phase: ExperimentPhase) => void;
-    resetSession: () => void;
+    
+    // NEU: Recovery & Reset Actions
+    initializeExperiment: () => Promise<void>;
+    resetExperiment: () => void;
 }
 
 // 4. Erstellung des eigentlichen Stores
-export const useExperimentStore = create<ExperimentState>((set) => ({
+export const useExperimentStore = create<ExperimentState>((set, get) => ({
     // Initiale Werte beim Start der App
     sessionId: null,
     currentPhase: 'INIT',
     group: null,
     isPhaseUnlocked: false, // Default: Jede Phase startet gesperrt
     hasConsented: false,
-    wasRecovered: false,
+    isRecovering: true, // Default auf true, bis der Check durch ist
 
     // Funktionen zum Updaten der Werte
     setSessionId: (id) => {
         set({ sessionId: id });
-        // Speichere Session lokal bei neuer Erstellung
-        saveSessionLocally(id, 'AVATAR'); // wird später überschrieben wenn group klar ist
+        const currentGroup = get().group;
+        if (currentGroup) saveSessionLocally(id, currentGroup);
     },
 
     // WICHTIG: Beim Phasenwechsel schieben wir automatisch den Riegel wieder vor!
@@ -59,9 +60,9 @@ export const useExperimentStore = create<ExperimentState>((set) => ({
 
     setGroup: (group) => {
         set({ group });
-        // Update localStorage mit neuer Group
+        // Speichere Session lokal bei neuer Group
         if (group) {
-            const state = useExperimentStore.getState();
+            const state = get();
             if (state.sessionId) {
                 saveSessionLocally(state.sessionId, group);
             }
@@ -72,38 +73,45 @@ export const useExperimentStore = create<ExperimentState>((set) => ({
 
     setConsented: (val) => set({ hasConsented: val }),
 
-    setWasRecovered: (recovered) => set({ wasRecovered: recovered }),
-
     /**
-     * Stellt Session aus einer bestehenden sessionStorage wieder her
-     * Wird beim App-Start aufgerufen wenn Session Recovery erfolgreich war
+     * Hauptinitialisierungsfunktion: Wird beim App-Mount aufgerufen
+     * Versucht, eine bestehende Session aus der Datenbank zu recovern
+     * Falls erfolgreich: State wird restauriert (kein UI-Flackern!)
+     * Falls fehlgeschlagen: Frischer Start (isRecovering wird auf false gesetzt)
      */
-    restoreFromSession: (sessionId: string, group: ExperimentGroup, phase: ExperimentPhase) => {
-        set({
-            sessionId,
-            group,
-            currentPhase: phase,
-            isPhaseUnlocked: false,
-            wasRecovered: true
-        });
-        // Re-speichere im localStorage (sollte bereits vorhanden sein, aber sicher ist sicher)
-        if (group) {
-            saveSessionLocally(sessionId, group);
+    initializeExperiment: async () => {
+        set({ isRecovering: true });
+        const recoveredSession = await attemptSessionRecovery();
+
+        if (recoveredSession) {
+            // Gefunden! State aus der DB/SessionStorage wiederherstellen
+            set({
+                sessionId: recoveredSession.sessionId,
+                group: recoveredSession.group,
+                currentPhase: recoveredSession.currentPhase as ExperimentPhase,
+                hasConsented: true, // Wer eine Session hat, hat bereits zugestimmt
+                isPhaseUnlocked: false, // Phasen sind bei Reload erstmal sicherheitshalber gelockt
+                isRecovering: false
+            });
+        } else {
+            // Kein bestehendes Experiment gefunden -> Frischer Start
+            set({ isRecovering: false });
         }
     },
 
     /**
-     * Setzt Session zurück (z.B. nach Experiment abgeschlossen)
+     * Setzt die Experiment-Session komplett zurück
+     * Wird z.B. nach Phase5 (Debriefing) aufgerufen
      */
-    resetSession: () => {
+    resetExperiment: () => {
+        clearSavedSession();
         set({
             sessionId: null,
             currentPhase: 'INIT',
             group: null,
             isPhaseUnlocked: false,
             hasConsented: false,
-            wasRecovered: false
+            isRecovering: false
         });
-        clearSavedSession();
     }
 }));
