@@ -4,6 +4,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import { createExperimentSession, updateExperimentSession } from '@/app/lib/api/client';
+import ApprovalPendingNotice from '../ApprovalPendingNotice';
 
 export default function Phase0Onboarding() {
     const {
@@ -102,7 +103,7 @@ export default function Phase0Onboarding() {
     };
 
     const StoryPage = ({ title, subTitle, image, children, onNext, onPrev, enableZoom = false }: StoryPageProps) => (
-        <div className="min-h-[70dvh] flex items-center justify-center p-2 sm:p-4">
+        <div className="w-full">
             <style>{`
                 @keyframes zoomIn {
                     from {
@@ -118,35 +119,52 @@ export default function Phase0Onboarding() {
                     animation: zoomIn 1.5s ease-out forwards;
                 }
             `}</style>
-            <div className="w-full max-w-5xl">
-                {error && (
-                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                        <p className="font-semibold">❌ Fehler:</p>
-                        <p>{error}</p>
-                    </div>
-                )}
-                <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row transition-all duration-300">
-                    <div className="md:w-1/2 bg-slate-100 relative min-h-[220px] sm:min-h-[300px] md:min-h-full border-b md:border-b-0 md:border-r border-slate-200 overflow-hidden">
-                        <img src={image} alt={title} className={`absolute inset-0 w-full h-full object-cover object-center ${enableZoom ? 'image-zoom' : ''}`} />
-                    </div>
-                    <div className="p-5 sm:p-8 md:p-12 flex-1 flex flex-col justify-between">
+            {error && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    <p className="font-semibold">❌ Fehler:</p>
+                    <p>{error}</p>
+                </div>
+            )}
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 bg-slate-950 px-6 py-5 text-white lg:px-8">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
-                            <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-sky-700 mb-2">{subTitle}</p>
-                            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">{title}</h1>
-                            <div className="text-slate-600 space-y-4 leading-relaxed text-sm md:text-base">
+                            <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-sky-300">
+                                {subTitle}
+                            </p>
+                            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
+                        </div>
+                        <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-300">
+                            Onboarding
+                        </span>
+                    </div>
+                </div>
+
+                <div className="p-6 lg:p-8">
+                    <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
+                        <div className="relative min-h-[220px] overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-inner sm:min-h-[280px]">
+                            <img src={image} alt={title} className={`absolute inset-0 h-full w-full object-cover object-center ${enableZoom ? 'image-zoom' : ''}`} />
+                        </div>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                            <div className="space-y-4 text-sm leading-relaxed text-slate-700 md:text-base">
                                 {children}
                             </div>
                         </div>
-                        <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center gap-4">
-                            {onPrev ? (
-                                <button onClick={onPrev} className="text-sm md:text-base font-semibold text-slate-500 hover:text-slate-800 transition">
+                    </div>
+
+                    <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-6 sm:flex-row">
+                        {onPrev ? (
+                            <button onClick={onPrev} className="text-sm font-semibold text-slate-500 transition hover:text-slate-800 md:text-base">
                                     Zurück
                                 </button>
-                            ) : <div className="w-12 sm:w-16" />}
-                            <button onClick={onNext} disabled={isLoading} className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 text-sm md:text-base rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50">
-                                {isLoading ? 'Initialisiere...' : 'Weiter'}
-                            </button>
-                        </div>
+                        ) : <div className="w-12 sm:w-16" />}
+                        <button
+                            onClick={onNext}
+                            disabled={isLoading}
+                            className="w-full rounded-xl bg-blue-700 px-8 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none sm:w-auto md:text-base"
+                        >
+                            {isLoading ? 'Initialisiere...' : 'Weiter'}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -194,45 +212,59 @@ export default function Phase0Onboarding() {
 
     if (storyStep === 4 && currentPhase === 'ONBOARDING') {
         return (
-            <div className="flex items-center justify-center w-full">
-                <div className="bg-white border border-slate-200 p-8 md:p-10 rounded-2xl shadow-lg text-slate-800 max-w-2xl w-full">
-                    
-                    {error && (
-                        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                            <p className="font-semibold">❌ Fehler:</p>
-                            <p>{error}</p>
+            <div className="w-full">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 bg-slate-950 px-6 py-5 text-white lg:px-8">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div>
+                                <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-sky-300">
+                                    Protokoll-Aktivierung
+                                </p>
+                                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                                    Schichtübergabe
+                                </h2>
+                            </div>
+                            <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
+                                <p className="text-xs uppercase tracking-widest text-slate-400">Status</p>
+                                <div className="mt-2 flex items-center gap-2 font-bold text-emerald-300">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
+                                    Verbindung aktiv
+                                </div>
+                            </div>
                         </div>
-                    )}
+                    </div>
 
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="p-6 lg:p-8">
+                        {error && (
+                            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                <p className="font-semibold">❌ Fehler:</p>
+                                <p>{error}</p>
+                            </div>
+                        )}
+
+                    <div className="mb-4 flex items-center gap-3">
                         <span className="flex h-3 w-3 relative">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
                         </span>
-                        <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-sky-700">
-                            Protokoll-Aktivierung
+                        <p className="text-xs font-bold uppercase tracking-widest text-sky-700 md:text-sm">
+                            Übergabe bereit
                         </p>
                     </div>
 
-                    <h2 className="text-2xl md:text-3xl font-bold mb-6 text-slate-900">
-                        Schichtübergabe
-                    </h2>
-
-                    <div className="text-slate-600 space-y-4 leading-relaxed text-sm md:text-base mb-8">
+                    <div className="mb-8 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-700 md:text-base">
                         <p>Die sichere Verbindung zur Zentralinstanz ist hergestellt.</p>
                         <p>Bitte bestätige nun deine Bereitschaft über die KI-Kommunikation.</p>
-                        <p className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm shadow-inner">
+                        <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-inner">
                             Das System startet im Anschluss das offizielle Schichtübergabe-Protokoll und übermittelt dir die aktuellen Sensordaten der Schieferkamm-Anlage.
                         </p>
                     </div>
 
-                    <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-6 sm:flex-row">
                         {!isPhaseUnlocked ? (
-                            <p className="text-sm md:text-base text-amber-600 animate-pulse font-bold flex items-center gap-2">
-                                ⚠️ Warte auf Freigabe durch das Assistenzsystem.
-                            </p>
+                            <ApprovalPendingNotice className="w-full sm:w-auto md:text-base" />
                         ) : (
-                            <p className="text-sm md:text-base text-emerald-600 font-bold flex items-center gap-2">
+                            <p className="flex items-center gap-2 text-sm font-bold text-emerald-600 md:text-base">
                                 ✅ Übergabe bestätigt.
                             </p>
                         )}
@@ -242,13 +274,14 @@ export default function Phase0Onboarding() {
                             disabled={!isPhaseUnlocked || isLoading}
                             className={`w-full sm:w-auto font-bold py-3 px-8 text-sm md:text-base rounded-xl transition-all shadow-md ${
                                 isPhaseUnlocked
-                                    ? `bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg ${isNextStepReady ? 'next-step-attention' : ''}`
-                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    ? `bg-blue-700 hover:bg-blue-800 text-white hover:shadow-lg ${isNextStepReady ? 'next-step-attention' : ''}`
+                                    : 'bg-slate-300 text-slate-600 cursor-not-allowed shadow-none'
                             }`}
                         >
-                            {isLoading ? 'Lade Daten...' : 'Zum Leitwarten-Dashboard'}
+                            {isLoading ? 'Lade Daten...' : 'Zur Leitwarte'}
                         </button>
                     </div>
+                </div>
                 </div>
             </div>
         );

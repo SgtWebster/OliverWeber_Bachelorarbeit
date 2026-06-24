@@ -4,6 +4,7 @@
 import { useMemo, useState } from "react";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
 import { updateExperimentSession } from "@/app/lib/api/client";
+import ApprovalPendingNotice from "../ApprovalPendingNotice";
 
 type TelemetryStats = {
     ch4: number;          // Methan in % Vol. (Betriebsgrenze < 1,0 %)
@@ -328,9 +329,7 @@ export default function Phase1aPrecheck() {
                     </div>
 
                     {!isPhaseUnlocked && (
-                        <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
-                            Warte auf Freigabe durch das Assistenzsystem.
-                        </div>
+                        <ApprovalPendingNotice className="mt-8" />
                     )}
 
                     <div className="mt-8 flex flex-col gap-4 border-slate-100 pt-2 sm:flex-row sm:items-center sm:justify-between">

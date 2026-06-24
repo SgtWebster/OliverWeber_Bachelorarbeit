@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
 import { updateExperimentSession } from "@/app/lib/api/client";
+import ApprovalPendingNotice from "../ApprovalPendingNotice";
 
 type CalibrationState = {
     primAir: number;
@@ -294,10 +295,7 @@ export default function Phase1Routine() {
 
                 <div className="p-6 lg:p-8">
                     {!isPhaseUnlocked && (
-                        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm font-bold text-amber-800">
-                            <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-amber-500" />
-                            Warte auf Freigabe durch das Assistenzsystem.
-                        </div>
+                        <ApprovalPendingNotice className="mb-6" />
                     )}
 
                     <div className="grid items-start gap-5 xl:grid-cols-[1.45fr_1fr]">

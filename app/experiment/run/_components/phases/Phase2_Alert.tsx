@@ -4,6 +4,7 @@
 import { useMemo, useState } from "react";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
 import { updateExperimentSession } from "@/app/lib/api/client";
+import ApprovalPendingNotice from "../ApprovalPendingNotice";
 
 type Severity = "ok" | "warn" | "critical";
 type SectorState = "nominal" | "watch" | "alarm" | "locked";
@@ -421,30 +422,25 @@ export default function Phase2Alert() {
                                     </div>
                                 )}
 
-                                {investigationStarted && !isPhaseUnlocked && (
-                                    <div className="mt-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900">
-                                        Befund liegt vor. Bestätige ihn im {dialogName}, damit {agentName} die
-                                        Entscheidungsvorlage freigibt.
-                                    </div>
-                                )}
-
-                                <button
-                                    onClick={handlePrimaryAction}
-                                    disabled={isLoading || (investigationStarted && !isPhaseUnlocked)}
-                                    className={`mt-3 w-full rounded-xl px-5 py-3 text-sm font-black uppercase tracking-wide text-white shadow-lg transition disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${
-                                        isNextStepReady ? "next-step-attention " : ""
-                                    }${
-                                        investigationStarted ? "bg-slate-950 hover:bg-slate-800" : "bg-red-600 hover:bg-red-700"
-                                    }`}
-                                >
-                                    {!investigationStarted
-                                        ? "Lagebild prüfen"
-                                        : !isPhaseUnlocked
-                                            ? `Warte auf Freigabe im ${dialogName}…`
+                                {investigationStarted && !isPhaseUnlocked ? (
+                                    <ApprovalPendingNotice className="mt-3" />
+                                ) : (
+                                    <button
+                                        onClick={handlePrimaryAction}
+                                        disabled={isLoading}
+                                        className={`mt-3 w-full rounded-xl px-5 py-3 text-sm font-black uppercase tracking-wide text-white shadow-lg transition disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${
+                                            isNextStepReady ? "next-step-attention " : ""
+                                        }${
+                                            investigationStarted ? "bg-slate-950 hover:bg-slate-800" : "bg-red-600 hover:bg-red-700"
+                                        }`}
+                                    >
+                                        {!investigationStarted
+                                            ? "Lagebild prüfen"
                                             : isLoading
                                                 ? "Entscheidung wird vorbereitet…"
                                                 : "Zur Entscheidung"}
-                                </button>
+                                    </button>
+                                )}
                             </section>
                         </div>
                     </div>
