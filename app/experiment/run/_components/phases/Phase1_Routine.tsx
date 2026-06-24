@@ -148,6 +148,7 @@ export default function Phase1Routine() {
     const [activeSource, setActiveSource] = useState<WireSource | null>(null);
 
     const controlsEnabled = isPhaseUnlocked && !showAlarm && !isLoadingAlert;
+    const isNextStepReady = showAlarm && !isLoadingAlert;
 
     const relaysReady = relays.every((relay) => relay === "on");
 
@@ -299,7 +300,7 @@ export default function Phase1Routine() {
                         </div>
                     )}
 
-                    <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+                    <div className="grid items-start gap-5 xl:grid-cols-[1.45fr_1fr]">
                         <section className={`rounded-xl border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
                             <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
@@ -389,9 +390,9 @@ export default function Phase1Routine() {
                             </div>
                         </section>
 
-                        <div className="flex flex-col gap-6">
-                            <section className={`rounded-xl border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
-                                <div className="mb-4 flex items-start justify-between gap-4">
+                        <div className="flex flex-col gap-4">
+                            <section className={`rounded-xl border p-3 md:p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+                                <div className="mb-2 flex items-start justify-between gap-3">
                                     <div>
                                         <p className="font-bold text-slate-900">2. Relais-Neustart</p>
                                         <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -405,8 +406,8 @@ export default function Phase1Routine() {
                                     )}
                                 </div>
 
-                                <div className="rounded-xl border border-slate-300 bg-slate-100 p-4 shadow-inner">
-                                    <div className="grid grid-cols-3 gap-3">
+                                <div className="rounded-xl border border-slate-300 bg-slate-100 p-2.5 shadow-inner">
+                                    <div className="grid grid-cols-3 gap-2">
                                         {relays.map((relay, index) => {
                                             const isOn = relay === "on";
 
@@ -415,12 +416,12 @@ export default function Phase1Routine() {
                                                     key={`relay-${index}`}
                                                     onClick={() => toggleRelay(index)}
                                                     disabled={!controlsEnabled || isOn}
-                                                    className={`relative h-20 rounded-lg border-2 px-2 text-center transition ${isOn ? "cursor-default border-emerald-500 bg-emerald-100 text-emerald-900" : "border-rose-500 bg-rose-100 text-rose-900 shadow-[0_0_18px_rgba(244,63,94,0.30)] hover:bg-rose-200"} disabled:cursor-default`}
+                                                    className={`relative h-14 rounded-lg border-2 px-1.5 text-center transition md:h-16 ${isOn ? "cursor-default border-emerald-500 bg-emerald-100 text-emerald-900" : "border-rose-500 bg-rose-100 text-rose-900 shadow-[0_0_18px_rgba(244,63,94,0.30)] hover:bg-rose-200"} disabled:cursor-default`}
                                                     aria-label={`Relais K${index + 1} ${isOn ? "online" : "zurücksetzen"}`}
                                                 >
-                                                    <span className={`mx-auto mb-2 block h-3 w-3 rounded-full border ${isOn ? "border-emerald-700 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" : "border-rose-700 bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.9)]"}`} />
+                                                    <span className={`mx-auto mb-1 block h-2.5 w-2.5 rounded-full border ${isOn ? "border-emerald-700 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" : "border-rose-700 bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.9)]"}`} />
                                                     <span className="block font-mono text-xs font-black">K-{index + 1}</span>
-                                                    <span className="mt-1 block text-[10px] font-black uppercase tracking-wide">
+                                                    <span className="block text-[10px] font-black uppercase tracking-wide">
                                                         {isOn ? "ON" : "RESET"}
                                                     </span>
                                                 </button>
@@ -430,8 +431,8 @@ export default function Phase1Routine() {
                                 </div>
                             </section>
 
-                            <section className={`rounded-xl border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
-                                <div className="mb-4 flex items-start justify-between gap-4">
+                            <section className={`rounded-xl border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+                                <div className="mb-3 flex items-start justify-between gap-3">
                                     <div>
                                         <p className="font-bold text-slate-900">3. Daten-Routing</p>
                                         <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -445,8 +446,8 @@ export default function Phase1Routine() {
                                     )}
                                 </div>
 
-                                <div className="rounded-xl border border-slate-300 bg-slate-950 p-4 text-white shadow-inner">
-                                    <div className="grid grid-cols-[92px_1fr_92px] items-center gap-3">
+                                <div className="rounded-xl border border-slate-300 bg-slate-950 p-3 text-white shadow-inner">
+                                    <div className="grid grid-cols-2 gap-3 md:grid-cols-[92px_1fr_92px] md:items-center">
                                         <div className="flex flex-col gap-3">
                                             {wirePorts.map((port) => {
                                                 const isActive = activeSource === port.id;
@@ -457,7 +458,7 @@ export default function Phase1Routine() {
                                                         key={port.id}
                                                         onClick={() => handleWireSourceClick(port.id)}
                                                         disabled={!controlsEnabled}
-                                                        className={`h-14 rounded-lg border px-2 text-left transition ${isActive ? "border-sky-300 bg-sky-900/70 ring-2 ring-sky-400" : isConnected ? "border-slate-600 bg-slate-800" : "border-slate-600 bg-slate-900 hover:bg-slate-800"}`}
+                                                        className={`h-12 rounded-lg border px-2 text-left transition md:h-14 ${isActive ? "border-sky-300 bg-sky-900/70 ring-2 ring-sky-400" : isConnected ? "border-slate-600 bg-slate-800" : "border-slate-600 bg-slate-900 hover:bg-slate-800"}`}
                                                     >
                                                         <span className="flex items-center gap-2">
                                                             <span className={`h-4 w-4 rounded-full border ${port.dotClass}`} />
@@ -471,7 +472,7 @@ export default function Phase1Routine() {
                                             })}
                                         </div>
 
-                                        <div className="relative h-56 overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+                                        <div className="relative hidden h-56 overflow-hidden rounded-lg border border-slate-700 bg-slate-900 md:block">
                                             <svg viewBox="0 0 400 240" className="absolute inset-0 h-full w-full" aria-hidden="true">
                                                 <defs>
                                                     <filter id="softGlow">
@@ -518,12 +519,6 @@ export default function Phase1Routine() {
                                                     );
                                                 })}
                                             </svg>
-
-                                            {!Object.values(connections).some(Boolean) && (
-                                                <div className="absolute inset-0 flex items-center justify-center px-5 text-center text-xs leading-relaxed text-slate-500">
-                                                    Keine Verbindung gesetzt. Ader links auswählen und rechts auf die passende Buchse legen.
-                                                </div>
-                                            )}
                                         </div>
 
                                         <div className="flex flex-col gap-3">
@@ -536,7 +531,7 @@ export default function Phase1Routine() {
                                                         key={target.id}
                                                         onClick={() => handleWireTargetClick(target.id)}
                                                         disabled={!controlsEnabled || !canConnect}
-                                                        className={`h-14 rounded-lg border px-2 text-left transition ${isConnected ? "border-emerald-500 bg-emerald-900/40" : canConnect ? "border-sky-400 bg-sky-950 ring-1 ring-sky-500 hover:bg-sky-900" : "border-slate-600 bg-slate-900"} disabled:cursor-default`}
+                                                        className={`h-12 rounded-lg border px-2 text-left transition md:h-14 ${isConnected ? "border-emerald-500 bg-emerald-900/40" : canConnect ? "border-sky-400 bg-sky-950 ring-1 ring-sky-500 hover:bg-sky-900" : "border-slate-600 bg-slate-900"} disabled:cursor-default`}
                                                     >
                                                         <span className="flex items-center gap-2">
                                                             <span className={`h-4 w-4 rounded-full border ${target.dotClass}`} />
@@ -551,7 +546,7 @@ export default function Phase1Routine() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-800 pt-3">
+                                    <div className="mt-3 flex flex-col gap-2 border-t border-slate-800 pt-3 sm:flex-row sm:items-center sm:justify-between">
                                         <p className="text-xs text-slate-400">
                                             Falsch gesteckte Leitungen können durch erneutes Auswählen überschrieben werden.
                                         </p>
@@ -603,7 +598,7 @@ export default function Phase1Routine() {
                             <button
                                 onClick={handleStartAlarmPhase}
                                 disabled={isLoadingAlert}
-                                className="w-full rounded-xl bg-red-600 px-10 py-5 text-xl font-black uppercase tracking-wider text-white shadow-[0_0_30px_rgba(220,38,38,0.5)] transition hover:scale-[1.02] hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
+                                className={`w-full rounded-xl bg-red-600 px-10 py-5 text-xl font-black uppercase tracking-wider text-white shadow-[0_0_30px_rgba(220,38,38,0.5)] transition hover:scale-[1.02] hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto ${isNextStepReady ? "next-step-attention" : ""}`}
                             >
                                 {isLoadingAlert ? "Notfallprotokoll wird gestartet..." : "Notfallprotokoll initiieren"}
                             </button>

@@ -14,6 +14,20 @@ pnpm dev
 bun dev
 ```
 
+## Admin Dashboard MVP
+
+Set this environment variable before starting the app:
+
+```bash
+ADMIN_ACCESS_CODE=your-strong-secret-code
+```
+
+Admin access flow:
+
+1. Open the site footer and click the subtle `•` link.
+2. Enter your `ADMIN_ACCESS_CODE` on `/admin`.
+3. You are redirected to `/dashboard` (currently a placeholder page).
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.

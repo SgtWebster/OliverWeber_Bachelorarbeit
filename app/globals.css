@@ -26,3 +26,37 @@ body {
 ::selection {
   background: rgba(13, 148, 136, 0.18); /* teal-600 sehr dezent */
 }
+
+@keyframes next-step-unlock-flash {
+  0% {
+    background-color: #dc2626;
+    border-color: #b91c1c;
+    box-shadow: 0 0 0 rgba(220, 38, 38, 0);
+  }
+  100% {
+    background-color: #ea580c;
+    border-color: #c2410c;
+    box-shadow: 0 0 26px rgba(249, 115, 22, 0.6);
+  }
+}
+
+@keyframes next-step-orange-blink {
+  0%,
+  100% {
+    background-color: #ea580c;
+    border-color: #c2410c;
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.35);
+  }
+  50% {
+    background-color: #fb923c;
+    border-color: #ea580c;
+    box-shadow: 0 0 26px rgba(249, 115, 22, 0.75);
+  }
+}
+
+.next-step-attention {
+  color: #ffffff !important;
+  animation:
+    next-step-unlock-flash 0.45s ease-out 1,
+    next-step-orange-blink 1s ease-in-out 0.45s infinite;
+}

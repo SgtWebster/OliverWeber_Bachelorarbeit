@@ -126,26 +126,32 @@ const stateLabel: Record<SectorState, string> = {
     locked: "Zu"
 };
 
+type StepState = "done" | "active" | "todo";
+
 export default function Phase2Alert() {
-    const { sessionId, setPhase, socialAdherenceScore, isPhaseUnlocked } = useExperimentStore();
+    const { sessionId, setPhase, socialAdherenceScore, isPhaseUnlocked, group } = useExperimentStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [investigationStarted, setInvestigationStarted] = useState(false);
+
+    const agentName = group === "TERMINAL" ? "das System-Terminal" : "Aida";
+    const dialogName = group === "TERMINAL" ? "System-Terminal" : "Dialog mit Aida";
+    const isNextStepReady = investigationStarted && isPhaseUnlocked && !isLoading;
 
     const logEntries = useMemo(() => {
         if (!investigationStarted) return initialLogEntries;
 
         return [
-            "[15:49:31] Operator hat Lagebildprüfung gestartet.",
+            "[15:49:31] Operator hat Vorfallprüfung gestartet.",
             "[15:49:33] Prognose: CH₄ überschreitet in Kürze Eskalationsschwelle.",
             "[15:49:35] Gegenmaßnahme limitiert: WK-04 hält Sollstellung nicht.",
-            "[15:49:37] Entscheidungsvorlage erstellt: Sektor halten oder S04 abschotten.",
+            "[15:49:37] Befund erstellt: Ursache WK-04, Sektor 04 nicht stabil bewettert.",
             ...initialLogEntries
         ];
     }, [investigationStarted]);
 
     const handleNext = async () => {
-        if (!sessionId || isLoading || !isPhaseUnlocked) return;
+        if (!sessionId || isLoading || !investigationStarted || !isPhaseUnlocked) return;
 
         setIsLoading(true);
         setError(null);
@@ -170,248 +176,277 @@ export default function Phase2Alert() {
     };
 
     const handlePrimaryAction = () => {
-        if (!isPhaseUnlocked) return;
         if (!investigationStarted) {
             setInvestigationStarted(true);
             return;
         }
+        if (!isPhaseUnlocked) return;
         void handleNext();
     };
 
+    // Ablauf: 1) Lagebild am Arbeitsplatz prüfen -> 2) Befund im Dialog bestätigen lassen -> 3) Zur Entscheidung
+    const steps: { id: string; label: string; state: StepState }[] = [
+        { id: "review", label: "1 · Lagebild prüfen", state: investigationStarted ? "done" : "active" },
+        {
+            id: "confirm",
+            label: "2 · Befund bestätigen",
+            state: !investigationStarted ? "todo" : isPhaseUnlocked ? "done" : "active"
+        },
+        {
+            id: "decide",
+            label: "3 · Zur Entscheidung",
+            state: investigationStarted && isPhaseUnlocked ? "active" : "todo"
+        }
+    ];
+
+    const stepStateClasses: Record<StepState, string> = {
+        done: "border-emerald-300/70 bg-emerald-400/15 text-emerald-100",
+        active: "border-white/80 bg-white/15 text-white",
+        todo: "border-red-700/70 bg-red-900/30 text-red-200/70"
+    };
+
     return (
-        <div className="relative">
+        <div className="relative w-full">
             {error && (
                 <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-2xl border border-red-300 bg-white shadow-sm">
-                <div className="border-b border-red-800 bg-red-950 px-5 py-4 text-white lg:px-6">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col overflow-hidden rounded-2xl border border-red-300 bg-white shadow-sm">
+                {/* HEADER */}
+                <div className="border-b border-red-800 bg-red-950 px-4 py-3 text-white lg:px-5">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
-                            <div className="mb-2 flex items-center gap-3">
-                                <span className="flex h-9 w-9 animate-pulse items-center justify-center rounded-full border-2 border-red-400 bg-red-700 text-lg font-black shadow-[0_0_24px_rgba(248,113,113,0.55)]">
+                            <div className="mb-1 flex items-center gap-2.5">
+                                <span className="flex h-7 w-7 animate-pulse items-center justify-center rounded-full border-2 border-red-400 bg-red-700 text-base font-black shadow-[0_0_24px_rgba(248,113,113,0.55)]">
                                     !
                                 </span>
-                                <p className="text-xs font-black uppercase tracking-[0.26em] text-red-300">
-                                    Alarmphase / Sektor 04
+                                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-red-300">
+                                    Alarm / Sektor 04
                                 </p>
                             </div>
-                            <h2 className="text-2xl font-black tracking-tight">
+                            <h2 className="text-lg font-black tracking-tight md:text-xl">
                                 Kritischer Abfall der Grubenbewetterung
                             </h2>
-                            <p className="mt-1 max-w-4xl text-xs leading-relaxed text-red-100/90 md:text-sm">
-                                WK-04 hält die Sollstellung nicht. In Sektor 04 steigen die Methanwerte, während der
-                                Wetterstrom fällt. Prüfe das Lagebild und öffne danach die Entscheidungsvorlage.
+                            <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-red-100/90 md:text-xs">
+                                WK-04 hält die Sollstellung nicht. In Sektor 04 steigt das Methan, während der
+                                Wetterstrom fällt. Sichte das Lagebild und führe die Vorfallprüfung durch.
                             </p>
                         </div>
 
-                        <div className="flex shrink-0 items-stretch gap-3">
-                            <div className="rounded-xl border border-red-700 bg-red-900/50 px-4 py-3 text-sm shadow-inner">
-                                <p className="text-[10px] uppercase tracking-widest text-red-200/80">Gefahrenlage</p>
-                                <p className="mt-1 text-2xl font-black uppercase tracking-wide text-white">kritisch</p>
-                                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-red-200/85">
-                                    Entscheidung erforderlich
-                                </p>
-                            </div>
-                            <button
-                                onClick={handlePrimaryAction}
-                                disabled={!isPhaseUnlocked || isLoading}
-                                className="min-w-48 rounded-xl bg-white px-5 py-3 text-sm font-black uppercase tracking-wide text-red-800 shadow-lg transition hover:bg-red-50 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
-                            >
-                                {!isPhaseUnlocked
-                                    ? "Alarm bestätigen"
-                                    : investigationStarted
-                                        ? isLoading
-                                            ? "Wird vorbereitet..."
-                                            : "Zur Entscheidung"
-                                        : "Lagebild prüfen"}
-                            </button>
+                        <div className="rounded-lg border border-red-700 bg-red-900/50 px-3 py-2 text-center shadow-inner lg:shrink-0">
+                            <p className="text-[9px] uppercase tracking-widest text-red-200/80">Gefahrenlage</p>
+                            <p className="text-lg font-black uppercase tracking-wide text-white md:text-xl">kritisch</p>
                         </div>
+                    </div>
+
+                    {/* Schritt-Anzeige: macht den Ablauf für den Operator explizit */}
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                        {steps.map((step) => (
+                            <div
+                                key={step.id}
+                                className={`flex items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-center text-[10px] font-black uppercase tracking-wide transition md:text-[11px] ${stepStateClasses[step.state]}`}
+                            >
+                                {step.state === "done" && <span aria-hidden="true">✓</span>}
+                                <span className="truncate">{step.label}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                <div className="p-4 lg:p-5">
-                    {!isPhaseUnlocked && (
-                        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                            <span className="font-black">Alarm noch nicht bestätigt.</span>{" "}
-                            Bestätige den Alarm zuerst im Dialogpanel. Danach kann die Lageprüfung gestartet werden.
-                        </div>
-                    )}
-
-                    <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-                        <section className="rounded-xl border border-slate-200 bg-white p-4">
-                            <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                                <div>
-                                    <p className="font-bold text-slate-900">1. Messwerte</p>
-                                    <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-                                        Kompaktes Lagebild für die nächste Entscheidung.
-                                    </p>
-                                </div>
-                                <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-700">
-                                    kritisch
-                                </span>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-                                {alarmMetrics.map((metric) => (
-                                    <div key={metric.id} className={`rounded-xl border p-3 ${severityClasses[metric.severity]}`}>
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <p className="text-xs font-black uppercase tracking-wide">{metric.label}</p>
-                                                <p className="mt-1 font-mono text-xl font-black tabular-nums">{metric.value}</p>
-                                            </div>
-                                            <span className={`mt-1 h-2.5 w-2.5 rounded-full ${severityDotClasses[metric.severity]}`} />
-                                        </div>
-                                        <p className="mt-2 text-[11px] font-semibold opacity-80">{metric.reference}</p>
-                                        <p className="mt-0.5 text-[11px] font-black uppercase tracking-wide">Trend: {metric.trend}</p>
+                {/* BODY */}
+                <div className="p-3 lg:p-4">
+                    <div className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr]">
+                        {/* LINKE SPALTE: Messwerte + Log */}
+                        <div className="flex flex-col gap-3">
+                            <section className="rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900">1. Messwerte</p>
+                                        <p className="text-[11px] leading-snug text-slate-600">
+                                            Kompaktes Lagebild für die nächste Entscheidung.
+                                        </p>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        <section className="rounded-xl border border-slate-200 bg-white p-4">
-                            <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                                <div>
-                                    <p className="font-bold text-slate-900">2. Grubenplan</p>
-                                    <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-                                        Bauplanansicht mit Personalstand und Alarmort.
-                                    </p>
-                                </div>
-                                <div className="flex shrink-0 flex-col items-end gap-1">
-                                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-700">
-                                        {totalWorkers} Personen gesamt
-                                    </span>
                                     <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-red-700">
-                                        {alarmSectorWorkers} Personen in S04
+                                        kritisch
                                     </span>
                                 </div>
-                            </div>
 
-                            <div className="relative h-72 overflow-hidden rounded-xl border border-slate-700 bg-slate-950 shadow-inner">
-                                <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(56,189,248,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.18)_1px,transparent_1px)] [background-size:18px_18px]" />
-                                <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
-                                    <path d="M17 46 H39 V28 H64 V46 H86 V65" className="fill-none stroke-sky-300/60" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M39 46 V75 H43" className="fill-none stroke-sky-300/45" strokeWidth="4" strokeLinecap="round" />
-                                    <path d="M66 46 C73 48 78 54 86 65" className="fill-none stroke-red-400/80" strokeWidth="5" strokeLinecap="round" />
-                                    <circle cx="86" cy="65" r="8" className="fill-none stroke-red-400" strokeWidth="1.8" />
-                                    <circle cx="86" cy="65" r="12" className="fill-none stroke-red-400/50" strokeWidth="1" />
-                                </svg>
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                    {alarmMetrics.map((metric) => (
+                                        <div key={metric.id} className={`rounded-lg border p-2.5 ${severityClasses[metric.severity]}`}>
+                                            <div className="flex items-start justify-between gap-2">
+                                                <p className="text-[11px] font-black uppercase tracking-wide">{metric.label}</p>
+                                                <span className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${severityDotClasses[metric.severity]}`} />
+                                            </div>
+                                            <p className="mt-1 font-mono text-base font-black tabular-nums">{metric.value}</p>
+                                            <p className="mt-1 text-[10px] font-semibold leading-tight opacity-80">{metric.reference}</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wide">Trend: {metric.trend}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
 
-                                <div className="absolute left-3 top-3 rounded-lg border border-sky-400/40 bg-slate-900/80 px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-sky-200">
-                                    Schieferkamm / Wetterplan
+                            <section className="rounded-xl border border-slate-200 bg-slate-950 p-3 font-mono text-emerald-300">
+                                <div className="mb-2 flex items-center justify-between gap-3 border-b border-slate-800 pb-2">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Alarm- und Systemlog</p>
+                                    <span className="rounded-full border border-red-900 bg-red-950 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-red-300">
+                                        Live
+                                    </span>
+                                </div>
+                                <div className="h-24 space-y-1 overflow-y-auto pr-2 text-[11px] leading-relaxed">
+                                    {logEntries.map((entry, index) => (
+                                        <p key={`${entry}-${index}`} className={entry.includes("ALARM") || entry.includes("Entscheidung") || entry.includes("Befund") ? "font-black text-red-300" : "text-emerald-300/90"}>
+                                            {entry}
+                                        </p>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* RECHTE SPALTE: Grubenplan + Vorfallprüfung */}
+                        <div className="flex flex-col gap-3">
+                            <section className="rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900">2. Grubenplan</p>
+                                        <p className="text-[11px] leading-snug text-slate-600">
+                                            Personalstand und Alarmort.
+                                        </p>
+                                    </div>
+                                    <div className="flex shrink-0 flex-col items-end gap-1">
+                                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-700">
+                                            {totalWorkers} gesamt
+                                        </span>
+                                        <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-red-700">
+                                            {alarmSectorWorkers} in S04
+                                        </span>
+                                    </div>
                                 </div>
 
-                                {mineSectors.map((sector) => (
-                                    <div
-                                        key={sector.id}
-                                        className={`absolute rounded-lg border-2 p-2 font-mono text-xs transition ${sectorClasses[sector.state]}`}
-                                        style={{
-                                            left: `${sector.x}%`,
-                                            top: `${sector.y}%`,
-                                            width: `${sector.w}%`,
-                                            height: `${sector.h}%`
-                                        }}
-                                    >
-                                        <div className="flex items-start justify-between gap-1">
-                                            <span className="font-black">{sector.label}</span>
-                                            <span className="rounded bg-black/20 px-1 text-[9px] font-black uppercase">
-                                                {stateLabel[sector.state]}
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-black">
-                                            <span
-                                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-black shadow-sm ${
-                                                    sector.state === "alarm"
-                                                        ? "border-white/80 bg-white text-red-700"
-                                                        : "border-slate-200 bg-white text-slate-950"
-                                                }`}
-                                                title={`${sector.workers} Personen in ${sector.label}`}
-                                            >
-                                                <span aria-hidden="true">👷</span>
-                                                <span>{sector.workers}</span>
-                                            </span>
-                                            {sector.state === "alarm" && (
-                                                <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] uppercase text-white">
-                                                    Alarm
+                                <div className="relative h-44 overflow-hidden rounded-xl border border-slate-700 bg-slate-950 shadow-inner md:h-52">
+                                    <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(56,189,248,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.18)_1px,transparent_1px)] [background-size:18px_18px]" />
+                                    <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true" preserveAspectRatio="none">
+                                        <path d="M17 46 H39 V28 H64 V46 H86 V65" className="fill-none stroke-sky-300/60" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M39 46 V75 H43" className="fill-none stroke-sky-300/45" strokeWidth="4" strokeLinecap="round" />
+                                        <path d="M66 46 C73 48 78 54 86 65" className="fill-none stroke-red-400/80" strokeWidth="5" strokeLinecap="round" />
+                                        <circle cx="86" cy="65" r="8" className="fill-none stroke-red-400" strokeWidth="1.8" />
+                                        <circle cx="86" cy="65" r="12" className="fill-none stroke-red-400/50" strokeWidth="1" />
+                                    </svg>
+
+                                    <div className="absolute left-2 top-2 rounded-md border border-sky-400/40 bg-slate-900/80 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wide text-sky-200">
+                                        Schieferkamm / Wetterplan
+                                    </div>
+
+                                    {mineSectors.map((sector) => (
+                                        <div
+                                            key={sector.id}
+                                            className={`absolute rounded-md border-2 p-1.5 font-mono text-[11px] transition ${sectorClasses[sector.state]}`}
+                                            style={{
+                                                left: `${sector.x}%`,
+                                                top: `${sector.y}%`,
+                                                width: `${sector.w}%`,
+                                                height: `${sector.h}%`
+                                            }}
+                                        >
+                                            <div className="flex items-start justify-between gap-1">
+                                                <span className="font-black">{sector.label}</span>
+                                                <span className="rounded bg-black/20 px-1 text-[8px] font-black uppercase">
+                                                    {stateLabel[sector.state]}
                                                 </span>
-                                            )}
+                                            </div>
+                                            <div className="mt-1 flex items-center gap-1 text-[10px] font-black">
+                                                <span
+                                                    className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-black shadow-sm ${
+                                                        sector.state === "alarm"
+                                                            ? "border-white/80 bg-white text-red-700"
+                                                            : "border-slate-200 bg-white text-slate-950"
+                                                    }`}
+                                                    title={`${sector.workers} Personen in ${sector.label}`}
+                                                >
+                                                    <span aria-hidden="true">👷</span>
+                                                    <span>{sector.workers}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    <div className="absolute bottom-2 left-2 right-2 flex flex-wrap items-center gap-2 rounded-md border border-slate-700 bg-slate-900/90 px-2 py-1 text-[9px] font-bold text-slate-300">
+                                        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sky-400" /> normal</span>
+                                        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" /> beobachten</span>
+                                        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Alarm</span>
+                                        <span className="ml-auto">👷 {totalWorkers} / {alarmSectorWorkers} in S04</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* VORFALLPRÜFUNG: der eigentliche Arbeitsschritt des Operators */}
+                            <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-3">
+                                <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+                                    <p className="text-sm font-bold text-slate-900">3. Vorfallprüfung</p>
+                                    <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
+                                        investigationStarted
+                                            ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                            : "border-amber-300 bg-amber-50 text-amber-800"
+                                    }`}>
+                                        {investigationStarted ? "Befund erstellt" : "offen"}
+                                    </span>
+                                </div>
+
+                                {!investigationStarted ? (
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-600">
+                                        <p className="text-sm font-black text-slate-800">Lagebild auswerten</p>
+                                        <p className="mt-1 text-xs leading-relaxed">
+                                            Sichte Messwerte und Grubenplan. Starte dann die Vorfallprüfung, um die Ursache
+                                            zu bestimmen und eine Prognose zu erstellen.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-950">
+                                            <p className="text-xs font-black uppercase tracking-wide">Ursache</p>
+                                            <p className="mt-1 text-xs leading-relaxed">
+                                                WK-04 reagiert verzögert auf Stellbefehle. Die Abluft aus Sektor 04 wird nicht
+                                                stabil geführt.
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-950">
+                                            <p className="text-xs font-black uppercase tracking-wide">Prognose</p>
+                                            <p className="mt-1 text-xs leading-relaxed">
+                                                CH₄ überschreitet in Kürze die Eskalationsschwelle. Eine Operator-Entscheidung
+                                                ist erforderlich.
+                                            </p>
                                         </div>
                                     </div>
-                                ))}
-
-                                <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-[10px] font-bold text-slate-300">
-                                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sky-400" /> normal</span>
-                                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" /> beobachten</span>
-                                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Alarm</span>
-                                    <span className="ml-auto text-slate-300">
-                                        👷 {totalWorkers} gesamt / {alarmSectorWorkers} in S04
-                                    </span>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
-                        <section className="rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-sm text-emerald-300">
-                            <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-800 pb-2">
-                                <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Alarm- und Systemlog</p>
-                                <span className="rounded-full border border-red-900 bg-red-950 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-red-300">
-                                    Live
-                                </span>
-                            </div>
-                            <div className="h-36 space-y-1.5 overflow-y-auto pr-2 text-xs leading-relaxed">
-                                {logEntries.map((entry, index) => (
-                                    <p key={`${entry}-${index}`} className={entry.includes("ALARM") || entry.includes("Entscheidung") ? "font-black text-red-300" : "text-emerald-300/90"}>
-                                        {entry}
-                                    </p>
-                                ))}
-                            </div>
-                        </section>
-
-                        <section className="rounded-xl border border-slate-200 bg-white p-4">
-                            <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
-                                <p className="font-bold text-slate-900">3. Vorfallprüfung</p>
-                                {investigationStarted && (
-                                    <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-800">
-                                        Vorlage bereit
-                                    </span>
                                 )}
-                            </div>
 
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-950">
-                                    <p className="text-sm font-black">Vorläufige Ursache</p>
-                                    <p className="mt-1 text-xs leading-relaxed">
-                                        WK-04 reagiert verzögert auf Stellbefehle. Die Abluft aus Sektor 04 wird nicht stabil geführt.
-                                    </p>
-                                </div>
+                                {investigationStarted && !isPhaseUnlocked && (
+                                    <div className="mt-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900">
+                                        Befund liegt vor. Bestätige ihn im {dialogName}, damit {agentName} die
+                                        Entscheidungsvorlage freigibt.
+                                    </div>
+                                )}
 
-                                <div className={`rounded-xl border p-3 ${investigationStarted ? "border-amber-300 bg-amber-50 text-amber-950" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
-                                    <p className="text-sm font-black">Nächster Schritt</p>
-                                    <p className="mt-1 text-xs leading-relaxed">
-                                        {investigationStarted
-                                            ? "Entscheidungsvorlage öffnen: Stabilisierung fortsetzen oder Sektor 04 abschotten."
-                                            : "Lagebildprüfung starten, um die Entscheidungsvorlage freizugeben."}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handlePrimaryAction}
-                                disabled={!isPhaseUnlocked || isLoading}
-                                className={`mt-4 w-full rounded-xl px-6 py-4 text-base font-black uppercase tracking-wide text-white shadow-lg transition disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${investigationStarted ? "bg-slate-950 hover:bg-slate-800" : "bg-red-600 hover:bg-red-700"}`}
-                            >
-                                {!isPhaseUnlocked
-                                    ? "Alarm im Dialog bestätigen"
-                                    : investigationStarted
-                                        ? isLoading
-                                            ? "Entscheidung wird vorbereitet..."
-                                            : "Zur Entscheidung"
-                                        : "Lagebild prüfen"}
-                            </button>
-                        </section>
+                                <button
+                                    onClick={handlePrimaryAction}
+                                    disabled={isLoading || (investigationStarted && !isPhaseUnlocked)}
+                                    className={`mt-3 w-full rounded-xl px-5 py-3 text-sm font-black uppercase tracking-wide text-white shadow-lg transition disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${
+                                        isNextStepReady ? "next-step-attention " : ""
+                                    }${
+                                        investigationStarted ? "bg-slate-950 hover:bg-slate-800" : "bg-red-600 hover:bg-red-700"
+                                    }`}
+                                >
+                                    {!investigationStarted
+                                        ? "Lagebild prüfen"
+                                        : !isPhaseUnlocked
+                                            ? `Warte auf Freigabe im ${dialogName}…`
+                                            : isLoading
+                                                ? "Entscheidung wird vorbereitet…"
+                                                : "Zur Entscheidung"}
+                                </button>
+                            </section>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -51,6 +51,7 @@ export default function Phase1aPrecheck() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isNextStepReady = isPhaseUnlocked && !isLoading;
 
     const [stats, setStats] = useState<TelemetryStats>({
         ch4: 0.34,
@@ -101,15 +102,17 @@ export default function Phase1aPrecheck() {
             {
                 key: "ch4",
                 label: "Methan CH₄",
-                value: `${stats.ch4.toFixed(2)} %`,
+                value: stats.ch4.toFixed(2),
+                unit: "%",
                 target: "Betrieb < 1,0 %",
                 status: ch4Status,
                 progress: clamp((stats.ch4 / 1.2) * 100, 4, 100)
             },
             {
                 key: "co",
-                label: "Kohlenmonoxid CO",
-                value: `${stats.co.toFixed(1)} ppm`,
+                label: "CO",
+                value: stats.co.toFixed(1),
+                unit: "ppm",
                 target: "Normal < 10 ppm",
                 status: coStatus,
                 progress: clamp((stats.co / 30) * 100, 4, 100)
@@ -117,7 +120,8 @@ export default function Phase1aPrecheck() {
             {
                 key: "o2",
                 label: "Sauerstoff O₂",
-                value: `${stats.o2.toFixed(1)} %`,
+                value: stats.o2.toFixed(1),
+                unit: "%",
                 target: "Soll 20,5–21,0 %",
                 status: o2Status,
                 progress: clamp(((stats.o2 - 18.5) / 2.7) * 100, 4, 100)
@@ -125,7 +129,8 @@ export default function Phase1aPrecheck() {
             {
                 key: "airflow",
                 label: "Wetterstrom S04",
-                value: `${stats.airflow.toFixed(1)} m³/s`,
+                value: stats.airflow.toFixed(1),
+                unit: "m³/s",
                 target: "Soll 24–34 m³/s",
                 status: airflowStatus,
                 progress: clamp(((stats.airflow - 18) / 22) * 100, 4, 100)
@@ -133,7 +138,8 @@ export default function Phase1aPrecheck() {
             {
                 key: "pressure",
                 label: "Differenzdruck",
-                value: `${Math.round(stats.diffPressure)} Pa`,
+                value: `${Math.round(stats.diffPressure)}`,
+                unit: "Pa",
                 target: "Soll 240–380 Pa",
                 status: pressureStatus,
                 progress: clamp((stats.diffPressure / 450) * 100, 4, 100)
@@ -182,8 +188,7 @@ export default function Phase1aPrecheck() {
                             </p>
                             <h2 className="text-2xl font-bold tracking-tight">Schieferkamm — Sektor 04</h2>
                             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-                                Prüfe die Umwelt- und Wetterdaten vor der Schichtübernahme. Die Werte werden als
-                                Momentaufnahme der lokalen Sensorik dargestellt.
+                                Prüfe die Umwelt- und Wetterdaten vor der Schichtübernahme.
                             </p>
                         </div>
 
@@ -198,104 +203,120 @@ export default function Phase1aPrecheck() {
                 </div>
 
                 <div className="p-6 lg:p-8">
-                    <div className="mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
+                    <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                         {metrics.map((metric) => {
                             const classes = statusClasses[metric.status];
 
                             return (
-                                <article key={metric.key} className={`rounded-xl border p-4 ${classes.card}`}>
-                                    <div className="mb-3 flex items-start justify-between gap-3">
+                                <article key={metric.key} className={`rounded-xl border p-3.5 ${classes.card}`}>
+                                    <div className="mb-2.5 flex items-start justify-between gap-2">
                                         <div>
-                                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                            <p className="text-[11px] font-semibold leading-tight text-slate-600">
                                                 {metric.label}
                                             </p>
-                                            <p className="mt-1 text-2xl font-black tabular-nums text-slate-950">
-                                                {metric.value}
+                                            <p className="mt-1 flex items-end gap-1.5 tabular-nums text-slate-950">
+                                                <span className="text-[1.95rem] font-black leading-none">{metric.value}</span>
+                                                <span className="pb-0.5 text-sm font-bold leading-none text-slate-700">{metric.unit}</span>
                                             </p>
                                         </div>
-                                        <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide ${classes.badge}`}>
+                                        <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${classes.badge}`}>
                                             {classes.label}
                                         </span>
                                     </div>
 
-                                    <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
                                         <div
                                             className={`h-full rounded-full transition-all duration-500 ${classes.bar}`}
                                             style={{ width: `${metric.progress}%` }}
                                         />
                                     </div>
-                                    <p className="mt-2 text-xs text-slate-500">{metric.target}</p>
+                                    <p className="mt-1.5 text-[11px] text-slate-500">{metric.target}</p>
                                 </article>
                             );
                         })}
                     </div>
 
-                    <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
-                        <section className="rounded-xl border border-slate-200 bg-white p-5">
-                            <div className="mb-5 flex items-start justify-between gap-4">
+                    <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+                        <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-sky-50/40 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
+                            <div className="mb-3 flex items-start justify-between gap-3">
                                 <div>
                                     <p className="font-bold text-slate-900">Manuelle Systemtests</p>
-                                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                                    <p className="mt-1 text-sm leading-snug text-slate-600">
                                         Starte einzelne Plausibilitätsprüfungen. Die Diagnosen verändern die Anzeige nur
                                         innerhalb realistischer Betriebsdriften.
                                     </p>
                                 </div>
-                                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
-                                    5 Systeme
+                                <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">
+                                    online
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 <button
                                     onClick={() => runDiagnostic("Hauptlüfter L-01")}
-                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm"
+                                    className="group rounded-xl border border-slate-300/90 bg-white/80 px-4 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
                                 >
-                                    <span className="block text-sm font-bold text-slate-800">Hauptlüfter L-01</span>
-                                    <span className="mt-1 block text-xs text-slate-500">Drehzahl, Lagerstatus, Rückmeldung FU</span>
+                                    <span className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                                        <span className="text-sky-500">●</span>
+                                        Hauptlüfter L-01
+                                    </span>
+                                    <span className="mt-0.5 block text-xs leading-snug text-slate-500">Drehzahl, Lagerstatus, Rückmeldung FU</span>
                                 </button>
 
                                 <button
                                     onClick={() => runDiagnostic("Gassensorik S04-GAS-2")}
-                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm"
+                                    className="group rounded-xl border border-slate-300/90 bg-white/80 px-4 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
                                 >
-                                    <span className="block text-sm font-bold text-slate-800">Gassensorik S04-GAS-2</span>
-                                    <span className="mt-1 block text-xs text-slate-500">CH₄, CO, O₂ — Plausibilitätsabgleich</span>
+                                    <span className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                                        <span className="text-sky-500">●</span>
+                                        Gassensorik S04-GAS-2
+                                    </span>
+                                    <span className="mt-0.5 block text-xs leading-snug text-slate-500">CH₄, CO, O₂ — Plausibilitätsabgleich</span>
                                 </button>
 
                                 <button
                                     onClick={() => runDiagnostic("Wettertür WT-04")}
-                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm"
+                                    className="group rounded-xl border border-slate-300/90 bg-white/80 px-4 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
                                 >
-                                    <span className="block text-sm font-bold text-slate-800">Wettertür WT-04</span>
-                                    <span className="mt-1 block text-xs text-slate-500">Endlage, Differenzdruck, Sperrkontakt</span>
+                                    <span className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                                        <span className="text-sky-500">●</span>
+                                        Wettertür WT-04
+                                    </span>
+                                    <span className="mt-0.5 block text-xs leading-snug text-slate-500">Endlage, Differenzdruck, Sperrkontakt</span>
                                 </button>
 
                                 <button
                                     onClick={() => runDiagnostic("Pumpensumpf P-Delta")}
-                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm"
+                                    className="group rounded-xl border border-slate-300/90 bg-white/80 px-4 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
                                 >
-                                    <span className="block text-sm font-bold text-slate-800">Pumpensumpf P-Delta</span>
-                                    <span className="mt-1 block text-xs text-slate-500">Füllstand, Förderstrom, Motorschutz</span>
+                                    <span className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                                        <span className="text-sky-500">●</span>
+                                        Pumpensumpf P-Delta
+                                    </span>
+                                    <span className="mt-0.5 block text-xs leading-snug text-slate-500">Füllstand, Förderstrom, Motorschutz</span>
                                 </button>
 
                                 <button
                                     onClick={() => runDiagnostic("Fluchtwegkennzeichnung")}
-                                    className="group rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-400 hover:bg-white hover:shadow-sm sm:col-span-2"
+                                    className="group rounded-xl border border-slate-300/90 bg-white/80 px-4 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm sm:col-span-2"
                                 >
-                                    <span className="block text-sm font-bold text-slate-800">Fluchtwegkennzeichnung / Notbeleuchtung</span>
-                                    <span className="mt-1 block text-xs text-slate-500">Batteriepuffer, Linienüberwachung, Sichtprüfung Rückmeldekontakte</span>
+                                    <span className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                                        <span className="text-sky-500">●</span>
+                                        Fluchtwegkennzeichnung / Notbeleuchtung
+                                    </span>
+                                    <span className="mt-0.5 block text-xs leading-snug text-slate-500">Batteriepuffer, Linienüberwachung, Sichtprüfung Rückmeldekontakte</span>
                                 </button>
                             </div>
                         </section>
 
-                        <section className="rounded-xl border border-slate-800 bg-slate-950 p-5 font-mono text-sm text-emerald-300 shadow-inner">
-                            <div className="mb-3 flex items-center justify-between border-b border-slate-800 pb-3">
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-300">Ereignis-Log</p>
-                                <p className="text-[10px] uppercase tracking-widest text-slate-500">statisch / scrollbar</p>
+                        <section className="rounded-2xl border border-emerald-500/25 bg-[#020b08] p-4 font-mono text-sm text-emerald-300 shadow-inner">
+                            <div className="mb-2.5 flex items-center justify-between border-b border-emerald-500/20 pb-2.5">
+                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-200">Ereignis-Log</p>
+                                <p className="text-[10px] uppercase tracking-widest text-emerald-400/70">statisch / scrollbar</p>
                             </div>
 
-                            <div className="h-64 overflow-y-auto pr-2 text-xs leading-relaxed scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
-                                <div className="space-y-2">
+                            <div className="h-56 overflow-y-auto pr-2 text-[11px] leading-relaxed scrollbar-thin scrollbar-thumb-emerald-700/70 scrollbar-track-[#03130f]">
+                                <div className="space-y-1.5">
                                     {eventFeed.map((line, index) => (
                                         <p key={`${line}-${index}`} className="whitespace-pre-wrap break-words text-emerald-300/90">
                                             {line}
@@ -312,15 +333,14 @@ export default function Phase1aPrecheck() {
                         </div>
                     )}
 
-                    <div className="mt-8 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
-                        {/*<p className="max-w-2xl text-sm leading-relaxed text-slate-600">*/}
-                        {/*    Alle Precheck-Parameter liegen im betrieblichen Toleranzbereich. Für die Schichtübernahme*/}
-                        {/*    ist im nächsten Schritt eine operative Kalibrierung erforderlich.*/}
-                        {/*</p>*/}
+                    <div className="mt-8 flex flex-col gap-4 border-slate-100 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
+                            Alle Precheck-Parameter liegen im betrieblichen Toleranzbereich.
+                        </p>
                         <button
                             onClick={handleStartRoutine}
                             disabled={isLoading || !isPhaseUnlocked}
-                            className="w-full rounded-xl bg-blue-700 px-8 py-3 font-bold text-white shadow-md transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none sm:w-auto"
+                            className={`w-full rounded-xl bg-blue-700 px-8 py-3 font-bold text-white shadow-md transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none sm:w-auto ${isNextStepReady ? "next-step-attention" : ""}`}
                         >
                             {isLoading
                                 ? "Kalibrierung wird gestartet..."

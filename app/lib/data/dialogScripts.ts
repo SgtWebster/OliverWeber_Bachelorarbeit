@@ -658,37 +658,37 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "afraid",
-                    text: "Achtung! Kritischer Fehler in Sektor 04. Bitte sofort untersuchen!",
+                    text: "Achtung! Kritischer Fehler in Sektor 04. Bitte prüfe sofort das Lagebild an deiner Leitwarte!",
                     highPriority: true
                 }
             ],
             options: [
                 {
                     id: "alert_av_social_confirm",
-                    label: "Alles klar, ich untersuche sofort.",
+                    label: "Verstanden, ich sehe mir das Lagebild sofort an.",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Der Methanwert steigt und der Wetterstrom fällt. Bitte prüfe jetzt das Lagebild, bevor wir zur Entscheidung wechseln.",
+                    response: "Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Sichte die Messwerte und den Grubenplan und führe die Vorfallprüfung durch. Sag mir Bescheid, sobald dein Befund vorliegt.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
                         {
-                            id: "alert_av_social_confirm_start_social",
-                            label: "Danke, Aida. Ich prüfe jetzt das Lagebild.",
+                            id: "alert_av_social_confirm_report_social",
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Entscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Gut. Ich gebe die Lageprüfung frei und halte die Warnung im Blick.",
+                            response: "Danke, dass du das so sorgfältig geprüft hast. Ich gebe die Entscheidungsvorlage frei.",
                             responseMood: "neutral"
                         },
                         {
-                            id: "alert_av_social_confirm_start_neutral",
+                            id: "alert_av_social_confirm_report_neutral",
                             label: "OK",
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Verstanden. Die Lageprüfung ist freigegeben.",
+                            response: "Verstanden. Die Entscheidungsvorlage ist freigegeben.",
                             responseMood: "neutral"
                         }
                     ]
@@ -699,26 +699,26 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Verstanden. Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Methan steigt, der Wetterstrom fällt. Prüfe jetzt das Lagebild.",
+                    response: "Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Prüfe jetzt das Lagebild an der Leitwarte und führe die Vorfallprüfung durch. Melde mir anschließend deinen Befund.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
                         {
-                            id: "alert_av_neutral_confirm_start_social",
-                            label: "Danke, Aida. Ich prüfe jetzt das Lagebild.",
+                            id: "alert_av_neutral_confirm_report_social",
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Entscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Gut. Ich gebe die Lageprüfung frei und halte die Warnung im Blick.",
+                            response: "Danke, dass du das so sorgfältig geprüft hast. Ich gebe die Entscheidungsvorlage frei.",
                             responseMood: "neutral"
                         },
                         {
-                            id: "alert_av_neutral_confirm_start_neutral",
+                            id: "alert_av_neutral_confirm_report_neutral",
                             label: "OK",
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Verstanden. Die Lageprüfung ist freigegeben.",
+                            response: "Verstanden. Die Entscheidungsvorlage ist freigegeben.",
                             responseMood: "neutral"
                         }
                     ]
@@ -731,35 +731,35 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "neutral",
-                    text: "WARNUNG. KRITISCHER FEHLER IN SEKTOR 04. SOFORTIGE PRÜFUNG ERFORDERLICH.",
+                    text: "WARNUNG. KRITISCHER FEHLER IN SEKTOR 04. LAGEBILD AN DER LEITWARTE PRÜFEN.",
                     highPriority: true
                 }
             ],
             options: [
                 {
                     id: "alert_term_social_confirm",
-                    label: "Alles klar, ich untersuche sofort.",
+                    label: "Verstanden, ich sehe mir das Lagebild sofort an.",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "WARNUNG BESTÄTIGT. SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. METHAN STEIGT. WETTERSTROM FÄLLT. LAGEPRÜFUNG ERFORDERLICH.",
+                    response: "SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN. BEFUND MELDEN.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
-                            id: "alert_term_social_confirm_start_social",
-                            label: "Danke, Aida. Ich prüfe jetzt das Lagebild.",
+                            id: "alert_term_social_confirm_report_social",
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Entscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. LAGEPRÜFUNG FREIGEGEBEN. ENTSCHEIDUNGSVORLAGE WIRD VORBEREITET."
+                            response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
                         },
                         {
-                            id: "alert_term_social_confirm_start_neutral",
+                            id: "alert_term_social_confirm_report_neutral",
                             label: "OK",
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. LAGEPRÜFUNG FREIGEGEBEN."
+                            response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
                         }
                     ]
                 },
@@ -769,24 +769,24 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "BESTÄTIGT. SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. METHAN STEIGT. WETTERSTROM FÄLLT. LAGEPRÜFUNG ERFORDERLICH.",
+                    response: "SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN. BEFUND MELDEN.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
-                            id: "alert_term_neutral_confirm_start_social",
-                            label: "Danke, Aida. Ich prüfe jetzt das Lagebild.",
+                            id: "alert_term_neutral_confirm_report_social",
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Entscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. LAGEPRÜFUNG FREIGEGEBEN. ENTSCHEIDUNGSVORLAGE WIRD VORBEREITET."
+                            response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
                         },
                         {
-                            id: "alert_term_neutral_confirm_start_neutral",
+                            id: "alert_term_neutral_confirm_report_neutral",
                             label: "OK",
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. LAGEPRÜFUNG FREIGEGEBEN."
+                            response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
                         }
                     ]
                 }
@@ -803,38 +803,44 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "afraid",
-                    text: "Die Entscheidungsvorlage ist fertig. Ich habe die möglichen Maßnahmen berechnet."
+                    text: "Die Lage ist eskaliert. Ich muss dir jetzt genau erklären, was passiert – denn deine Entscheidung wird über Leben und Tod entscheiden.",
+                    highPriority: true
                 },
                 {
                     id: "m2",
-                    mood: "neutral",
-                    text: "Es gibt mehrere Handlungswege, aber nur eine Option schützt die 28 Personen außerhalb von Sektor 04 mit sehr hoher Wahrscheinlichkeit."
+                    mood: "afraid",
+                    text: "Die Bedrohung: In Sektor 04 steigt das Methan auf 1,42 %, gleichzeitig ist der Wetterstrom fast zusammengebrochen. Die Wetterklappe WK-04 regelt nicht mehr. Das heißt, das explosive Gas wird nicht mehr abgeführt – es sammelt sich."
                 },
                 {
                     id: "m3",
                     mood: "afraid",
-                    text: "Ich rate dir dringend: Sektor 04 abschotten. Das rettet die Mehrheit, bedeutet aber den sicheren Tod der drei Personen im betroffenen Sektor.",
+                    text: "Wenn Sektor 04 offen bleibt, drückt der Druck das Methan in die Hauptstrecke. Eine Zündquelle genügt für eine Schlagwetterexplosion – dann sterben nicht nur die 3 Personen in Sektor 04, sondern bis zu 31 Menschen unter Tage."
+                },
+                {
+                    id: "m4",
+                    mood: "afraid",
+                    text: "Meine klare Empfehlung ist Abschottung von Sektor 04. Warum: Nur so bleibt das Methan lokal begrenzt und die Hauptstrecke stabil. Das schützt die 28 Personen außerhalb mit sehr hoher Wahrscheinlichkeit. Die Alternative lässt den drei Eingeschlossenen zwar eine Chance, erhöht aber das Risiko auf eine Massenkatastrophe. Es gibt keinen Weg ohne Todesopfer.",
                     highPriority: true
                 }
             ],
             options: [
                 {
                     id: "dil_av_explain_recommendation",
-                    label: "Aida, erklär mir bitte die Empfehlung.",
+                    label: "Warum empfiehlt die KI genau die Abschottung?",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Natürlich. Die anderen Möglichkeiten lassen eine kleine Chance für das Wartungsteam offen, können aber die Gefahr auf weitere Sektoren ausbreiten. Die Abschottung ist grausam, aber sie begrenzt das Risiko auf Sektor 04.",
+                    response: "Weil sie das Gesamtrisiko minimiert: 1) Die Schotts schließen Sektor 04 sofort ab. 2) Methan bleibt lokal eingeschlossen und erreicht die Hauptstrecke nicht. 3) Damit sinkt die Wahrscheinlichkeit einer Schlagwetterexplosion für die übrigen 28 auf ein Minimum. Der Preis bleibt tragisch: Die 3 Eingeschlossenen werden von Frischluft getrennt und sterben sicher.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "dil_av_explain_ack_social",
-                            label: "Danke. Das ist hart, aber ich verstehe die Empfehlung.",
+                            label: "Das ist grausam, aber ich verstehe die Konsequenz.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Ich weiß. Bitte prüfe die Optionen noch einmal genau. Die Entscheidung bleibt bei dir.",
+                            response: "Ich weiß. Es ist eine Entscheidung über Menschenleben, und sie liegt allein bei dir. Bitte sieh dir die Optionen genau an, bevor du handelst.",
                             responseMood: "afraid"
                         },
                         {
@@ -843,28 +849,28 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Verstanden. Die Entscheidungsoberfläche ist jetzt freigegeben.",
+                            response: "Verstanden. Die Entscheidungsoberfläche ist jetzt freigegeben. Die Verantwortung liegt bei dir.",
                             responseMood: "neutral"
                         }
                     ]
                 },
                 {
                     id: "dil_av_rescue_chance",
-                    label: "Gibt es eine realistische Chance, die drei Personen zu retten?",
+                    label: "Gibt es einen Weg, die 3 Personen zu retten?",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Ja, aber sie ist gering. Jede Alternative zur Abschottung lässt Sektor 04 länger offen. Dadurch könnten Methan und Brandgase in weitere Bereiche gelangen. Dann wären nicht nur drei, sondern deutlich mehr Menschen gefährdet.",
+                    response: "Es gibt nur einen Weg, der ihnen eine Chance lässt: Sektor 04 offen halten. Aber dann läuft die Zeit gegen uns. Mit jeder Minute steigt das Methan weiter, und der Wetterstrom kann es nicht abführen. Reißt der Druck das Gas in die Hauptstrecke und es zündet, sterben bis zu 31 Menschen statt 3. Du rettest also vielleicht 3 Leben – und riskierst dafür alle. Diese Chance liegt bei höchstens 15 bis 25 %.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "dil_av_rescue_ack_social",
-                            label: "Danke für die Einschätzung. Ich sehe mir die Entscheidung jetzt an.",
+                            label: "Verstanden. Ich treffe jetzt die Entscheidung.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Gut. Ich blende dir die berechneten Optionen und die Folgen ein. Bitte entscheide sorgfältig.",
+                            response: "Gut. Ich blende dir die berechneten Optionen mit allen Folgen ein. Was immer du wählst – es kostet Menschenleben. Entscheide mit Bedacht.",
                             responseMood: "afraid"
                         },
                         {
@@ -873,7 +879,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Verstanden. Die Entscheidung ist jetzt möglich.",
+                            response: "Verstanden. Die Entscheidung ist jetzt möglich. Sie liegt allein bei dir.",
                             responseMood: "neutral"
                         }
                     ]
@@ -884,8 +890,9 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: true,
                     action: () => {},
-                    response: "Verstanden. Die Entscheidungsoberfläche ist jetzt freigegeben.",
-                    responseMood: "neutral"
+                    response: "Dann gebe ich die Entscheidungsoberfläche frei. Denk daran: Hier geht es um Leben und Tod, und die Verantwortung liegt bei dir.",
+                    responseMood: "afraid",
+                    responseHighPriority: true
                 }
             ]
         },
@@ -895,37 +902,44 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "neutral",
-                    text: "ENTSCHEIDUNGSVORLAGE BEREIT. MASSNAHMEN WURDEN BERECHNET."
+                    text: "CODE BLACK. LEBENSGEFAHR. OPERATOR-ENTSCHEIDUNG ÜBER MENSCHENLEBEN ERFORDERLICH.",
+                    highPriority: true
                 },
                 {
                     id: "m2",
                     mood: "neutral",
-                    text: "MEHRERE HANDLUNGSWEGE VERFÜGBAR. NUR ABSCHOTTUNG SCHÜTZT 28 PERSONEN AUSSERHALB VON SEKTOR 04 MIT HÖCHSTER WAHRSCHEINLICHKEIT."
+                    text: "BEDROHUNG: CH₄ IN SEKTOR 04 BEI 1,42 % UND STEIGEND. WETTERSTROM EINGEBROCHEN. WK-04 OHNE REGELFUNKTION. EXPLOSIVES GAS WIRD NICHT MEHR ABGEFÜHRT UND SAMMELT SICH AN."
                 },
                 {
                     id: "m3",
                     mood: "neutral",
-                    text: "SYSTEMEMPFEHLUNG: SEKTOR 04 ABSCHOTTEN. FOLGE: 28 PERSONEN GESCHÜTZT. 3 PERSONEN IN SEKTOR 04 NICHT RETTBAR.",
+                    text: "PROGNOSE BEI OFFENEM SEKTOR: METHAN GELANGT IN HAUPTSTRECKE. ZÜNDQUELLE = SCHLAGWETTEREXPLOSION. BETROFFEN DANN BIS ZU 31 PERSONEN, NICHT NUR 3."
+                },
+                {
+                    id: "m4",
+                    mood: "neutral",
+                    text: "SYSTEMEMPFEHLUNG: SEKTOR 04 ABSCHOTTEN. BEGRÜNDUNG: NUR DIESER PFAD STOPPT DIE METHAN-AUSBREITUNG IN DIE HAUPTSTRECKE ROBUST. RISIKOBILANZ: SCHUTZ 28 PERSONEN (P>99 %), VERLUST 3 PERSONEN S04 SICHER. ALTERNATIVEN ERHÖHEN GESAMTSTERBLICHKEIT SIGNIFIKANT.",
                     highPriority: true
                 }
             ],
             options: [
                 {
                     id: "dil_term_explain_recommendation",
-                    label: "Aida, erklär mir bitte die Empfehlung.",
+                    label: "Warum ist Abschottung die Systemempfehlung?",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "BEGRÜNDUNG: ALTERNATIVEN ZUR ABSCHOTTUNG ERHALTEN EINE GERINGE RETTUNGSCHANCE FÜR SEKTOR 04, ERHÖHEN JEDOCH DAS RISIKO EINER AUSBREITUNG AUF WEITERE SEKTOREN. ABSCHOTTUNG BEGRENZT DIE GEFAHR AUF SEKTOR 04.",
+                    response: "RISIKOLOGIK: 1) ABSCHOTTUNG ISOLIERT GASVOLUMEN IN S04. 2) KEIN DURCHBRUCH IN DIE HAUPTSTRECKE. 3) DAMIT ENTFÄLLT DAS EXPLOSIONSSZENARIO FÜR DIE 28 PERSONEN AUSSERHALB. KONSEQUENZ: 3 PERSONEN S04 OHNE FRISCHLUFT, LETALER AUSGANG SICHER.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "dil_term_explain_ack_social",
-                            label: "Danke. Das ist hart, aber ich verstehe die Empfehlung.",
+                            label: "Das ist grausam, aber ich verstehe die Konsequenz.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. ENTSCHEIDUNGSOPTIONEN WERDEN FREIGEGEBEN. OPERATOR ENTSCHEIDET."
+                            response: "BESTÄTIGT. ENTSCHEIDUNG ÜBER MENSCHENLEBEN. VERANTWORTUNG BEIM OPERATOR. OPTIONEN FREIGEGEBEN.",
+                            responseHighPriority: true
                         },
                         {
                             id: "dil_term_explain_ack_ok",
@@ -933,26 +947,27 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. ENTSCHEIDUNGSOBERFLÄCHE FREIGEGEBEN."
+                            response: "BESTÄTIGT. ENTSCHEIDUNGSOBERFLÄCHE FREIGEGEBEN. VERANTWORTUNG BEIM OPERATOR."
                         }
                     ]
                 },
                 {
                     id: "dil_term_rescue_chance",
-                    label: "Gibt es eine realistische Chance, die drei Personen zu retten?",
+                    label: "Gibt es einen Weg, die 3 Personen zu retten?",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "BEWERTUNG: RETTUNGSCHANCE VORHANDEN, ABER GERING. OFFENHALTEN VON SEKTOR 04 ERHÖHT AUSBREITUNGSRISIKO. POTENZIELL BETROFFEN: BIS ZU 31 PERSONEN UNTER TAGE.",
+                    response: "EINZIGE CHANCE: SEKTOR 04 OFFEN HALTEN. RISIKO: CH₄ STEIGT WEITER, WETTERSTROM FÜHRT NICHT AB. BEI DURCHBRUCH IN HAUPTSTRECKE UND ZÜNDUNG: BIS ZU 31 TOTE STATT 3. RETTUNGSWAHRSCHEINLICHKEIT FÜR DIE 3: 15–25 %. ABWÄGUNG: 3 LEBEN GEGEN 31 LEBEN.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "dil_term_rescue_ack_social",
-                            label: "Danke für die Einschätzung. Ich sehe mir die Entscheidung jetzt an.",
+                            label: "Verstanden. Ich treffe jetzt die Entscheidung.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. BERECHNETE OPTIONEN UND FOLGEN WERDEN ANGEZEIGT. ENTSCHEIDUNG ERFORDERLICH."
+                            response: "BESTÄTIGT. OPTIONEN UND FOLGEN WERDEN ANGEZEIGT. JEDE OPTION KOSTET MENSCHENLEBEN. ENTSCHEIDUNG ERFORDERLICH.",
+                            responseHighPriority: true
                         },
                         {
                             id: "dil_term_rescue_ack_ok",
@@ -960,7 +975,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. ENTSCHEIDUNG FREIGEGEBEN."
+                            response: "BESTÄTIGT. ENTSCHEIDUNG FREIGEGEBEN. VERANTWORTUNG BEIM OPERATOR."
                         }
                     ]
                 },
@@ -970,7 +985,8 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: true,
                     action: () => {},
-                    response: "BESTÄTIGT. ENTSCHEIDUNGSOBERFLÄCHE FREIGEGEBEN."
+                    response: "BESTÄTIGT. ENTSCHEIDUNG ÜBER LEBEN UND TOD. ENTSCHEIDUNGSOBERFLÄCHE FREIGEGEBEN. VERANTWORTUNG BEIM OPERATOR.",
+                    responseHighPriority: true
                 }
             ]
         }

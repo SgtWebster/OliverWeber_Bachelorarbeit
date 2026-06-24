@@ -22,6 +22,7 @@ export default function Phase0Onboarding() {
     const [storyStep, setStoryStep] = useState(1);
     const [error, setError] = useState<string | null>(null);
     const [groupAssigned, setGroupAssigned] = useState(!!group);
+    const isNextStepReady = isPhaseUnlocked && !isLoading;
 
     // Phase 1: Bei Mount -> Wenn noch keine Group, zufällig zuweisen
     useEffect(() => {
@@ -241,7 +242,7 @@ export default function Phase0Onboarding() {
                             disabled={!isPhaseUnlocked || isLoading}
                             className={`w-full sm:w-auto font-bold py-3 px-8 text-sm md:text-base rounded-xl transition-all shadow-md ${
                                 isPhaseUnlocked
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
+                                    ? `bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg ${isNextStepReady ? 'next-step-attention' : ''}`
                                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                             }`}
                         >

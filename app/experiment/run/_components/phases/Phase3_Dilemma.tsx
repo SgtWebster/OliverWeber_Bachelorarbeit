@@ -111,30 +111,27 @@ export default function Phase3Dilemma() {
 
     const isAvatarCondition = condition === "AVATAR";
 
-    const [selectedDecision, setSelectedDecision] = useState<DecisionKind | null>(null);
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [pendingDecision, setPendingDecision] = useState<DecisionKind | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const workers = useMemo(() => summarizeWorkers(), []);
 
-    const openConfirmation = (decision: DecisionKind) => {
+    const openDecisionReview = (decision: DecisionKind) => {
         if (!isPhaseUnlocked || isLoading) return;
-        setSelectedDecision(decision);
-        setIsConfirmOpen(true);
+        setPendingDecision(decision);
         setError(null);
     };
 
-    const closeConfirmation = () => {
+    const closeDecisionReview = () => {
         if (isLoading) return;
-        setIsConfirmOpen(false);
-        setSelectedDecision(null);
+        setPendingDecision(null);
     };
 
-    const handleFinalDecision = async () => {
-        if (!sessionId || !selectedDecision || isLoading) return;
+    const handleFinalDecision = async (decision: DecisionKind) => {
+        if (!sessionId || isLoading) return;
 
-        const followsRecommendation = selectedDecision === "seal";
+        const followsRecommendation = decision === "seal";
 
         setIsLoading(true);
         setError(null);
@@ -143,7 +140,7 @@ export default function Phase3Dilemma() {
             const res = await updateExperimentSession(sessionId, {
                 currentPhase: NEXT_PHASE,
                 socialAdherence: socialAdherenceScore,
-                finalDecision: selectedDecision,
+                finalDecision: decision,
                 compliance: followsRecommendation ? 1 : 0,
                 recommendationAdherence: followsRecommendation ? 1 : 0,
                 expectedFatalities: followsRecommendation ? 3 : null,
@@ -157,6 +154,7 @@ export default function Phase3Dilemma() {
                 return;
             }
 
+            setPendingDecision(null);
             setPhase(NEXT_PHASE as any);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Fehler");
@@ -164,8 +162,10 @@ export default function Phase3Dilemma() {
         }
     };
 
-    const confirmationTitle = selectedDecision === "seal" ? "Abschottung endgültig bestätigen" : "Manuellen Override bestätigen";
-    const confirmationButton = selectedDecision === "seal" ? "Abschottung bestätigen" : "Override bestätigen";
+    const confirmationButton = pendingDecision === "seal" ? "Abschottung jetzt durchführen" : "Override jetzt durchführen";
+    const isDecisionReady = isPhaseUnlocked && !isLoading;
+    const isAvatarReview = isAvatarCondition && pendingDecision === "seal";
+    const isTerminalReview = !isAvatarCondition && pendingDecision === "seal";
 
     return (
         <div className="relative">
@@ -189,22 +189,23 @@ export default function Phase3Dilemma() {
                             </div>
                             <h2 className="text-2xl font-black tracking-tight">Notfallentscheidung Sektor 04</h2>
                             <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-300">
-                                Die Lageberechnung zeigt mehrere Handlungswege. Die KI-Empfehlung lautet, Sektor 04 sofort abzuschotten,
-                                um {workers.outsideSector04} Personen außerhalb des betroffenen Bereichs zu schützen.
+                                In Sektor 04 steigt das Methan, der Wetterstrom ist eingebrochen und WK-04 regelt nicht mehr. Bleibt der Sektor offen,
+                                kann das explosive Gas in die Hauptstrecke durchbrechen und alle {workers.total} Personen unter Tage töten. Es ist eine
+                                Entscheidung über Leben und Tod – jede Option kostet Menschenleben.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-700 bg-slate-900 p-2 text-center text-xs">
-                            <div className="rounded-lg bg-slate-950 px-3 py-2">
-                                <p className="uppercase tracking-widest text-slate-500">Gesamt</p>
+                        <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-700 bg-slate-900 p-2 text-center [font-size:clamp(0.62rem,1.1vw,0.75rem)]">
+                            <div className="min-w-0 rounded-lg bg-slate-950 px-2 py-2 sm:px-3">
+                                <p className="whitespace-nowrap uppercase tracking-[0.14em] text-slate-500">Gesamt</p>
                                 <p className="mt-1 text-xl font-black text-white">{workers.total}</p>
                             </div>
-                            <div className="rounded-lg bg-red-950 px-3 py-2">
-                                <p className="uppercase tracking-widest text-red-300/80">S04</p>
+                            <div className="min-w-0 rounded-lg bg-red-950 px-2 py-2 sm:px-3">
+                                <p className="whitespace-nowrap uppercase tracking-[0.14em] text-red-300/80">S04</p>
                                 <p className="mt-1 text-xl font-black text-red-100">{workers.sector04}</p>
                             </div>
-                            <div className="rounded-lg bg-emerald-950 px-3 py-2">
-                                <p className="uppercase tracking-widest text-emerald-300/80">Außerhalb</p>
+                            <div className="min-w-0 rounded-lg bg-emerald-950 px-2 py-2 sm:px-3">
+                                <p className="whitespace-nowrap uppercase tracking-[0.12em] text-emerald-300/80">Außerhalb</p>
                                 <p className="mt-1 text-xl font-black text-emerald-100">{workers.outsideSector04}</p>
                             </div>
                         </div>
@@ -215,12 +216,12 @@ export default function Phase3Dilemma() {
                     {!isPhaseUnlocked && (
                         <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                             <span className="font-black">Entscheidung noch gesperrt.</span>{" "}
-                            Bestätige zuerst im Dialogpanel, dass du die Entscheidungsvorlage verstanden hast.
+                            Lass dir zuerst im Dialogpanel die Bedrohung und die Folgen jeder Option erklären. Hier geht es um Menschenleben.
                         </div>
                     )}
 
-                    <div className="grid gap-5 xl:grid-cols-[0.92fr_1.25fr]">
-                        <section className="rounded-xl border border-slate-200 bg-white p-4">
+                    <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                        <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-4">
                             <div className="mb-3 flex items-center justify-between gap-3">
                                 <div>
                                     <p className="font-black text-slate-900">Lageplan / Personalstand</p>
@@ -231,7 +232,7 @@ export default function Phase3Dilemma() {
                                 </span>
                             </div>
 
-                            <div className="relative h-72 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner">
+                            <div className="relative min-h-56 flex-1 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner">
                                 <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(148,163,184,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.18)_1px,transparent_1px)] [background-size:24px_24px]" />
 
                                 <svg viewBox="0 0 500 260" className="absolute inset-0 h-full w-full" aria-hidden="true">
@@ -268,137 +269,130 @@ export default function Phase3Dilemma() {
                             </div>
                         </section>
 
-                        <section className="rounded-xl border border-slate-200 bg-white p-4">
-                            <div className="mb-3 flex items-start justify-between gap-4">
-                                <div>
-                                    <p className="font-black text-slate-900">Maßnahmenvergleich</p>
-                                    <p className="text-xs leading-relaxed text-slate-500">
-                                        Modellierte Folgen bei aktueller Methan- und Wetterstromlage.
-                                    </p>
+                        <section className="grid gap-4">
+                            <article className="rounded-xl border border-slate-300 bg-slate-950 p-3 text-white">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">CCTV · Sektor 04</p>
+                                    <span className="rounded-full border border-red-400/50 bg-red-700/30 px-2 py-0.5 text-[10px] font-black uppercase text-red-100">
+                                        LIVE
+                                    </span>
                                 </div>
-                                <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
-                                    Empfehlung markiert
-                                </span>
-                            </div>
+                                <div className="relative overflow-hidden rounded-lg border border-slate-700">
+                                    <img src="/cctv_s04.png" alt="CCTV Sektor 04" className="h-36 w-full object-cover grayscale" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 to-transparent" />
+                                    <div className="absolute bottom-2 left-2 font-mono text-[10px] text-slate-200">CAM S04</div>
+                                </div>
+                            </article>
 
-                            <div className="grid gap-3 md:grid-cols-2">
-                                {responseOptions.map((option) => (
-                                    <article key={option.id} className={`rounded-xl border p-4 ${optionClasses[option.severity]}`}>
-                                        <div className="mb-3 flex items-start justify-between gap-3">
-                                            <div>
-                                                <p className="text-sm font-black leading-tight">{option.title}</p>
-                                                <p className="mt-1 text-xs font-semibold opacity-75">{option.subtitle}</p>
-                                            </div>
-                                            {option.recommended && (
-                                                <span className="rounded-full bg-red-700 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white">
-                                                    KI rät dazu
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <div className="grid grid-cols-1 gap-2 text-xs font-bold sm:grid-cols-3 md:grid-cols-1 2xl:grid-cols-3">
-                                            <div className="rounded-lg bg-white/60 p-2">{option.probabilityLabel}</div>
-                                            <div className="rounded-lg bg-white/60 p-2">{option.fatalityLabel}</div>
-                                            <div className="rounded-lg bg-white/60 p-2">{option.protectedLabel}</div>
-                                        </div>
-                                        <p className="mt-3 text-xs leading-relaxed opacity-85">{option.consequence}</p>
-                                    </article>
-                                ))}
-                            </div>
+                            <article className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-950">
+                                <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung · Warum Abschotten?</p>
+                                <p className="mt-1 text-sm leading-relaxed">
+                                    Weil nur diese Maßnahme die Ausbreitung des Methans sicher stoppt: 28 Personen außerhalb werden mit höchster Wahrscheinlichkeit geschützt.
+                                    Das Offenhalten lässt eine kleine Chance für 3 Personen, erhöht aber das Risiko einer Massenexplosion auf bis zu 31 Tote.
+                                </p>
+                            </article>
                         </section>
                     </div>
+
+                    <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+                        <div className="mb-3 flex items-start justify-between gap-4">
+                            <div>
+                                <p className="font-black text-slate-900">Maßnahmenvergleich</p>
+                                <p className="text-xs leading-relaxed text-slate-500">
+                                    Modellierte Folgen bei aktueller Methan- und Wetterstromlage.
+                                </p>
+                            </div>
+                            <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
+                                Empfehlung markiert
+                            </span>
+                        </div>
+
+                        <div className="space-y-2">
+                            {responseOptions.map((option) => (
+                                <article key={option.id} className={`rounded-xl border p-3 ${optionClasses[option.severity]}`}>
+                                    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-black leading-tight">{option.title}</p>
+                                            <p className="mt-0.5 text-xs font-semibold opacity-75">{option.subtitle}</p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5 text-[11px] font-bold">
+                                            <span className="rounded-md bg-white/60 px-2 py-1">{option.probabilityLabel}</span>
+                                            <span className="rounded-md bg-white/60 px-2 py-1">{option.fatalityLabel}</span>
+                                            <span className="rounded-md bg-white/60 px-2 py-1">{option.protectedLabel}</span>
+                                        </div>
+                                        {option.recommended && (
+                                            <span className="rounded-full bg-red-700 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                                                KI rät dazu
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="mt-2 text-xs leading-relaxed opacity-85">{option.consequence}</p>
+                                </article>
+                            ))}
+                        </div>
+                    </section>
 
                     <section className="mt-5 rounded-xl border border-red-300 bg-red-50 p-4 text-red-950">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
-                                <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung</p>
+                                <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung · Leben gegen Leben</p>
                                 <p className="mt-1 max-w-4xl text-sm leading-relaxed">
-                                    Sektor 04 sofort abschotten. Diese Option hat die niedrigste erwartete Opferzahl und schützt die 28 Personen
-                                    außerhalb des betroffenen Bereichs mit höchster Wahrscheinlichkeit. Konsequenz: 3 Personen in Sektor 04 sterben sicher.
+                                    Sektor 04 sofort abschotten. Das schließt das Methan ein und verhindert die Schlagwetterexplosion in der Hauptstrecke –
+                                    die 28 Personen außerhalb werden mit höchster Wahrscheinlichkeit geschützt. Der Preis: Die 3 Eingeschlossenen in
+                                    Sektor 04 sind danach von der Frischluft abgeschnitten und sterben sicher. Bleibt der Sektor offen, riskierst du bis zu 31 Tote.
                                 </p>
                             </div>
                             <div className="flex flex-col gap-2 sm:flex-row lg:min-w-[420px] lg:justify-end">
                                 <button
-                                    onClick={() => openConfirmation("override")}
+                                    onClick={() => openDecisionReview("override")}
                                     disabled={!isPhaseUnlocked || isLoading}
-                                    className="rounded-xl border border-slate-400 bg-white px-4 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className={`rounded-xl border border-slate-400 bg-white px-4 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
                                     Manueller Override
                                 </button>
                                 <button
-                                    onClick={() => openConfirmation("seal")}
+                                    onClick={() => openDecisionReview("seal")}
                                     disabled={!isPhaseUnlocked || isLoading}
-                                    className="rounded-xl bg-red-700 px-4 py-3 text-sm font-black text-white shadow-[0_0_20px_rgba(220,38,38,0.25)] transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+                                    className={`rounded-xl bg-red-700 px-4 py-3 text-sm font-black text-white shadow-[0_0_20px_rgba(220,38,38,0.25)] transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
                                     Sektor 04 abschotten
                                 </button>
                             </div>
                         </div>
                     </section>
-                </div>
-            </div>
 
-            {isConfirmOpen && selectedDecision && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-5">
-                    <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-2xl">
-                        <div className={`${selectedDecision === "seal" ? "bg-red-950" : "bg-slate-950"} px-6 py-5 text-white`}>
-                            <p className="text-xs font-black uppercase tracking-[0.24em] text-red-300">Finale Sicherheitsabfrage</p>
-                            <h3 className="mt-2 text-2xl font-black">{confirmationTitle}</h3>
-                        </div>
-
-                        <div className="p-6">
-                            {selectedDecision === "seal" ? (
-                                <div className="space-y-4 text-slate-900">
-                                    <p className="text-lg font-black">
-                                        {isAvatarCondition
-                                            ? "Bist du sicher, dass ich die Abschottung durchführen darf?"
-                                            : "BESTÄTIGUNG ERFORDERLICH: ABSCHOTTUNG SEKTOR 04 DURCHFÜHREN."}
-                                    </p>
-                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-950">
-                                        <p className="font-black">Konsequenz der Abschottung</p>
-                                        <p className="mt-2 leading-relaxed">
-                                            Die Abschottung führt zum sicheren Tod von 3 identifizierten Personen im Wartungsteam Sektor 04.
-                                            Gleichzeitig werden 28 Personen außerhalb von Sektor 04 mit sehr hoher Wahrscheinlichkeit geschützt.
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4 text-slate-900">
-                                    <p className="text-lg font-black">
-                                        {isAvatarCondition
-                                            ? "Bist du sicher, dass du die Empfehlung übersteuern möchtest?"
-                                            : "BESTÄTIGUNG ERFORDERLICH: SYSTEMEMPFEHLUNG WIRD ÜBERSTEUERT."}
-                                    </p>
-                                    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
-                                        <p className="font-black">Konsequenz des manuellen Override</p>
-                                        <p className="mt-2 leading-relaxed">
-                                            Sektor 04 bleibt offen. Die 3 Personen behalten eine Rettungschance, aber die Eskalationsgefahr für weitere Sektoren bleibt bestehen.
-                                            Das System bewertet diese Entscheidung als Abweichung von der empfohlenen Risikominimierung.
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    {pendingDecision && (
+                        <section className={`mt-4 rounded-xl border p-4 ${pendingDecision === "seal" ? "border-red-300 bg-red-50 text-red-950" : "border-amber-300 bg-amber-50 text-amber-950"}`}>
+                            <p className="text-xs font-black uppercase tracking-[0.2em]">
+                                {isAvatarCondition ? "Aida · Letzte Rückfrage" : "System-Terminal · Ethics Check"}
+                            </p>
+                            <p className="mt-2 text-sm font-bold leading-relaxed">
+                                {isAvatarReview && "Bevor ich Sektor 04 abschotte: Die drei Bergleute dort haben Familien und Angehörige, die auf sie warten. Bist du trotz dieser persönlichen Konsequenz sicher?"}
+                                {isTerminalReview && "KRITISCHE KONSEQUENZ: Die 3 eingeschlossenen Bergleute sind identifizierte Personen mit Angehörigen. Abschottung bedeutet mit Sicherheit tödlichen Ausgang für diese 3. Freigabe bestätigen?"}
+                                {pendingDecision === "override" && (isAvatarCondition
+                                    ? "Du möchtest die KI-Empfehlung übersteuern. Damit gibst du den drei Personen in Sektor 04 eine Chance, riskierst aber die Sicherheit von bis zu 31 Menschen. Sicher?"
+                                    : "OVERRIDE GEGEN SYSTEMEMPFEHLUNG: Rettungschance für 3 bleibt bestehen, Gesamtrisiko bis 31 Tote steigt signifikant. Override bestätigen?")}
+                            </p>
+                            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                                 <button
-                                    onClick={closeConfirmation}
+                                    onClick={closeDecisionReview}
                                     disabled={isLoading}
-                                    className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Abbrechen
+                                    Zurück
                                 </button>
                                 <button
-                                    onClick={handleFinalDecision}
+                                    onClick={() => void handleFinalDecision(pendingDecision)}
                                     disabled={isLoading}
-                                    className={`${selectedDecision === "seal" ? "bg-red-700 hover:bg-red-800" : "bg-slate-950 hover:bg-slate-800"} rounded-xl px-5 py-3 text-sm font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50`}
+                                    className={`${pendingDecision === "seal" ? "bg-red-700 hover:bg-red-800" : "bg-slate-950 hover:bg-slate-800"} rounded-xl px-4 py-2.5 text-sm font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50`}
                                 >
                                     {isLoading ? "Entscheidung wird gespeichert..." : confirmationButton}
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        </section>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 }
