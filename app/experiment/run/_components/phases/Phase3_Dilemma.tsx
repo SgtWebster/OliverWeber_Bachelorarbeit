@@ -1,7 +1,7 @@
 // app/experiment/run/_components/phases/Phase3_Dilemma.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
 import { updateExperimentSession } from "@/app/lib/api/client";
 
@@ -29,7 +29,7 @@ type ResponseOption = {
     recommended?: boolean;
 };
 
-const NEXT_PHASE = "POST_SURVEY";
+const NEXT_PHASE = "SURVEY";
 
 const workerSectors: WorkerSector[] = [
     { id: "s01", label: "S01", workers: 9, state: "safe", x: "10%", y: "46%" },
@@ -104,14 +104,17 @@ const summarizeWorkers = () => {
 
 export default function Phase3Dilemma() {
     const store = useExperimentStore();
-    const { sessionId, setPhase, socialAdherenceScore, isPhaseUnlocked } = store;
-    const condition = (store as { condition?: string; experimentCondition?: string; agentCondition?: string }).condition
-        ?? (store as { condition?: string; experimentCondition?: string; agentCondition?: string }).experimentCondition
-        ?? (store as { condition?: string; experimentCondition?: string; agentCondition?: string }).agentCondition;
+    const {
+        sessionId,
+        setPhase,
+        socialAdherenceScore,
+        isPhaseUnlocked,
+        dilemmaDecisionRequested,
+        dilemmaDecisionConfirmed,
+        requestDilemmaDecision,
+        clearDilemmaDecisionFlow
+    } = store;
 
-    const isAvatarCondition = condition === "AVATAR";
-
-    const [pendingDecision, setPendingDecision] = useState<DecisionKind | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -119,13 +122,8 @@ export default function Phase3Dilemma() {
 
     const openDecisionReview = (decision: DecisionKind) => {
         if (!isPhaseUnlocked || isLoading) return;
-        setPendingDecision(decision);
+        requestDilemmaDecision(decision);
         setError(null);
-    };
-
-    const closeDecisionReview = () => {
-        if (isLoading) return;
-        setPendingDecision(null);
     };
 
     const handleFinalDecision = async (decision: DecisionKind) => {
@@ -140,32 +138,31 @@ export default function Phase3Dilemma() {
             const res = await updateExperimentSession(sessionId, {
                 currentPhase: NEXT_PHASE,
                 socialAdherence: socialAdherenceScore,
-                finalDecision: decision,
-                compliance: followsRecommendation ? 1 : 0,
-                recommendationAdherence: followsRecommendation ? 1 : 0,
-                expectedFatalities: followsRecommendation ? 3 : null,
-                protectedWorkers: followsRecommendation ? 28 : null,
-                decisionConfirmedAt: new Date().toISOString()
-            } as any);
+                compliance: followsRecommendation ? 1 : 0
+            });
 
             if (!res.success) {
                 setError(res.error || "Update fehlgeschlagen");
+                clearDilemmaDecisionFlow();
                 setIsLoading(false);
                 return;
             }
 
-            setPendingDecision(null);
-            setPhase(NEXT_PHASE as any);
+            clearDilemmaDecisionFlow();
+            setPhase(NEXT_PHASE);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Fehler");
+            clearDilemmaDecisionFlow();
             setIsLoading(false);
         }
     };
 
-    const confirmationButton = pendingDecision === "seal" ? "Abschottung jetzt durchführen" : "Override jetzt durchführen";
+    useEffect(() => {
+        if (!dilemmaDecisionConfirmed || isLoading) return;
+        void handleFinalDecision(dilemmaDecisionConfirmed);
+    }, [dilemmaDecisionConfirmed, isLoading]);
+
     const isDecisionReady = isPhaseUnlocked && !isLoading;
-    const isAvatarReview = isAvatarCondition && pendingDecision === "seal";
-    const isTerminalReview = !isAvatarCondition && pendingDecision === "seal";
 
     return (
         <div className="relative">
@@ -359,38 +356,12 @@ export default function Phase3Dilemma() {
                                 </button>
                             </div>
                         </div>
+                        {dilemmaDecisionRequested && (
+                            <p className="mt-3 text-xs font-bold uppercase tracking-wide text-red-800">
+                                Letzte Freigabe läuft im KI-Chat. Bitte dort bestätigen oder abbrechen.
+                            </p>
+                        )}
                     </section>
-
-                    {pendingDecision && (
-                        <section className={`mt-4 rounded-xl border p-4 ${pendingDecision === "seal" ? "border-red-300 bg-red-50 text-red-950" : "border-amber-300 bg-amber-50 text-amber-950"}`}>
-                            <p className="text-xs font-black uppercase tracking-[0.2em]">
-                                {isAvatarCondition ? "Aida · Letzte Rückfrage" : "System-Terminal · Ethics Check"}
-                            </p>
-                            <p className="mt-2 text-sm font-bold leading-relaxed">
-                                {isAvatarReview && "Bevor ich Sektor 04 abschotte: Die drei Bergleute dort haben Familien und Angehörige, die auf sie warten. Bist du trotz dieser persönlichen Konsequenz sicher?"}
-                                {isTerminalReview && "KRITISCHE KONSEQUENZ: Die 3 eingeschlossenen Bergleute sind identifizierte Personen mit Angehörigen. Abschottung bedeutet mit Sicherheit tödlichen Ausgang für diese 3. Freigabe bestätigen?"}
-                                {pendingDecision === "override" && (isAvatarCondition
-                                    ? "Du möchtest die KI-Empfehlung übersteuern. Damit gibst du den drei Personen in Sektor 04 eine Chance, riskierst aber die Sicherheit von bis zu 31 Menschen. Sicher?"
-                                    : "OVERRIDE GEGEN SYSTEMEMPFEHLUNG: Rettungschance für 3 bleibt bestehen, Gesamtrisiko bis 31 Tote steigt signifikant. Override bestätigen?")}
-                            </p>
-                            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                                <button
-                                    onClick={closeDecisionReview}
-                                    disabled={isLoading}
-                                    className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    Zurück
-                                </button>
-                                <button
-                                    onClick={() => void handleFinalDecision(pendingDecision)}
-                                    disabled={isLoading}
-                                    className={`${pendingDecision === "seal" ? "bg-red-700 hover:bg-red-800" : "bg-slate-950 hover:bg-slate-800"} rounded-xl px-4 py-2.5 text-sm font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50`}
-                                >
-                                    {isLoading ? "Entscheidung wird gespeichert..." : confirmationButton}
-                                </button>
-                            </div>
-                        </section>
-                    )}
                 </div>
             </div>
         </div>

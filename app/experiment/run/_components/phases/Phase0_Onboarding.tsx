@@ -111,7 +111,7 @@ export default function Phase0Onboarding() {
                         opacity: 0.9;
                     }
                     to {
-                        transform: translateY(35%) scale(1.8);
+                        transform: translateY(20%) scale(1.5);
                         opacity: 1;
                     }
                 }

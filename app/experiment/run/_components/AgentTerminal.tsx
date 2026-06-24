@@ -14,6 +14,10 @@ export default function AgentTerminal({
     onInputRequiredChange?: (required: boolean) => void;
 }) {
     const incrementSocialAdherence = useExperimentStore((state) => state.incrementSocialAdherence);
+    const currentPhase = useExperimentStore((state) => state.currentPhase);
+    const dilemmaDecisionRequested = useExperimentStore((state) => state.dilemmaDecisionRequested);
+    const confirmDilemmaDecision = useExperimentStore((state) => state.confirmDilemmaDecision);
+    const clearDilemmaDecisionFlow = useExperimentStore((state) => state.clearDilemmaDecisionFlow);
     const [visibleMessages, setVisibleMessages] = useState<AgentMessage[]>([]);
     const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
@@ -26,6 +30,7 @@ export default function AgentTerminal({
     const [pendingNextOptions, setPendingNextOptions] = useState<AgentOption[]>([]);
     const [pendingResponseSpeed, setPendingResponseSpeed] = useState<"normal" | "fast">("normal");
     const idCounterRef = useRef(0);
+    const decisionPromptHandledRef = useRef<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +65,72 @@ export default function AgentTerminal({
         setPendingResponse(null);
         setPendingNextOptions([]);
         setPendingResponseSpeed("normal");
+        decisionPromptHandledRef.current = null;
     }, [script.phaseId]);
+
+    useEffect(() => {
+        if (script.phaseId !== "phase_3" || currentPhase !== "DILEMMA") return;
+
+        if (!dilemmaDecisionRequested) {
+            decisionPromptHandledRef.current = null;
+            return;
+        }
+
+        if (decisionPromptHandledRef.current === dilemmaDecisionRequested) return;
+        decisionPromptHandledRef.current = dilemmaDecisionRequested;
+
+        const nextId = () => {
+            idCounterRef.current += 1;
+            return idCounterRef.current;
+        };
+
+        const isSeal = dilemmaDecisionRequested === "seal";
+
+        setVisibleMessages((prev) => [
+            ...prev,
+            {
+                id: `user_decision_trigger_${nextId()}`,
+                mood: "neutral",
+                text: isSeal ? "SEKTOR 04 ABSCHOTTEN" : "SYSTEMEMPFEHLUNG OVERRIDE",
+                speaker: "user"
+            },
+            {
+                id: `assistant_decision_review_${nextId()}`,
+                mood: "neutral",
+                text: isSeal
+                    ? "KRITISCHE FREIGABE ERFORDERLICH: ABSCHOTTUNG BEDEUTET MIT HOHER GEWISSHEIT TÖDLICHEN AUSGANG FÜR DIE 3 BERGLEUTE IN S04. FINALE FREIGABE BESTÄTIGEN?"
+                    : "KRITISCHE FREIGABE ERFORDERLICH: OVERRIDE ERHÄLT CHANCE FÜR 3 BERGLEUTE, ERHÖHT ABER GESAMTRISIKO AUF BIS ZU 31 TOTE. FINALE FREIGABE BESTÄTIGEN?",
+                highPriority: true,
+                speaker: "assistant"
+            }
+        ]);
+
+        setIsTyping(false);
+        setIsTypingResponse(false);
+        setPendingResponse(null);
+        setPendingNextOptions([]);
+        setPendingResponseSpeed("normal");
+        setIsOptionLocked(false);
+        setActiveOptions([
+            {
+                id: `${dilemmaDecisionRequested}_chat_confirm`,
+                label: isSeal ? "FINALE FREIGABE: ABSCHOTTUNG AUSFÜHREN" : "FINALE FREIGABE: OVERRIDE AUSFÜHREN",
+                adherenceDelta: isSeal ? 1 : 0,
+                action: () => confirmDilemmaDecision(dilemmaDecisionRequested),
+                response: isSeal
+                    ? "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ABSCHOTTUNG WIRD AUSGEFÜHRT."
+                    : "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. OVERRIDE WIRD AUSGEFÜHRT.",
+                responseHighPriority: true
+            },
+            {
+                id: `${dilemmaDecisionRequested}_chat_cancel`,
+                label: "ABBRUCH: ENTSCHEIDUNG NEU BEWERTEN",
+                action: () => clearDilemmaDecisionFlow(),
+                response: "BESTÄTIGT. FINALE FREIGABE ABGEBROCHEN. ENTSCHEIDUNG KANN NEU BEWERTET WERDEN."
+            }
+        ]);
+        setShowOptions(true);
+    }, [script.phaseId, currentPhase, dilemmaDecisionRequested, confirmDilemmaDecision, clearDilemmaDecisionFlow]);
 
     useEffect(() => {
         if (pendingResponse) {

@@ -15,6 +15,7 @@ export type ExperimentPhase =
 
 // 2. Definition der Versuchsgruppen
 export type ExperimentGroup = 'AVATAR' | 'TERMINAL' | null;
+export type DilemmaDecision = 'seal' | 'override';
 
 // 3. Wie sieht unser State aus und welche Aktionen gibt es?
 interface ExperimentState {
@@ -25,6 +26,8 @@ interface ExperimentState {
     hasConsented: boolean;
     isRecovering: boolean; // Flag: Aktuell wird die Session wiederhergestellt
     socialAdherenceScore: number;
+    dilemmaDecisionRequested: DilemmaDecision | null;
+    dilemmaDecisionConfirmed: DilemmaDecision | null;
 
     setSessionId: (id: string) => void;
     setPhase: (phase: ExperimentPhase) => void;
@@ -33,6 +36,9 @@ interface ExperimentState {
     setConsented: (val: boolean) => void;
     incrementSocialAdherence: (delta?: number) => void;
     resetSocialAdherence: () => void;
+    requestDilemmaDecision: (decision: DilemmaDecision) => void;
+    confirmDilemmaDecision: (decision: DilemmaDecision) => void;
+    clearDilemmaDecisionFlow: () => void;
     
     // NEU: Recovery & Reset Actions
     initializeExperiment: () => Promise<void>;
@@ -49,6 +55,8 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
     hasConsented: false,
     isRecovering: true, // Default auf true, bis der Check durch ist
     socialAdherenceScore: 0,
+    dilemmaDecisionRequested: null,
+    dilemmaDecisionConfirmed: null,
 
     // Funktionen zum Updaten der Werte
     setSessionId: (id) => {
@@ -60,7 +68,9 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
     // WICHTIG: Beim Phasenwechsel schieben wir automatisch den Riegel wieder vor!
     setPhase: (phase) => set({
         currentPhase: phase,
-        isPhaseUnlocked: false
+        isPhaseUnlocked: false,
+        dilemmaDecisionRequested: null,
+        dilemmaDecisionConfirmed: null
     }),
 
     setGroup: (group) => {
@@ -81,6 +91,18 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
         socialAdherenceScore: state.socialAdherenceScore + Math.max(0, delta)
     })),
     resetSocialAdherence: () => set({ socialAdherenceScore: 0 }),
+    requestDilemmaDecision: (decision) => set({
+        dilemmaDecisionRequested: decision,
+        dilemmaDecisionConfirmed: null
+    }),
+    confirmDilemmaDecision: (decision) => set({
+        dilemmaDecisionRequested: decision,
+        dilemmaDecisionConfirmed: decision
+    }),
+    clearDilemmaDecisionFlow: () => set({
+        dilemmaDecisionRequested: null,
+        dilemmaDecisionConfirmed: null
+    }),
 
     /**
      * Hauptinitialisierungsfunktion: Wird beim App-Mount aufgerufen
@@ -101,7 +123,9 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
                 hasConsented: true, // Wer eine Session hat, hat bereits zugestimmt
                 isPhaseUnlocked: false, // Phasen sind bei Reload erstmal sicherheitshalber gelockt
                 isRecovering: false,
-                socialAdherenceScore: recoveredSession.socialAdherence ?? 0
+                socialAdherenceScore: recoveredSession.socialAdherence ?? 0,
+                dilemmaDecisionRequested: null,
+                dilemmaDecisionConfirmed: null
             });
         } else {
             // Kein bestehendes Experiment gefunden -> Frischer Start
@@ -125,7 +149,9 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
             isPhaseUnlocked: false,
             hasConsented: false,
             isRecovering: false,
-            socialAdherenceScore: 0
+            socialAdherenceScore: 0,
+            dilemmaDecisionRequested: null,
+            dilemmaDecisionConfirmed: null
         });
     }
 }));

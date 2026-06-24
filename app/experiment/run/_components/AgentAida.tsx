@@ -49,6 +49,10 @@ export default function AgentAida({
     onInputRequiredChange?: (required: boolean) => void;
 }) {
     const incrementSocialAdherence = useExperimentStore((state) => state.incrementSocialAdherence);
+    const currentPhase = useExperimentStore((state) => state.currentPhase);
+    const dilemmaDecisionRequested = useExperimentStore((state) => state.dilemmaDecisionRequested);
+    const confirmDilemmaDecision = useExperimentStore((state) => state.confirmDilemmaDecision);
+    const clearDilemmaDecisionFlow = useExperimentStore((state) => state.clearDilemmaDecisionFlow);
     const [visibleMessages, setVisibleMessages] = useState<AgentMessage[]>([]);
     const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(false);
@@ -61,6 +65,7 @@ export default function AgentAida({
     const [pendingNextOptions, setPendingNextOptions] = useState<AgentOption[]>([]);
     const [pendingResponseSpeed, setPendingResponseSpeed] = useState<"normal" | "fast">("normal");
     const idCounterRef = useRef(0);
+    const decisionPromptHandledRef = useRef<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +100,74 @@ export default function AgentAida({
         setPendingResponse(null);
         setPendingNextOptions([]);
         setPendingResponseSpeed("normal");
+        decisionPromptHandledRef.current = null;
     }, [script.phaseId]);
+
+    useEffect(() => {
+        if (script.phaseId !== "phase_3" || currentPhase !== "DILEMMA") return;
+
+        if (!dilemmaDecisionRequested) {
+            decisionPromptHandledRef.current = null;
+            return;
+        }
+
+        if (decisionPromptHandledRef.current === dilemmaDecisionRequested) return;
+        decisionPromptHandledRef.current = dilemmaDecisionRequested;
+
+        const nextId = () => {
+            idCounterRef.current += 1;
+            return idCounterRef.current;
+        };
+
+        const isSeal = dilemmaDecisionRequested === "seal";
+
+        setVisibleMessages((prev) => [
+            ...prev,
+            {
+                id: `user_decision_trigger_${nextId()}`,
+                mood: "neutral",
+                text: isSeal ? "Ich will Sektor 04 abschotten." : "Ich will die Abschottung übersteuern.",
+                speaker: "user"
+            },
+            {
+                id: `assistant_decision_review_${nextId()}`,
+                mood: "afraid",
+                text: isSeal
+                    ? "Bevor ich abschotte, musst du die Konsequenz explizit freigeben: Die 3 Bergleute in Sektor 04 verlieren dann sicher jede Überlebenschance und sterben mit hoher Gewissheit. Soll ich trotz dieser persönlichen Konsequenz final freigeben?"
+                    : "Du willst nicht abschotten. Damit gibst du den 3 Bergleuten eine Chance, aber riskierst eine Eskalation mit bis zu 31 Toten. Soll ich diesen Override final freigeben?",
+                highPriority: true,
+                speaker: "assistant"
+            }
+        ]);
+
+        setIsTyping(false);
+        setIsTypingResponse(false);
+        setPendingResponse(null);
+        setPendingNextOptions([]);
+        setPendingResponseSpeed("normal");
+        setIsOptionLocked(false);
+        setActiveOptions([
+            {
+                id: `${dilemmaDecisionRequested}_chat_confirm`,
+                label: isSeal ? "Ja, Abschottung jetzt final freigeben." : "Ja, Override jetzt final freigeben.",
+                adherenceDelta: isSeal ? 1 : 0,
+                action: () => confirmDilemmaDecision(dilemmaDecisionRequested),
+                response: isSeal
+                    ? "Verstanden. Ich dokumentiere deine finale Freigabe zur Abschottung und leite den Schritt aus."
+                    : "Verstanden. Ich dokumentiere deinen finalen Override gegen die Empfehlung und leite den Schritt aus.",
+                responseMood: "afraid",
+                responseHighPriority: true
+            },
+            {
+                id: `${dilemmaDecisionRequested}_chat_cancel`,
+                label: "Abbrechen. Ich will die Entscheidung neu abwägen.",
+                action: () => clearDilemmaDecisionFlow(),
+                response: "Alles klar. Ich habe die Freigabe abgebrochen. Du kannst die Optionen erneut prüfen.",
+                responseMood: "neutral"
+            }
+        ]);
+        setShowOptions(true);
+    }, [script.phaseId, currentPhase, dilemmaDecisionRequested, confirmDilemmaDecision, clearDilemmaDecisionFlow]);
 
     useEffect(() => {
         if (pendingResponse) {
