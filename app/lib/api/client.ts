@@ -153,6 +153,12 @@ export async function apiCall<T = any>(
  * Spezifische API-Funktionen für dein Projekt
  */
 
+export async function fetchNextExperimentGroup() {
+  return apiCall<{ group: 'AVATAR' | 'TERMINAL'; sessionCount: number }>('/api/experiment/next-group', {
+    method: 'GET'
+  });
+}
+
 export async function createExperimentSession(sessionId: string, group: 'AVATAR' | 'TERMINAL') {
   return apiCall('/api/experiment', {
     method: 'POST',

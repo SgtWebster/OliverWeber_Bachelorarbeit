@@ -3,7 +3,7 @@
 
 import { useState, useEffect, type ReactNode } from 'react';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
-import { createExperimentSession, updateExperimentSession } from '@/app/lib/api/client';
+import { createExperimentSession, updateExperimentSession, fetchNextExperimentGroup } from '@/app/lib/api/client';
 import ApprovalPendingNotice from '../ApprovalPendingNotice';
 
 export default function Phase0Onboarding() {
@@ -25,13 +25,38 @@ export default function Phase0Onboarding() {
     const [groupAssigned, setGroupAssigned] = useState(!!group);
     const isNextStepReady = isPhaseUnlocked && !isLoading;
 
-    // Phase 1: Bei Mount -> Wenn noch keine Group, zufällig zuweisen
+    // Phase 1: Bei Mount -> Wenn noch keine Group, deterministisch abwechselnd zuweisen
+    // (jeder zweite Proband AVATAR, jeder andere TERMINAL -> exakt 50/50 bei großer Stichprobe).
+    // Die Entscheidung trifft der Server anhand der Anzahl bereits angelegter Sessions.
     useEffect(() => {
-        if (!group && !groupAssigned) {
-            const assignedGroup = Math.random() < 0.5 ? 'AVATAR' : 'TERMINAL';
-            setGroup(assignedGroup);
-            setGroupAssigned(true);
-        }
+        if (group || groupAssigned) return;
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const response = await fetchNextExperimentGroup();
+                if (cancelled) return;
+
+                if (response.success && response.data?.group) {
+                    setGroup(response.data.group);
+                } else {
+                    // Fallback: Falls der Server nicht erreichbar ist, zufällige Zuweisung
+                    console.warn('next-group endpoint failed, falling back to random assignment:', response.error);
+                    setGroup(Math.random() < 0.5 ? 'AVATAR' : 'TERMINAL');
+                }
+            } catch (err) {
+                if (cancelled) return;
+                console.error('Fehler bei der Gruppenzuweisung, fallback auf Zufall:', err);
+                setGroup(Math.random() < 0.5 ? 'AVATAR' : 'TERMINAL');
+            } finally {
+                if (!cancelled) setGroupAssigned(true);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
     }, [group, groupAssigned, setGroup]);
 
     const activateCommunication = async () => {
