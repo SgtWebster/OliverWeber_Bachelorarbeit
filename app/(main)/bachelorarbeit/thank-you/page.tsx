@@ -7,19 +7,28 @@ import { useExperimentStore } from '@/app/lib/store/experimentStore';
 
 export default function ThankYouPage() {
     const router = useRouter();
-    const { currentPhase } = useExperimentStore();
+    const { currentPhase, isRecovering, initializeExperiment } = useExperimentStore();
 
     const [email, setEmail] = useState('');
     const [wantsRaffle, setWantsRaffle] = useState(true); // Gewinnspiel als Default an
     const [wantsNewsletter, setWantsNewsletter] = useState(false);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-    // 🚨 DIE FIREWALL: Wirft jeden raus, der das Experiment nicht regulär beendet hat
+    // Bei einem Reload (oder verdrängtem Tab) ist der In-Memory-Store leer.
+    // Deshalb stellen wir die Session zuerst aus der DB/SessionStorage wieder her,
+    // damit niemand ausgesperrt wird, der das Experiment regulär beendet hat.
     useEffect(() => {
-        if (currentPhase !== 'DEBRIEFING') {
+        initializeExperiment();
+    }, [initializeExperiment]);
+
+    // 🚨 DIE FIREWALL: Wirft jeden raus, der das Experiment nicht regulär beendet hat.
+    // Greift bewusst erst, NACHDEM die Recovery abgeschlossen ist – sonst würde der
+    // initiale 'INIT'-Zustand eine gerade fertige Teilnahme fälschlich aussperren.
+    useEffect(() => {
+        if (!isRecovering && currentPhase !== 'DEBRIEFING') {
             router.replace('/bachelorarbeit');
         }
-    }, [currentPhase, router]);
+    }, [isRecovering, currentPhase, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,6 +55,12 @@ export default function ThankYouPage() {
 
     return (
         <div className="min-h-[70vh] max-w-2xl mx-auto px-4 py-16 flex items-center justify-center text-slate-800">
+            {isRecovering || currentPhase !== 'DEBRIEFING' ? (
+                <div className="flex flex-col items-center gap-4 text-slate-500">
+                    <div className="w-6 h-6 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm font-medium">Teilnahme wird geprüft …</p>
+                </div>
+            ) : (
             <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
 
                 {/* Header-Bereich */}
@@ -143,6 +158,7 @@ export default function ThankYouPage() {
                     )}
                 </div>
             </div>
+            )}
         </div>
     );
 }
