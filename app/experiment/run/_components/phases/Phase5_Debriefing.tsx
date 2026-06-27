@@ -20,8 +20,12 @@ export default function Phase5Debriefing() {
                     Das Experiment ist beendet
                 </h2>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600 md:text-base">
-                    Wichtig: Alles, was du in der Leitwarte erlebt hast, war ein <strong>fiktives, experimentelles Szenario</strong>.
+                    Alles, was du in der Leitwarte erlebt hast, war ein <strong>fiktives, experimentelles Szenario</strong>.
                     Es gab zu keinem Zeitpunkt reale Gefahr oder reale Einsatzkräfte.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 md:text-base">
+                    Wichtig: Die finale Entscheidung war so konzipiert, dass es keine 'richtige' oder perfekte Lösung gab.
+                    Es ging rein um die Beobachtung deines Entscheidungsprozesses – du konntest also nichts falsch machen.
                 </p>
             </div>
 
@@ -69,6 +73,15 @@ export default function Phase5Debriefing() {
                         </div>
                     </article>
                 </div>
+            </section>
+
+            <section className="mb-6 border border-slate-200 bg-white p-4 md:p-5">
+                <h3 className="text-base font-black text-slate-900">Datenverwendung & Widerruf</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                    Deine Daten wurden vollständig anonym erhoben und werden ausschließlich für diese Forschung verwendet.
+                    Falls du nach dieser Aufklärung nicht mehr mit der Verwendung deiner Daten einverstanden bist, kannst
+                    du das Browserfenster jetzt einfach schließen, ohne den Abschluss zu bestätigen.
+                </p>
             </section>
 
             <section className="mb-6 border border-slate-200 bg-white p-4 md:p-5">

@@ -1,7 +1,7 @@
 // app/experiment/run/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import AgentAida from '@/app/experiment/run/_components/AgentAida';
@@ -22,16 +22,52 @@ export default function ExperimentRunPage() {
     const [chatInputHintDismissed, setChatInputHintDismissed] = useState(false);
     const [isAtPageBottom, setIsAtPageBottom] = useState(false);
     const chatPanelRef = useRef<HTMLDivElement>(null);
+    const contentScrollRef = useRef<HTMLDivElement>(null);
+    const suppressChatScrollUntilRef = useRef(0);
+    const prevAdvanceReadyRef = useRef(false);
     const {
         currentPhase,
         group,
         sessionId,
         hasConsented,
+        isPhaseUnlocked,
+        isAlertDecisionUnlocked,
         setPhaseUnlocked,
         setAlertDecisionUnlocked,
         isRecovering,
         initializeExperiment
     } = useExperimentStore();
+
+    // Der „Weiter“-Trigger pro Phase: Bei ALERT zählt erst die freigeschaltete
+    // Entscheidung, sonst die generische Phasen-Freigabe.
+    const phaseAdvanceReady = currentPhase === 'ALERT' ? isAlertDecisionUnlocked : isPhaseUnlocked;
+
+    const isMobileViewport = useCallback(
+        () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches,
+        []
+    );
+
+    const scrollExperimentToTop = useCallback((behavior: ScrollBehavior = 'auto') => {
+        if (typeof window === 'undefined') return;
+        window.scrollTo({ top: 0, behavior });
+        contentScrollRef.current?.scrollTo({ top: 0, behavior });
+    }, []);
+
+    const scrollChatIntoView = useCallback(() => {
+        chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, []);
+
+    // Wenn die KI zu schreiben beginnt, scrollen wir auf Mobile zum Chat herunter –
+    // außer kurz nach einer Button-Freigabe (dann hat „nach oben“ Vorrang).
+    const handleAssistantWritingChange = useCallback(
+        (writing: boolean) => {
+            if (!writing || !isMobileViewport()) return;
+            if (Date.now() < suppressChatScrollUntilRef.current) return;
+            setChatInputHintDismissed(true);
+            requestAnimationFrame(() => scrollChatIntoView());
+        },
+        [isMobileViewport, scrollChatIntoView]
+    );
 
     // 1. Trigger Recovery beim Mounten der Component
     useEffect(() => {
@@ -108,6 +144,22 @@ export default function ExperimentRunPage() {
         chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
+    // Bei jedem Phasenwechsel zuerst ganz nach oben (Desktop wie Mobile).
+    useEffect(() => {
+        scrollExperimentToTop('auto');
+        prevAdvanceReadyRef.current = false;
+        suppressChatScrollUntilRef.current = 0;
+    }, [currentPhase, scrollExperimentToTop]);
+
+    // Sobald ein „Weiter“-Button freigegeben wird, auf Mobile wieder nach oben.
+    useEffect(() => {
+        if (phaseAdvanceReady && !prevAdvanceReadyRef.current && isMobileViewport()) {
+            suppressChatScrollUntilRef.current = Date.now() + 1500;
+            scrollExperimentToTop('smooth');
+        }
+        prevAdvanceReadyRef.current = phaseAdvanceReady;
+    }, [phaseAdvanceReady, isMobileViewport, scrollExperimentToTop]);
+
     // 3. Fallback UI während wir den State aus der Datenbank holen
     if (isRecovering) {
         return (
@@ -152,9 +204,9 @@ export default function ExperimentRunPage() {
                 <div className="relative z-10 flex-1 min-h-0 flex flex-col md:flex-row pt-6">
 
                     {/* LINKE SEITE: Die Leitwarte */}
-                    <div className="relative flex-1 min-h-0 flex flex-col p-4 md:p-8 overflow-y-auto order-1">
+                    <div ref={contentScrollRef} className="relative flex-1 min-h-0 flex flex-col p-4 md:p-8 md:overflow-y-auto order-1">
                         {/* Sanftes Max-Width Limit für perfekte Lesbarkeit auf großen Screens */}
-                        <div className="relative z-10 max-w-4xl xl:max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
+                        <div className="relative z-10 max-w-4xl xl:max-w-5xl mx-auto w-full flex-grow flex flex-col md:justify-center">
                             {(currentPhase === 'INIT' || currentPhase === 'ONBOARDING') && <Phase0Onboarding />}
                             {currentPhase === 'PRECHECK' && <Phase1aPrecheck />}
                             {currentPhase === 'ROUTINE' && <Phase1Routine />}
@@ -180,9 +232,9 @@ export default function ExperimentRunPage() {
                             <div className="flex-1 min-h-0 overflow-hidden relative">
                                 {activeScript && (
                                     group === 'AVATAR' ? (
-                                        <AgentAida script={activeScript} onInputRequiredChange={handleChatInputRequiredChange} />
+                                        <AgentAida script={activeScript} onInputRequiredChangeAction={handleChatInputRequiredChange} onAssistantWritingChangeAction={handleAssistantWritingChange} />
                                     ) : (
-                                        <AgentTerminal script={activeScript} onInputRequiredChange={handleChatInputRequiredChange} />
+                                        <AgentTerminal script={activeScript} onInputRequiredChangeAction={handleChatInputRequiredChange} onAssistantWritingChangeAction={handleAssistantWritingChange} />
                                     )
                                 )}
                             </div>

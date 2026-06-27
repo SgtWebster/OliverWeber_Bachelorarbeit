@@ -141,7 +141,10 @@ export default function Phase4Survey() {
                 document.body
             )}
             <div className="mx-auto w-full max-w-4xl border border-slate-300 bg-white p-6 text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)] md:p-10">
-            <div className="mb-6 border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
+            <div className="mb-6 border-l-4 border-sky-600 bg-sky-100 px-4 py-3 text-sm font-semibold text-sky-950 shadow-sm">
+                <span className="mr-2 inline-block rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                    Hinweis
+                </span>
                 Das Einsatzszenario ist abgeschlossen. Jetzt beginnt die Datenerhebung über deine Wahrnehmung und Entscheidungen.
             </div>
             {error && (

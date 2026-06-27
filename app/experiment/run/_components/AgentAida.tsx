@@ -44,10 +44,12 @@ const avatarByMood: Record<AidaMood, string> = {
 
 export default function AgentAida({
     script,
-    onInputRequiredChange
+    onInputRequiredChangeAction,
+    onAssistantWritingChangeAction
 }: {
     script: AgentScript;
-    onInputRequiredChange?: (required: boolean) => void;
+    onInputRequiredChangeAction?: (required: boolean) => void;
+    onAssistantWritingChangeAction?: (writing: boolean) => void;
 }) {
     const incrementSocialAdherence = useExperimentStore((state) => state.incrementSocialAdherence);
     const currentPhase = useExperimentStore((state) => state.currentPhase);
@@ -72,10 +74,12 @@ export default function AgentAida({
     const decisionPromptHandledRef = useRef<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
         setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            const el = scrollContainerRef.current;
+            if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
         }, 100);
     };
 
@@ -84,14 +88,18 @@ export default function AgentAida({
     }, [visibleMessages, isTyping, showOptions, isTypingResponse, pendingResponse]);
 
     useEffect(() => {
-        onInputRequiredChange?.(showOptions);
-    }, [showOptions, onInputRequiredChange]);
+        onInputRequiredChangeAction?.(showOptions);
+    }, [showOptions, onInputRequiredChangeAction]);
+
+    useEffect(() => {
+        onAssistantWritingChangeAction?.(isTyping || isTypingResponse);
+    }, [isTyping, isTypingResponse, onAssistantWritingChangeAction]);
 
     useEffect(() => {
         return () => {
-            onInputRequiredChange?.(false);
+            onInputRequiredChangeAction?.(false);
         };
-    }, [onInputRequiredChange]);
+    }, [onInputRequiredChangeAction]);
 
     useLayoutEffect(() => {
         setCurrentMsgIndex(0);
@@ -323,7 +331,7 @@ export default function AgentAida({
             {/* Chat Verlauf - NO SCROLLBAR, letzte Nachricht sichtbar */}
             <div className="flex-grow p-3 md:p-4 overflow-hidden relative">
                 {/* Scrollable content, aber hidden scrollbar */}
-                <div className="h-full overflow-y-auto scroll-smooth scrollbar-hide">
+                <div ref={scrollContainerRef} className="h-full overflow-y-auto scroll-smooth scrollbar-hide">
                     <div className="space-y-3 md:space-y-4">
                         {visibleMessages.map(renderMessage)}
 

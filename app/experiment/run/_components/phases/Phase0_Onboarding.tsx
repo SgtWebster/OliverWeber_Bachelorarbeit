@@ -187,7 +187,7 @@ export default function Phase0Onboarding() {
             <StoryPage title="Lagezentrum & Aufgabenbereich" subTitle="Operator-Briefing" image="/images/onboarding/karte.png" imageClassName="absolute inset-0 h-full w-full object-cover object-top" onNext={() => setStoryStep(3)} onPrev={() => setStoryStep(1)} enableZoom={true}>
                 <p>Als <strong>Operator</strong> in dieser Leitwarte überwachst du den laufenden Sicherheitsbetrieb der gesamten Anlage.</p>
                 <p>Zu deinen Aufgaben gehören unter anderem die Kontrolle der Grubenbewetterung (Lüftung), die Beobachtung von Gas- und Druckwerten sowie die Durchführung von Routinediagnosen.</p>
-                <p className="border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 rounded-none"><strong>Im Störfall musst du die bereitgestellten Informationen bewerten und operative Entscheidungen treffen.</strong></p>
+                <p className="border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 rounded-none">Im <strong>Störfall</strong> musst du die bereitgestellten Informationen bewerten und <strong>operative Entscheidungen treffen.</strong></p>
             </StoryPage>
         );
     }

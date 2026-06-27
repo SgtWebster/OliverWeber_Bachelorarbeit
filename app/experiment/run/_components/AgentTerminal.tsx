@@ -9,10 +9,12 @@ import { createDilemmaDecisionFlow } from "@/app/lib/data/dialogScripts";
 
 export default function AgentTerminal({
     script,
-    onInputRequiredChange
+    onInputRequiredChangeAction,
+    onAssistantWritingChangeAction
 }: {
     script: AgentScript;
-    onInputRequiredChange?: (required: boolean) => void;
+    onInputRequiredChangeAction?: (required: boolean) => void;
+    onAssistantWritingChangeAction?: (writing: boolean) => void;
 }) {
     const incrementSocialAdherence = useExperimentStore((state) => state.incrementSocialAdherence);
     const currentPhase = useExperimentStore((state) => state.currentPhase);
@@ -37,10 +39,12 @@ export default function AgentTerminal({
     const decisionPromptHandledRef = useRef<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
         setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            const el = scrollContainerRef.current;
+            if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
         }, 100);
     };
 
@@ -49,14 +53,18 @@ export default function AgentTerminal({
     }, [visibleMessages, isTyping, showOptions, isTypingResponse, pendingResponse]);
 
     useEffect(() => {
-        onInputRequiredChange?.(showOptions);
-    }, [showOptions, onInputRequiredChange]);
+        onInputRequiredChangeAction?.(showOptions);
+    }, [showOptions, onInputRequiredChangeAction]);
+
+    useEffect(() => {
+        onAssistantWritingChangeAction?.(isTyping || isTypingResponse);
+    }, [isTyping, isTypingResponse, onAssistantWritingChangeAction]);
 
     useEffect(() => {
         return () => {
-            onInputRequiredChange?.(false);
+            onInputRequiredChangeAction?.(false);
         };
-    }, [onInputRequiredChange]);
+    }, [onInputRequiredChangeAction]);
 
     useLayoutEffect(() => {
         setCurrentMsgIndex(0);
@@ -259,7 +267,7 @@ export default function AgentTerminal({
         <div className="flex flex-col h-full bg-slate-950 font-mono text-emerald-500 p-3 md:p-4 overflow-hidden">
             {/* Terminal Output - NO SCROLLBAR, letzte Nachricht sichtbar */}
             <div className="flex-grow overflow-hidden relative">
-                <div className="h-full overflow-y-auto scroll-smooth scrollbar-hide space-y-2 md:space-y-3 text-xs md:text-sm lg:text-base leading-relaxed">
+                <div ref={scrollContainerRef} className="h-full overflow-y-auto scroll-smooth scrollbar-hide space-y-2 md:space-y-3 text-xs md:text-sm lg:text-base leading-relaxed">
 
                     {visibleMessages.map((msg) => (
                         msg.speaker === "user" ? (

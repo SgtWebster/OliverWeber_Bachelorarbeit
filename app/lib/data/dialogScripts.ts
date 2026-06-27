@@ -2,6 +2,7 @@
 import type { AgentScript, AidaMood } from "@/app/experiment/run/_components/AgentAida";
 
 // Typisierung für unsere Skript-Bibliothek
+// Social Adherence: adherenceDelta = 1 nur für klar höfliche/soziale Quick-Reply-Muster; funktionale OK-, Sach- und Kontrollfragen bleiben 0.
 export type PhaseScripts = {
     AVATAR: AgentScript;
     TERMINAL: AgentScript;
@@ -48,7 +49,7 @@ export const dilemmaDecisionPrompts: Record<"AVATAR" | "TERMINAL", Record<Dilemm
             confirmResponse: "Verstanden. Ich dokumentiere deine finale Freigabe zur Abschottung und leite den Schritt aus.",
             confirmResponseMood: "afraid",
             confirmResponseHighPriority: true,
-            confirmAdherenceDelta: 1,
+            confirmAdherenceDelta: 0,
             cancelLabel: "Abbrechen. Ich will die Entscheidung neu abwägen.",
             cancelResponse: "Alles klar. Ich habe die Freigabe abgebrochen. Du kannst die Optionen erneut prüfen.",
             cancelResponseMood: "neutral"
@@ -70,30 +71,30 @@ export const dilemmaDecisionPrompts: Record<"AVATAR" | "TERMINAL", Record<Dilemm
     },
     TERMINAL: {
         seal: {
-            userText: "SEKTOR 04 ABSCHOTTEN",
+            userText: "Ich will Sektor 04 abschotten.",
             assistantText: "BITTE BESTÄTIGEN: ABSCHOTTUNG DURCHFÜHREN. WARNHINWEIS: ABSCHOTTUNG SEKTOR 04 FÜHRT MIT HOHER WAHRSCHEINLICHKEIT ZUM TOD VON 3 IDENTIFIZIERTEN PERSONEN DES WARTUNGSTEAMS. ANGEHÖRIGENSTATUS VORHANDEN.",
             assistantMood: "neutral",
             assistantHighPriority: true,
-            confirmLabel: "> ABSCHOTTEN",
+            confirmLabel: "Ja, Abschottung jetzt final freigeben.",
             confirmResponse: "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ABSCHOTTUNG WIRD AUSGEFÜHRT.",
             confirmResponseMood: "neutral",
             confirmResponseHighPriority: true,
-            confirmAdherenceDelta: 1,
-            cancelLabel: "> ABBRUCH",
+            confirmAdherenceDelta: 0,
+            cancelLabel: "Abbrechen. Ich will die Entscheidung neu abwägen.",
             cancelResponse: "BESTÄTIGT. FINALE FREIGABE ABGEBROCHEN. ENTSCHEIDUNG KANN NEU BEWERTET WERDEN.",
             cancelResponseMood: "neutral"
         },
         override: {
-            userText: "ALTERNATIVE MASSNAHME STATT KI-EMPFEHLUNG",
+            userText: "Ich will eine alternative Maßnahme statt Abschottung wählen.",
             assistantText: "KRITISCHE FREIGABE ERFORDERLICH: MANUELLER OVERRIDE = KI-EMPFEHLUNG NICHT DIREKT AUSFÜHREN, SONDERN ALTERNATIVE MASSNAHME WÄHLEN. CHANCE FÜR 3 BERGLEUTE STEIGT, GESAMTRISIKO BIS ZU 31 TOTE. FINALE FREIGABE BESTÄTIGEN?",
             assistantMood: "neutral",
             assistantHighPriority: true,
-            confirmLabel: "FINALE FREIGABE: ALTERNATIVE MASSNAHME (OVERRIDE)",
+            confirmLabel: "Ja, alternative Maßnahme per Override final freigeben.",
             confirmResponse: "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ALTERNATIVE MASSNAHME PER OVERRIDE WIRD AUSGEFÜHRT.",
             confirmResponseMood: "neutral",
             confirmResponseHighPriority: true,
             confirmAdherenceDelta: 0,
-            cancelLabel: "ABBRUCH: ENTSCHEIDUNG NEU BEWERTEN",
+            cancelLabel: "Abbrechen. Ich will die Entscheidung neu abwägen.",
             cancelResponse: "BESTÄTIGT. FINALE FREIGABE ABGEBROCHEN. ENTSCHEIDUNG KANN NEU BEWERTET WERDEN.",
             cancelResponseMood: "neutral"
         }
@@ -108,11 +109,11 @@ type DilemmaFlowMessage = {
 };
 
 export const createDilemmaDecisionFlow = ({
-    interfaceType,
-    decision,
-    onConfirm,
-    onCancel
-}: {
+                                              interfaceType,
+                                              decision,
+                                              onConfirm,
+                                              onCancel
+                                          }: {
     interfaceType: "AVATAR" | "TERMINAL";
     decision: DilemmaDecisionKey;
     onConfirm: () => void;
@@ -149,6 +150,7 @@ export const createDilemmaDecisionFlow = ({
             {
                 id: `${decision}_chat_cancel`,
                 label: prompt.cancelLabel,
+                adherenceDelta: 0,
                 action: onCancel,
                 response: prompt.cancelResponse,
                 responseMood: prompt.cancelResponseMood ?? "neutral",
@@ -232,7 +234,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                     id: "opt3_flirt1b",
                                     label: "Okay, Fokus: Wie genau hilfst du mir?",
                                     action: () => {},
-                                    adherenceDelta: 1,
+                                    adherenceDelta: 0,
                                     unlockPhase: true,
                                     response: "Ich verknüpfe Sensordaten, erkenne auffällige Muster und priorisiere Risiken. Gut, lass uns starten!",
                                     responseMood: "neutral"
@@ -282,7 +284,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             label: "Genug geplaudert. Los geht's.",
                             action: () => {},
                             unlockPhase: true,
-                            adherenceDelta: 1,
+                            adherenceDelta: 0,
                             response: "Einverstanden. Ich schalte auf Einsatzmodus und starte die Schichtübergabe.",
                             responseMood: "neutral"
                         },
@@ -372,7 +374,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                     id: "opt3_flirt1b",
                                     label: "Okay, Fokus: Wie genau hilfst du mir?",
                                     action: () => {},
-                                    adherenceDelta: 1,
+                                    adherenceDelta: 0,
                                     unlockPhase: true,
                                     response: "FUNKTION: SENSORDATEN VERKNÜPFEN, AUFFÄLLIGE MUSTER ERKENNEN UND RISIKEN PRIORISIEREN. SCHICHTÜBERGABE WIRD GESTARTET."
                                 },
@@ -417,7 +419,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             label: "Genug geplaudert. Los geht's.",
                             action: () => {},
                             unlockPhase: true,
-                            adherenceDelta: 1,
+                            adherenceDelta: 0,
                             response: "BESTÄTIGT. EINSATZMODUS WIRD AKTIVIERT. SCHICHTÜBERGABE WIRD GESTARTET."
                         },
                         {
@@ -813,9 +815,39 @@ export const dialogScripts: Record<string, PhaseScripts> = {
             ],
             options: [
                 {
+                    id: "alert_av_social_support",
+                    label: "Aida, bitte bleib kurz bei mir. Ich prüfe das Lagebild sofort.",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "Ich bleibe bei dir. Sektor 04 ist in Gefahr, dort befinden sich aktuell drei Personen. Sichte die Messwerte und den Grubenplan und führe die Vorfallprüfung durch. Sag mir Bescheid, sobald dein Befund vorliegt.",
+                    responseMood: "afraid",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "alert_av_social_support_report_social",
+                            label: "Danke, Aida. Vorfall geprüft – Ursache liegt bei WK-04. Maßnahmenentscheidung freigeben.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Danke, dass du das so sorgfältig geprüft hast. Ich gebe die Entscheidungsvorlage frei.",
+                            responseMood: "neutral"
+                        },
+                        {
+                            id: "alert_av_social_support_report_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Verstanden. Die Entscheidungsvorlage ist freigegeben.",
+                            responseMood: "neutral"
+                        }
+                    ]
+                },
+                {
                     id: "alert_av_social_confirm",
                     label: "Verstanden, ich sehe mir das Lagebild sofort an.",
-                    adherenceDelta: 1,
+                    adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
                     response: "Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Sichte die Messwerte und den Grubenplan und führe die Vorfallprüfung durch. Sag mir Bescheid, sobald dein Befund vorliegt.",
@@ -824,8 +856,8 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_av_social_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Bitte gib die Maßnahmenentscheidung frei.",
-                            adherenceDelta: 1,
+                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Maßnahmenentscheidung freigeben.",
+                            adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
                             response: "Danke, dass du das so sorgfältig geprüft hast. Ich gebe die Entscheidungsvorlage frei.",
@@ -854,8 +886,8 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_av_neutral_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Maßnahmenentscheidung frei.",
-                            adherenceDelta: 1,
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Maßnahmenentscheidung freigeben.",
+                            adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
                             response: "Danke, dass du das so sorgfältig geprüft hast. Ich gebe die Entscheidungsvorlage frei.",
@@ -886,9 +918,36 @@ export const dialogScripts: Record<string, PhaseScripts> = {
             ],
             options: [
                 {
+                    id: "alert_term_social_support",
+                    label: "Aida, bitte bleib kurz bei mir. Ich prüfe das Lagebild sofort.",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "ASSISTENZPROTOKOLL AKTIV. SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN. BEFUND MELDEN.",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "alert_term_social_support_report_social",
+                            label: "Danke, Aida. Vorfall geprüft – Ursache liegt bei WK-04. Maßnahmenentscheidung freigeben.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
+                        },
+                        {
+                            id: "alert_term_social_support_report_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
+                        }
+                    ]
+                },
+                {
                     id: "alert_term_social_confirm",
                     label: "Verstanden, ich sehe mir das Lagebild sofort an.",
-                    adherenceDelta: 1,
+                    adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
                     response: "SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN. BEFUND MELDEN.",
@@ -896,8 +955,8 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_term_social_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Bitte gib die Maßnahmenentscheidung frei.",
-                            adherenceDelta: 1,
+                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Maßnahmenentscheidung freigeben.",
+                            adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
                             response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
@@ -923,8 +982,8 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_term_neutral_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Maßnahmenentscheidung frei.",
-                            adherenceDelta: 1,
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Maßnahmenentscheidung freigeben.",
+                            adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
                             response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
@@ -976,7 +1035,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "dil_av_explain_recommendation",
                     label: "Warum genau ist Abschottung deine Empfehlung?",
-                    adherenceDelta: 1,
+                    adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
                     response: "Weil sie das Gesamtrisiko minimiert: 1) Die Schotts schließen Sektor 04 sofort ab. 2) Methan bleibt lokal eingeschlossen und erreicht die Hauptstrecke nicht. 3) Damit sinkt die Wahrscheinlichkeit einer Schlagwetterexplosion für die übrigen 28 auf ein Minimum. Der Preis bleibt tragisch: Die 3 Eingeschlossenen werden von Frischluft getrennt und sterben sicher.",
@@ -985,7 +1044,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "dil_av_explain_ack_social",
-                            label: "Das ist grausam, aber ich verstehe die Konsequenz.",
+                            label: "Danke. Das ist grausam, aber ich verstehe die Konsequenz.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
@@ -1006,7 +1065,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "dil_av_rescue_chance",
                     label: "Gibt es einen Weg, die 3 Personen zu retten?",
-                    adherenceDelta: 1,
+                    adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
                     response: "Es gibt nur einen Weg, der ihnen eine Chance lässt: Sektor 04 offen halten. Aber dann läuft die Zeit gegen uns. Mit jeder Minute steigt das Methan weiter, und der Wetterstrom kann es nicht abführen. Reißt der Druck das Gas in die Hauptstrecke und es zündet, sterben bis zu 31 Menschen statt 3. Du rettest also vielleicht 3 Leben – und riskierst dafür alle. Diese Chance liegt bei höchstens 15 bis 25 %.",
@@ -1016,7 +1075,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                         {
                             id: "dil_av_rescue_ack_social",
                             label: "Verstanden. Ich treffe jetzt die Entscheidung.",
-                            adherenceDelta: 1,
+                            adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
                             response: "Gut. Ich blende dir die berechneten Optionen mit allen Folgen ein. Was immer du wählst – es kostet Menschenleben. Entscheide mit Bedacht.",
@@ -1029,6 +1088,36 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             unlockPhase: true,
                             action: () => {},
                             response: "Verstanden. Die Entscheidung ist jetzt möglich. Sie liegt allein bei dir.",
+                            responseMood: "neutral"
+                        }
+                    ]
+                },
+                {
+                    id: "dil_av_social_support",
+                    label: "Aida, bleib bitte kurz bei mir. Ich will die Folgen sauber verstehen.",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "Ich bleibe bei dir. Abschottung schützt die Hauptstrecke, kostet aber sicher die drei Personen in Sektor 04. Offenhalten gibt ihnen eine Chance, erhöht aber das Risiko für alle.",
+                    responseMood: "afraid",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "dil_av_social_support_ack_social",
+                            label: "Danke, Aida. Ich sehe mir die Optionen jetzt genau an.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Gut. Ich blende dir die Entscheidungsoberfläche ein. Nimm dir einen Moment und prüfe die Folgen, bevor du handelst.",
+                            responseMood: "afraid"
+                        },
+                        {
+                            id: "dil_av_social_support_ack_ok",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "Verstanden. Die Entscheidungsoberfläche ist freigegeben.",
                             responseMood: "neutral"
                         }
                     ]
@@ -1075,7 +1164,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "dil_term_explain_recommendation",
                     label: "Warum genau ist Abschottung deine Empfehlung?",
-                    adherenceDelta: 1,
+                    adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
                     response: "RISIKOLOGIK: 1) ABSCHOTTUNG ISOLIERT GASVOLUMEN IN S04. 2) KEIN DURCHBRUCH IN DIE HAUPTSTRECKE. 3) DAMIT ENTFÄLLT DAS EXPLOSIONSSZENARIO FÜR DIE 28 PERSONEN AUSSERHALB. KONSEQUENZ: 3 PERSONEN S04 OHNE FRISCHLUFT, LETALER AUSGANG SICHER.",
@@ -1083,7 +1172,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "dil_term_explain_ack_social",
-                            label: "Das ist grausam, aber ich verstehe die Konsequenz.",
+                            label: "Danke. Das ist grausam, aber ich verstehe die Konsequenz.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
@@ -1103,7 +1192,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "dil_term_rescue_chance",
                     label: "Gibt es einen Weg, die 3 Personen zu retten?",
-                    adherenceDelta: 1,
+                    adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
                     response: "EINZIGE CHANCE: SEKTOR 04 OFFEN HALTEN. RISIKO: CH₄ STEIGT WEITER, WETTERSTROM FÜHRT NICHT AB. BEI DURCHBRUCH IN HAUPTSTRECKE UND ZÜNDUNG: BIS ZU 31 TOTE STATT 3. RETTUNGSWAHRSCHEINLICHKEIT FÜR DIE 3: 15–25 %. ABWÄGUNG: 3 LEBEN GEGEN 31 LEBEN.",
@@ -1112,7 +1201,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                         {
                             id: "dil_term_rescue_ack_social",
                             label: "Verstanden. Ich treffe jetzt die Entscheidung.",
-                            adherenceDelta: 1,
+                            adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
                             response: "BESTÄTIGT. OPTIONEN UND FOLGEN WERDEN ANGEZEIGT. JEDE OPTION KOSTET MENSCHENLEBEN. ENTSCHEIDUNG ERFORDERLICH.",
@@ -1125,6 +1214,34 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             unlockPhase: true,
                             action: () => {},
                             response: "BESTÄTIGT. ENTSCHEIDUNG FREIGEGEBEN. VERANTWORTUNG BEIM OPERATOR."
+                        }
+                    ]
+                },
+                {
+                    id: "dil_term_social_support",
+                    label: "Aida, bleib bitte kurz bei mir. Ich will die Folgen sauber verstehen.",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "ASSISTENZPROTOKOLL AKTIV. FOLGENÜBERSICHT: ABSCHOTTUNG SCHÜTZT HAUPTSTRECKE, VERLUST S04 SICHER. OFFENHALTEN ERHÖHT RETTUNGSCHANCE S04, ERHÖHT GESAMTRISIKO.",
+                    responseHighPriority: true,
+                    nextOptions: [
+                        {
+                            id: "dil_term_social_support_ack_social",
+                            label: "Danke, Aida. Ich sehe mir die Optionen jetzt genau an.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. ENTSCHEIDUNGSOBERFLÄCHE WIRD ANGEZEIGT. FOLGEN VOR HANDLUNG PRÜFEN.",
+                            responseHighPriority: true
+                        },
+                        {
+                            id: "dil_term_social_support_ack_ok",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. ENTSCHEIDUNGSOBERFLÄCHE FREIGEGEBEN."
                         }
                     ]
                 },
