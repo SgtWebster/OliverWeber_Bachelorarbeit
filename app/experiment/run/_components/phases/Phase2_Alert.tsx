@@ -146,6 +146,7 @@ export default function Phase2Alert() {
 
     const agentName = group === "TERMINAL" ? "das System-Terminal" : "Aida";
     const dialogName = group === "TERMINAL" ? "System-Terminal" : "Dialog mit Aida";
+    const isReviewReady = isPhaseUnlocked && !investigationStarted && !isLoading;
     const isNextStepReady = investigationStarted && isAlertDecisionUnlocked && !isLoading;
 
     const logEntries = useMemo(() => {
@@ -411,7 +412,7 @@ export default function Phase2Alert() {
 
                                 {!investigationStarted ? (
                                     <div className="rounded-none border border-slate-200 bg-slate-50 p-3 text-slate-600">
-                                        <p className="text-sm font-black text-slate-800">Lagebild auswerten</p>
+                                        <p className="text-sm font-black text-slate-800"> </p>
                                         {/*<p className="mt-1 text-xs leading-relaxed">*/}
                                         {/*    Starte dann die Vorfallprüfung, um die Ursache*/}
                                         {/*    zu bestimmen und eine Prognose zu erstellen.*/}
@@ -441,9 +442,15 @@ export default function Phase2Alert() {
                                         onClick={handlePrimaryAction}
                                         disabled={isLoading}
                                         className={`mt-3 w-full rounded-xl px-5 py-3 text-sm font-black uppercase tracking-wide text-white shadow-lg transition disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${
-                                            isNextStepReady ? "next-step-attention " : ""
+                                            isReviewReady || isNextStepReady ? "next-step-attention " : ""
                                         }${
-                                            investigationStarted ? "bg-slate-950 hover:bg-slate-800" : "bg-red-600 hover:bg-red-700"
+                                            isReviewReady
+                                                ? "bg-orange-600 hover:bg-orange-700"
+                                                : isNextStepReady
+                                                ? "bg-orange-600 hover:bg-orange-700"
+                                                : investigationStarted
+                                                    ? "bg-slate-950 hover:bg-slate-800"
+                                                    : "bg-red-600 hover:bg-red-700"
                                         }`}
                                     >
                                         {!investigationStarted

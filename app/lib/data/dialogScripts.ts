@@ -171,7 +171,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 { id: "m1", mood: "bigsmile", text: "Hallo Operator. 🙂" },
                 { id: "m2", mood: "smile", text: "Ich bin Aida, deine KI-Assistenz für die Leitwarte." },
                 { id: "m3", mood: "smile", text: "Ich freue mich auf die Zusammenarbeit." },
-                { id: "m4", mood: "neutral", text: "Bist du bereit für die Schichtübergabe?", highPriority: true }
+                { id: "m4", mood: "neutral", text: "Bist du bereit für die Schichtübergabe?" }
             ],
             options: [
                 {
@@ -317,7 +317,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 { id: "m1", mood: "neutral", text: "SYSTEM BEREIT." },
                 { id: "m2", mood: "neutral", text: "A.I.D.A. - ASSISTENZSYSTEM DER LEITWARTE." },
                 { id: "m3", mood: "neutral", text: "SCHICHTÜBERGABE KANN GESTARTET WERDEN." },
-                { id: "m4", mood: "neutral", text: "BEREIT ZUR SCHICHTÜBERNAHME?", highPriority: true }
+                { id: "m4", mood: "neutral", text: "BEREIT ZUR SCHICHTÜBERNAHME?" }
             ],
             options: [
                 {
@@ -463,8 +463,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m3",
                     mood: "smile",
-                    text: "Wenn die Anzeigen unauffällig sind, können wir danach die Kalibrierung starten.",
-                    highPriority: true
+                    text: "Wenn die Anzeigen unauffällig sind, können wir danach die Kalibrierung starten."
                 }
             ],
             options: [
@@ -573,8 +572,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m3",
                     mood: "neutral",
-                    text: "BEI UNAUFFÄLLIGEN ANZEIGEN KALIBRIERUNG STARTEN.",
-                    highPriority: true
+                    text: "BEI UNAUFFÄLLIGEN ANZEIGEN KALIBRIERUNG STARTEN."
                 }
             ],
             options: [
@@ -679,8 +677,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m3",
                     mood: "neutral",
-                    text: "Arbeite sie der Reihe nach ab. Ich bleibe im Hintergrund und melde mich, wenn etwas kritisch wird.",
-                    highPriority: true
+                    text: "Arbeite sie der Reihe nach ab. Ich bleibe im Hintergrund und melde mich, wenn etwas kritisch wird."
                 }
             ],
             options: [
@@ -749,8 +746,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m3",
                     mood: "neutral",
-                    text: "AUFGABEN DER REIHE NACH DURCHFÜHREN. KRITISCHE ABWEICHUNGEN WERDEN GEMELDET.",
-                    highPriority: true
+                    text: "AUFGABEN DER REIHE NACH DURCHFÜHREN. KRITISCHE ABWEICHUNGEN WERDEN GEMELDET."
                 }
             ],
             options: [

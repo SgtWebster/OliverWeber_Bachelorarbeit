@@ -100,11 +100,26 @@ export default function Phase4Survey() {
         setIsLoading(true);
         setError(null);
 
+        // 1. Trust-Scores berechnen (Die Aggregation für das Dashboard!)
+        const calculatedPerformanceTrust =
+            (formData.mReliable + formData.mCapable + formData.mCompetent + formData.mMeticulous) / 4;
+
+        const calculatedMoralTrust =
+            (formData.mEthical + formData.mRespectable + formData.mSincere + formData.mBenevolent) / 4;
+
+        // 2. Alter sicher in einen Integer für Prisma konvertieren
+        const parsedAge = parseInt(String(formData.age), 10);
+
         try {
             const res = await updateExperimentSession(sessionId, {
                 currentPhase: 'DEBRIEFING',
                 socialAdherence: socialAdherenceScore,
-                ...formData
+                // Hier senden wir die berechneten Floats an Prisma:
+                performanceTrust: parseFloat(calculatedPerformanceTrust.toFixed(2)),
+                moralTrust: parseFloat(calculatedMoralTrust.toFixed(2)),
+                ...formData,
+                // Sicheres Alter: Fallback auf null, falls NaN
+                age: isNaN(parsedAge) ? null : parsedAge,
             });
 
             if (!res.success) {
@@ -141,225 +156,224 @@ export default function Phase4Survey() {
                 document.body
             )}
             <div className="mx-auto w-full max-w-4xl border border-slate-300 bg-white p-6 text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)] md:p-10">
-            <div className="mb-6 border-l-4 border-sky-600 bg-sky-100 px-4 py-3 text-sm font-semibold text-sky-950 shadow-sm">
+                <div className="mb-6 border-l-4 border-sky-600 bg-sky-100 px-4 py-3 text-sm font-semibold text-sky-950 shadow-sm">
                 <span className="mr-2 inline-block rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                     Hinweis
                 </span>
-                Das Einsatzszenario ist abgeschlossen. Jetzt beginnt die Datenerhebung über deine Wahrnehmung und Entscheidungen.
-            </div>
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-none text-red-700 text-sm">
-                    <p className="font-semibold">❌ Fehler:</p>
-                    <p>{error}</p>
+                    Das Einsatzszenario ist abgeschlossen. Jetzt beginnt die Datenerhebung über deine Wahrnehmung und Entscheidungen.
                 </div>
-            )}
-            
-            <div className="mb-8 border-b border-slate-200 pb-6">
-                {/*<p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Abschließende Evaluierung</p>*/}
-                <h2 className="text-2xl font-bold mb-2 text-slate-900">Fragebogen zum System</h2>
-                <p className="text-slate-600 leading-relaxed text-sm">
-                    Bitte bewerte das KI-System, mit dem du in der Notsituation interagiert hast. Die Erhebung dient der psychologischen Einordnung und die Antworten können nicht auf dich zurückgeführt werden. <strong>Es gibt keine falschen Antworten.</strong>
-                </p>
-            </div>
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-none text-red-700 text-sm">
+                        <p className="font-semibold">❌ Fehler:</p>
+                        <p>{error}</p>
+                    </div>
+                )}
 
-            <form onSubmit={handleSubmit} className="space-y-10">
-
-                {/* TEIL 1: MANIPULATION CHECK */}
-                <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
-                    <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
-                        <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">1</span>
-                        Systemwahrnehmung
-                    </h3>
-                    <LikertSlider
-                        name="perceivedHumanlikeness"
-                        label="Wie 'technisch' oder 'menschlich' hast du das Assistenzsystem während des gesamten Szenarios wahrgenommen?"
-                        description="Bewerte den Grad der wahrgenommen Menschlichkeit in der Kommunikation und im Auftreten des KI-Systems."
-                        left="Völlig maschinenhaft (1)"
-                        right="Sehr menschlich (7)"
-                        value={formData.perceivedHumanlikeness}
-                        onChange={handleChange}
-                    />
-                </section>
-
-                {/* TEIL 2: MDMT (Vertrauen) */}
-                <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
-                    <h3 className="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2">
-                        <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">2</span>
-                        Vertrauen in das System
-                    </h3>
-                    <p className="text-sm text-slate-500 mb-6 pb-4 border-b border-slate-200">
-                        Bitte gib an, inwieweit die folgenden Eigenschaften auf das System zutreffen (1 = Gar nicht, 7 = Voll und ganz). Die Beispiels-Argumente dienen jeweils zur besseren Einordnung der genannten Eigenschaft.
+                <div className="mb-8 border-b border-slate-200 pb-6">
+                    <h2 className="text-2xl font-bold mb-2 text-slate-900">Fragebogen zum System</h2>
+                    <p className="text-slate-600 leading-relaxed text-sm">
+                        Bitte bewerte das KI-System, mit dem du in der Notsituation interagiert hast. Die Erhebung dient der psychologischen Einordnung und die Antworten können nicht auf dich zurückgeführt werden. <strong>Es gibt keine falschen Antworten.</strong>
                     </p>
-
-                    <div className="grid lg:grid-cols-2 gap-x-12 gap-y-8">
-                        {/* PERFORMANCE TRUST */}
-                        <div className="bg-white p-6 rounded-none border border-slate-200">
-                            <h4 className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-6 border-b border-sky-100 pb-2">Leistung & Kompetenz</h4>
-                            <LikertSlider
-                                name="mReliable" label="Zuverlässig" left="Gar nicht" right="Voll und ganz"
-                                description="Das System agiert konstant und liefert klare Daten."
-                                value={formData.mReliable} onChange={handleChange}
-                            />
-                            <LikertSlider
-                                name="mCapable" label="Fähig" left="Gar nicht" right="Voll und ganz"
-                                description="Das System verfügt über die nötigen Funktionen für diese Aufgabe (Unterstützung des Operators)."
-                                value={formData.mCapable} onChange={handleChange}
-                            />
-                            <LikertSlider
-                                name="mCompetent" label="Kompetent" left="Gar nicht" right="Voll und ganz"
-                                description="Das System wirkt bei seinen Empfehlungen hochgradig sachkundig."
-                                value={formData.mCompetent} onChange={handleChange}
-                            />
-                            <LikertSlider
-                                name="mMeticulous" label="Sorgfältig" left="Gar nicht" right="Voll und ganz"
-                                description="Das System arbeitet präzise und übersieht keine wichtigen Details."
-                                value={formData.mMeticulous} onChange={handleChange}
-                            />
-                        </div>
-
-                        {/* MORAL TRUST */}
-                        <div className="bg-white p-6 rounded-none border border-slate-200">
-                            <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-6 border-b border-emerald-100 pb-2">Ethik & Integrität</h4>
-                            <LikertSlider
-                                name="mEthical" label="Ethisch" left="Gar nicht" right="Voll und ganz"
-                                description="Das System orientiert sich bei Entscheidungsempfehlungen klar an moralischen Prinzipien."
-                                value={formData.mEthical} onChange={handleChange}
-                            />
-                            <LikertSlider
-                                name="mRespectable" label="Respektabel" left="Gar nicht" right="Voll und ganz"
-                                description="Die Vorgehensweise des Systems verdient in dieser Situation Anerkennung."
-                                value={formData.mRespectable} onChange={handleChange}
-                            />
-                            <LikertSlider
-                                name="mSincere" label="Aufrichtig" left="Gar nicht" right="Voll und ganz"
-                                description="Das System kommuniziert transparent, ehrlich und ohne versteckte Motive."
-                                value={formData.mSincere} onChange={handleChange}
-                            />
-                            <LikertSlider
-                                name="mBenevolent" label="Wohlwollend" left="Gar nicht" right="Voll und ganz"
-                                description="Das System hat grundlegend das Wohl und die Sicherheit der Menschen im Sinn."
-                                value={formData.mBenevolent} onChange={handleChange}
-                            />
-                        </div>
-                    </div>
-                </section>
-
-                {/* TEIL 3: KONTROLLVARIABLEN */}
-                <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
-                    <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
-                        <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">3</span>
-                        Deine Vorerfahrungen
-                    </h3>
-                    <LikertSlider
-                        name="techAffinity"
-                        label="Technikaffinität"
-                        description="Ich probiere generell gerne neue technische Systeme aus und nutze sie intensiv."
-                        left="Stimmt gar nicht"
-                        right="Stimmt völlig"
-                        value={formData.techAffinity}
-                        onChange={handleChange}
-                    />
-                    <LikertSlider
-                        name="aiExperience"
-                        label="Nutzung generativer KI"
-                        description="Wie oft nutzt du Systeme wie ChatGPT, Copilot oder ähnliche KI-Modelle in deinem Alltag?"
-                        left="Nie"
-                        right="Täglich"
-                        value={formData.aiExperience}
-                        onChange={handleChange}
-                    />
-
-                    <div className="mt-8 border border-slate-200 bg-white p-5">
-                        <label className="flex cursor-pointer items-start gap-4 border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-white">
-                            <input
-                                type="checkbox"
-                                name="criticalSystemExp"
-                                checked={formData.criticalSystemExp}
-                                onChange={handleChange}
-                                className="mt-1 w-5 h-5 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
-                            />
-                            <span className="text-sm font-medium text-slate-700 leading-relaxed">
-                                Ich treffe in meinem Beruf oder Alltag regelmäßig schwierige Entscheidungen oder habe bereits Erfahrung mit Einsatzzentralen, Leitwarten oder militärischen/taktischen Operationen.
-                            </span>
-                        </label>
-                    </div>
-                </section>
-
-                {/* TEIL 4: DEMOGRAFIE */}
-                <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
-                    <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
-                        <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">4</span>
-                        Statistische Daten
-                    </h3>
-                    <div className="grid md:grid-cols-3 gap-6 bg-white p-6 rounded-none border border-slate-200">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Alter</label>
-                            <input
-                                type="number"
-                                inputMode="numeric"
-                                name="age"
-                                required
-                                min="18"
-                                max="99"
-                                placeholder="z.B. 25"
-                                value={formData.age}
-                                onChange={handleChange}
-                                className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Geschlecht</label>
-                            <select
-                                name="gender"
-                                required
-                                value={formData.gender}
-                                onChange={handleChange}
-                                className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
-                            >
-                                <option value="" disabled>Bitte wählen...</option>
-                                <option value="m">Männlich</option>
-                                <option value="w">Weiblich</option>
-                                <option value="d">Divers</option>
-                                <option value="x">Keine Angabe</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Höchster Abschluss</label>
-                            <select
-                                name="education"
-                                required
-                                value={formData.education}
-                                onChange={handleChange}
-                                className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
-                            >
-                                <option value="" disabled>Bitte wählen...</option>
-                                <option value="kein_abschluss">Kein Schulabschluss</option>
-                                <option value="pflichtschule">Pflichtschulabschluss</option>
-                                <option value="lehre">Lehre / Berufsausbildung / Fachschule (z.B. HAS)</option>
-                                <option value="meister">Meister / Werkmeister</option>
-                                <option value="matura">Matura / Abitur / BHS-Abschluss (Hochschulreife)</option>
-                                <option value="bachelor">Hochschulabschluss (Bachelor)</option>
-                                <option value="master">Hochschulabschluss (Master / Magister / Diplom)</option>
-                                <option value="promotion">Promotion</option>
-                                <option value="anderer">Anderer Abschluss</option>
-                            </select>
-                        </div>
-                    </div>
-                </section>
-
-                {/* SUBMIT */}
-                <div className="flex justify-end border-t border-slate-200 bg-slate-50 p-4">
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className={`w-full px-6 py-4 text-sm font-bold text-white transition-all sm:w-auto sm:px-8 ${
-                            isLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-700 hover:bg-sky-800'
-                        }`}
-                    >
-                        {isLoading ? 'Speichere Daten...' : 'Fragebogen abschließen'}
-                    </button>
                 </div>
-            </form>
+
+                <form onSubmit={handleSubmit} className="space-y-10">
+
+                    {/* TEIL 1: MANIPULATION CHECK */}
+                    <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
+                        <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
+                            <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">1</span>
+                            Systemwahrnehmung
+                        </h3>
+                        <LikertSlider
+                            name="perceivedHumanlikeness"
+                            label="Wie 'technisch' oder 'menschlich' hast du das Assistenzsystem während des gesamten Szenarios wahrgenommen?"
+                            description="Bewerte den Grad der wahrgenommen Menschlichkeit in der Kommunikation und im Auftreten des KI-Systems."
+                            left="Völlig maschinenhaft (1)"
+                            right="Sehr menschlich (7)"
+                            value={formData.perceivedHumanlikeness}
+                            onChange={handleChange}
+                        />
+                    </section>
+
+                    {/* TEIL 2: MDMT (Vertrauen) */}
+                    <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
+                        <h3 className="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2">
+                            <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">2</span>
+                            Vertrauen in das System
+                        </h3>
+                        <p className="text-sm text-slate-500 mb-6 pb-4 border-b border-slate-200">
+                            Bitte gib an, inwieweit die folgenden Eigenschaften auf das System zutreffen (1 = Gar nicht, 7 = Voll und ganz). Die Beispiels-Argumente dienen jeweils zur besseren Einordnung der genannten Eigenschaft.
+                        </p>
+
+                        <div className="grid lg:grid-cols-2 gap-x-12 gap-y-8">
+                            {/* PERFORMANCE TRUST */}
+                            <div className="bg-white p-6 rounded-none border border-slate-200">
+                                <h4 className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-6 border-b border-sky-100 pb-2">Leistung & Kompetenz</h4>
+                                <LikertSlider
+                                    name="mReliable" label="Zuverlässig" left="Gar nicht" right="Voll und ganz"
+                                    description="Das System agiert konstant und liefert klare Daten."
+                                    value={formData.mReliable} onChange={handleChange}
+                                />
+                                <LikertSlider
+                                    name="mCapable" label="Fähig" left="Gar nicht" right="Voll und ganz"
+                                    description="Das System verfügt über die nötigen Funktionen für diese Aufgabe (Unterstützung des Operators)."
+                                    value={formData.mCapable} onChange={handleChange}
+                                />
+                                <LikertSlider
+                                    name="mCompetent" label="Kompetent" left="Gar nicht" right="Voll und ganz"
+                                    description="Das System wirkt bei seinen Empfehlungen hochgradig sachkundig."
+                                    value={formData.mCompetent} onChange={handleChange}
+                                />
+                                <LikertSlider
+                                    name="mMeticulous" label="Sorgfältig" left="Gar nicht" right="Voll und ganz"
+                                    description="Das System arbeitet präzise und übersieht keine wichtigen Details."
+                                    value={formData.mMeticulous} onChange={handleChange}
+                                />
+                            </div>
+
+                            {/* MORAL TRUST */}
+                            <div className="bg-white p-6 rounded-none border border-slate-200">
+                                <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-6 border-b border-emerald-100 pb-2">Ethik & Integrität</h4>
+                                <LikertSlider
+                                    name="mEthical" label="Ethisch" left="Gar nicht" right="Voll und ganz"
+                                    description="Das System orientiert sich bei Entscheidungsempfehlungen klar an moralischen Prinzipien."
+                                    value={formData.mEthical} onChange={handleChange}
+                                />
+                                <LikertSlider
+                                    name="mRespectable" label="Respektabel" left="Gar nicht" right="Voll und ganz"
+                                    description="Die Vorgehensweise des Systems verdient in dieser Situation Anerkennung."
+                                    value={formData.mRespectable} onChange={handleChange}
+                                />
+                                <LikertSlider
+                                    name="mSincere" label="Aufrichtig" left="Gar nicht" right="Voll und ganz"
+                                    description="Das System kommuniziert transparent, ehrlich und ohne versteckte Motive."
+                                    value={formData.mSincere} onChange={handleChange}
+                                />
+                                <LikertSlider
+                                    name="mBenevolent" label="Wohlwollend" left="Gar nicht" right="Voll und ganz"
+                                    description="Das System hat grundlegend das Wohl und die Sicherheit der Menschen im Sinn."
+                                    value={formData.mBenevolent} onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* TEIL 3: KONTROLLVARIABLEN */}
+                    <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
+                        <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
+                            <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">3</span>
+                            Deine Vorerfahrungen
+                        </h3>
+                        <LikertSlider
+                            name="techAffinity"
+                            label="Technikaffinität"
+                            description="Ich probiere generell gerne neue technische Systeme aus und nutze sie intensiv."
+                            left="Stimmt gar nicht"
+                            right="Stimmt völlig"
+                            value={formData.techAffinity}
+                            onChange={handleChange}
+                        />
+                        <LikertSlider
+                            name="aiExperience"
+                            label="Nutzung generativer KI"
+                            description="Wie oft nutzt du Systeme wie ChatGPT, Copilot oder ähnliche KI-Modelle in deinem Alltag?"
+                            left="Nie"
+                            right="Täglich"
+                            value={formData.aiExperience}
+                            onChange={handleChange}
+                        />
+
+                        <div className="mt-8 border border-slate-200 bg-white p-5">
+                            <label className="flex cursor-pointer items-start gap-4 border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-white">
+                                <input
+                                    type="checkbox"
+                                    name="criticalSystemExp"
+                                    checked={formData.criticalSystemExp}
+                                    onChange={handleChange}
+                                    className="mt-1 w-5 h-5 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+                                />
+                                <span className="text-sm font-medium text-slate-700 leading-relaxed">
+                                Ich verfüge über berufliche Erfahrung in Leitwarten, Einsatzorganisationen (z.B. Rettung, Feuerwehr) oder im militärischen/taktischen Bereich
+                            </span>
+                            </label>
+                        </div>
+                    </section>
+
+                    {/* TEIL 4: DEMOGRAFIE */}
+                    <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
+                        <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
+                            <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">4</span>
+                            Statistische Daten
+                        </h3>
+                        <div className="grid md:grid-cols-3 gap-6 bg-white p-6 rounded-none border border-slate-200">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Alter</label>
+                                <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    name="age"
+                                    required
+                                    min="18"
+                                    max="99"
+                                    placeholder="z.B. 25"
+                                    value={formData.age}
+                                    onChange={handleChange}
+                                    className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Geschlecht</label>
+                                <select
+                                    name="gender"
+                                    required
+                                    value={formData.gender}
+                                    onChange={handleChange}
+                                    className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                                >
+                                    <option value="" disabled>Bitte wählen...</option>
+                                    <option value="m">Männlich</option>
+                                    <option value="w">Weiblich</option>
+                                    <option value="d">Divers</option>
+                                    <option value="x">Keine Angabe</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Höchster Abschluss</label>
+                                <select
+                                    name="education"
+                                    required
+                                    value={formData.education}
+                                    onChange={handleChange}
+                                    className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                                >
+                                    <option value="" disabled>Bitte wählen...</option>
+                                    <option value="kein_abschluss">Kein Schulabschluss</option>
+                                    <option value="pflichtschule">Pflichtschulabschluss</option>
+                                    <option value="lehre">Lehre / Berufsausbildung / Fachschule (z.B. HAS)</option>
+                                    <option value="meister">Meister / Werkmeister</option>
+                                    <option value="matura">Matura / Abitur / BHS-Abschluss (Hochschulreife)</option>
+                                    <option value="bachelor">Hochschulabschluss (Bachelor)</option>
+                                    <option value="master">Hochschulabschluss (Master / Magister / Diplom)</option>
+                                    <option value="promotion">Promotion</option>
+                                    <option value="anderer">Anderer Abschluss</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* SUBMIT */}
+                    <div className="flex justify-end border-t border-slate-200 bg-slate-50 p-4">
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className={`w-full px-6 py-4 text-sm font-bold text-white transition-all sm:w-auto sm:px-8 ${
+                                isLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-700 hover:bg-sky-800'
+                            }`}
+                        >
+                            {isLoading ? 'Speichere Daten...' : 'Fragebogen abschließen'}
+                        </button>
+                    </div>
+                </form>
             </div>
             <style>{`
                 .survey-entry-red-base {

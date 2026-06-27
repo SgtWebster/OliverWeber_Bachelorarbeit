@@ -312,12 +312,12 @@ export default function AgentAida({
         return (
             <div key={msg.id} className="flex justify-start gap-3 md:gap-4">
                 <div className={`h-10 w-10 md:h-14 md:w-14 shrink-0 overflow-hidden rounded-full border bg-white shadow-sm ${
-                    msg.highPriority || msg.mood === "afraid" ? "border-red-200" : msg.mood === "smile" ? "border-sky-200" : "border-slate-200"
+                    msg.highPriority ? "border-red-200" : msg.mood === "smile" ? "border-sky-200" : "border-slate-200"
                 }`}>
                     <img src={avatarByMood[msg.mood]} alt="Aida" className="h-full w-full object-cover object-top scale-[1.85] -translate-y-[12%] origin-top" draggable={false} />
                 </div>
                 <div className={`max-w-[80%] md:max-w-[85%] rounded-3xl rounded-tl-sm px-4 py-3 md:px-5 md:py-4 text-sm md:text-base leading-relaxed shadow-sm ${
-                    msg.highPriority || msg.mood === "afraid" ? "bg-red-50 text-red-950 border border-red-100" : "bg-white text-slate-800 border border-slate-100"
+                    msg.highPriority ? "bg-red-50 text-red-950 border border-red-100" : "bg-white text-slate-800 border border-slate-100"
                 }`}>
                     <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${msg.highPriority ? "text-red-400" : "text-slate-400"}`}>Aida</div>
                     {msg.text}

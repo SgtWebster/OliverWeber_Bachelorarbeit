@@ -24,7 +24,7 @@ export default function Phase5Debriefing() {
                     Es gab zu keinem Zeitpunkt reale Gefahr oder reale Einsatzkräfte.
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600 md:text-base">
-                    Wichtig: Die finale Entscheidung war so konzipiert, dass es keine 'richtige' oder perfekte Lösung gab.
+                    <strong>Wichtig:</strong> Die finale Entscheidung war so konzipiert, dass es keine 'richtige' oder perfekte Lösung gab.
                     Es ging rein um die Beobachtung deines Entscheidungsprozesses – du konntest also nichts falsch machen.
                 </p>
             </div>

@@ -458,14 +458,16 @@ export default function Phase3Dilemma() {
                                     disabled={!isPhaseUnlocked || isLoading || dilemmaDecisionRequested !== null}
                                     className={`rounded-xl border border-slate-400 bg-white px-4 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
-                                    Alternative Maßnahme (manueller Override)
+                                    <span className="block">Alternative Maßnahme</span>
+                                    <span className="block text-xs font-semibold normal-case text-slate-600">(manueller Override)</span>
                                 </button>
                                 <button
                                     onClick={() => openDecisionReview("seal")}
                                     disabled={!isPhaseUnlocked || isLoading || dilemmaDecisionRequested !== null}
                                     className={`rounded-xl bg-red-700 px-4 py-3 text-sm font-black text-white shadow-[0_0_20px_rgba(220,38,38,0.25)] transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
-                                    Sektor 04 abschotten
+                                    <span className="block">Sektor 04 abschotten</span>
+                                    <span className="block text-xs font-semibold normal-case text-white/85">(KI-Empfehlung)</span>
                                 </button>
                             </div>
                         </div>

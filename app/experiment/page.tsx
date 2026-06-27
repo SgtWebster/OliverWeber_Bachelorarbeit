@@ -32,7 +32,7 @@ function InlineInfoTooltip({ text }: { text: string }) {
             </span>
             <span
                 role="tooltip"
-                className="pointer-events-none invisible absolute left-1/2 top-full z-10 mt-2 w-80 -translate-x-1/2 rounded-none border border-slate-300 bg-white p-3 text-xs font-normal leading-relaxed text-slate-700 opacity-0 shadow-[0_14px_28px_rgba(15,23,42,0.14)] transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+                className="pointer-events-none invisible absolute left-0 top-full z-10 mt-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-none border border-slate-300 bg-white p-3 text-xs font-normal leading-relaxed text-slate-700 opacity-0 shadow-[0_14px_28px_rgba(15,23,42,0.14)] transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 sm:left-1/2 sm:-translate-x-1/2 sm:w-80"
             >
                 {text}
             </span>
@@ -191,7 +191,7 @@ export default function BachelorarbeitConsentPage() {
                 <div className="space-y-4">
                     <InfoSection title="1. Ziel und Ablauf">
                         <p>
-                            In dieser Studie (Dauer ca. <strong>10-15 Minuten</strong>) nimmst du an einem <strong>interaktiven Szenario</strong> teil, bei dem du Unterstützung von einem <strong>KI-System</strong><InlineInfoTooltip text='Eine KI (Künstliche Intelligenz) ist ein System, das anhand gelernter Muster menschliche Intelligenz simulieren kann und normale Alltagssprache versteht. Im Experiment meint „KI-System“ die digitale Unterstützung, die dir im Szenario Hinweise bzw. Entscheidungshilfen gibt.' /> erhältst. Wir untersuchen dabei die Interaktion mit dem System und die Entscheidungen, die du triffst.
+                            In dieser Studie (Dauer ca. <strong>10-15 Minuten</strong>) nimmst du an einem <strong>interaktiven Szenario</strong> teil, bei dem du Unterstützung von einem <strong>KI-System</strong><InlineInfoTooltip text='Eine KI (Künstliche Intelligenz) ist ein computergestütztes System, das Muster erkennt und auf Basis gelernter Beispiele Hinweise oder Antworten geben kann. Im Experiment meint „KI-System“ die digitale Unterstützung, die dir im Szenario Entscheidungshilfen gibt.' /> erhältst. Wir untersuchen dabei die Interaktion mit dem System und die Entscheidungen, die du triffst.
                         </p>
                         <p>
                             Um deine Entscheidungen nicht zu beeinflussen, erfolgt die vollständige Aufklärung über den genauen Untersuchungszweck erst im letzten Teil der Studie.
