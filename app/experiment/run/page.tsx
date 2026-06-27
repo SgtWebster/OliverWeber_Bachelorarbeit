@@ -28,6 +28,7 @@ export default function ExperimentRunPage() {
         sessionId,
         hasConsented,
         setPhaseUnlocked,
+        setAlertDecisionUnlocked,
         isRecovering,
         initializeExperiment
     } = useExperimentStore();
@@ -43,23 +44,30 @@ export default function ExperimentRunPage() {
 
         const rawScript = group === 'AVATAR' ? currentScripts.AVATAR : currentScripts.TERMINAL;
 
-        const mapOptions = (options: typeof rawScript.options): typeof rawScript.options =>
+        const mapOptions = (options: typeof rawScript.options, depth = 0): typeof rawScript.options =>
             options?.map((opt) => ({
                 ...opt,
                 action: () => {
-                    if (opt.unlockPhase !== false) {
+                    if (currentPhase === 'ALERT') {
+                        if (depth === 0) {
+                            setPhaseUnlocked(true);
+                            setAlertDecisionUnlocked(false);
+                        } else if (opt.unlockPhase === true) {
+                            setAlertDecisionUnlocked(true);
+                        }
+                    } else if (opt.unlockPhase !== false) {
                         setPhaseUnlocked(true);
                     }
                     opt.action();
                 },
-                nextOptions: mapOptions(opt.nextOptions)
+                nextOptions: mapOptions(opt.nextOptions, depth + 1)
             }));
 
         return {
             ...rawScript,
             options: mapOptions(rawScript.options)
         };
-    }, [currentPhase, group, setPhaseUnlocked]);
+    }, [currentPhase, group, setAlertDecisionUnlocked, setPhaseUnlocked]);
 
     // 2. Consent Check (greift erst, NACHDEM Recovery abgeschlossen ist)
     useEffect(() => {
@@ -124,15 +132,29 @@ export default function ExperimentRunPage() {
             )}
 
             {/* Main Content - mit pb um Footer-Platz zu reservieren */}
-            <div className="flex-1 min-h-0 flex flex-col md:pb-20">
+            <div className="relative flex-1 min-h-0 flex flex-col md:pb-20">
+                {currentPhase === 'ALERT' && (
+                    <div
+                        className="pointer-events-none absolute inset-0 z-0 animate-pulse bg-red-500/20"
+                        style={{ animationDuration: '1.2s' }}
+                        aria-hidden="true"
+                    />
+                )}
+                {currentPhase === 'DILEMMA' && (
+                    <div
+                        className="pointer-events-none absolute inset-0 z-0 animate-pulse bg-red-600/28"
+                        style={{ animationDuration: '0.95s' }}
+                        aria-hidden="true"
+                    />
+                )}
 
                 {/* LINKE SEITE & CHAT: Die Leitwarte */}
-                <div className="flex-1 min-h-0 flex flex-col md:flex-row pt-6">
+                <div className="relative z-10 flex-1 min-h-0 flex flex-col md:flex-row pt-6">
 
                     {/* LINKE SEITE: Die Leitwarte */}
-                    <div className="flex-1 min-h-0 flex flex-col p-4 md:p-8 overflow-y-auto order-1">
+                    <div className="relative flex-1 min-h-0 flex flex-col p-4 md:p-8 overflow-y-auto order-1">
                         {/* Sanftes Max-Width Limit für perfekte Lesbarkeit auf großen Screens */}
-                        <div className="max-w-4xl xl:max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
+                        <div className="relative z-10 max-w-4xl xl:max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
                             {(currentPhase === 'INIT' || currentPhase === 'ONBOARDING') && <Phase0Onboarding />}
                             {currentPhase === 'PRECHECK' && <Phase1aPrecheck />}
                             {currentPhase === 'ROUTINE' && <Phase1Routine />}

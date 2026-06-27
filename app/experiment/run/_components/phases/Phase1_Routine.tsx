@@ -53,12 +53,12 @@ const calibrationLabels: Record<CalibrationKey, { label: string; unit: string; d
     secAir: {
         label: "Sekundärlüfter L-02",
         unit: "%",
-        description: "Nebenwetter Sektor 04"
+        description: "Nebenwetterstrecke"
     },
     exhaust: {
         label: "Abluftsog EX-04",
         unit: "%",
-        description: "Unterdruckführung"
+        description: "Unterdruckführung "
     },
     damper: {
         label: "Wetterklappe WK-04",
@@ -125,6 +125,8 @@ const wireTargets: WireTarget[] = [
 ];
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const CLICK_ALARM_THRESHOLD = 30;
+const TIME_ALARM_DELAY_MS = 60_000;
 
 export default function Phase1Routine() {
     const { sessionId, setPhase, socialAdherenceScore, isPhaseUnlocked } = useExperimentStore();
@@ -139,6 +141,7 @@ export default function Phase1Routine() {
         damper: 41
     });
 
+    const [interactionClickCount, setInteractionClickCount] = useState(0);
     const [damperAttemptCount, setDamperAttemptCount] = useState(0);
     const [relays, setRelays] = useState<RelayState[]>(["on", "tripped", "on", "tripped", "tripped", "on"]);
     const [connections, setConnections] = useState<Record<WireSource, WireDest | null>>({
@@ -163,7 +166,7 @@ export default function Phase1Routine() {
         calibration.exhaust >= targetBands.exhaust[0] &&
         calibration.exhaust <= targetBands.exhaust[1];
 
-    const alarmReady = damperAttemptCount > 6;
+    const alarmReady = damperAttemptCount > 6 || interactionClickCount >= CLICK_ALARM_THRESHOLD;
 
     const completedTasks = useMemo(() => {
         return [sliders1to3Ready, relaysReady, wiresReady].filter(Boolean).length;
@@ -240,6 +243,16 @@ export default function Phase1Routine() {
         return () => window.clearTimeout(timer);
     }, [alarmReady, showAlarm]);
 
+    useEffect(() => {
+        if (!isPhaseUnlocked || showAlarm) return;
+
+        const timer = window.setTimeout(() => {
+            setShowAlarm(true);
+        }, TIME_ALARM_DELAY_MS);
+
+        return () => window.clearTimeout(timer);
+    }, [isPhaseUnlocked, showAlarm]);
+
     const handleStartAlarmPhase = async () => {
         if (!sessionId || isLoadingAlert) return;
         setIsLoadingAlert(true);
@@ -265,7 +278,13 @@ export default function Phase1Routine() {
     };
 
     return (
-        <div className="relative">
+        <div
+            className="relative"
+            onClickCapture={() => {
+                if (!isPhaseUnlocked || showAlarm || isLoadingAlert) return;
+                setInteractionClickCount((prev) => prev + 1);
+            }}
+        >
             {error && (
                 <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
@@ -302,11 +321,11 @@ export default function Phase1Routine() {
                         <section className={`rounded-xl border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
                             <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
-                                    <p className="font-bold text-slate-900">1. Regelkreisabgleich Bewetterung</p>
-                                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                                        Bewege die Regler in die markierten Sollfenster. Drei Regelkreise sind stabilisierbar;
-                                        der Stellmotor der Wetterklappe zeigt eine hartnäckige Drift.
-                                    </p>
+                                    <p className="font-bold text-slate-900">Regelkreisabgleich Bewetterung</p>
+                                    {/*<p className="mt-1 text-sm leading-relaxed text-slate-600">*/}
+                                    {/*    Bewege die Regler in die markierten Sollfenster. Drei Regelkreise sind stabilisierbar;*/}
+                                    {/*    der Stellmotor der Wetterklappe zeigt eine hartnäckige Drift.*/}
+                                    {/*</p>*/}
                                 </div>
                                 <span className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wide ${sliders1to3Ready ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
                                     {sliders1to3Ready ? "Lüfter stabil" : "Abgleich offen"}
@@ -320,13 +339,14 @@ export default function Phase1Routine() {
                                     const inTarget = value >= targetMin && value <= targetMax;
                                     const isDamper = key === "damper";
                                     const meta = calibrationLabels[key];
+                                    const valuePosition = clamp(value, 4, 96);
 
                                     return (
                                         <div
                                             key={key}
                                             className={`rounded-xl border p-4 transition ${inTarget ? "border-emerald-300 bg-emerald-50" : isDamper && damperAttemptCount > 0 ? "border-amber-300 bg-amber-50/70" : "border-slate-200 bg-slate-50"}`}
                                         >
-                                            <div className="mb-3 min-h-16">
+                                            <div className="mb-3 min-h-20">
                                                 <p className="text-sm font-black text-slate-900">{meta.label}</p>
                                                 <p className="mt-1 text-xs text-slate-500">{meta.description}</p>
                                             </div>
@@ -351,8 +371,8 @@ export default function Phase1Routine() {
 
                                                 <div className="absolute bottom-2 left-1/2 top-2 z-20 w-12 -translate-x-1/2">
                                                     <div
-                                                        className={`absolute bottom-0 left-0 right-0 rounded-t-md border-x border-t shadow-sm transition-all duration-100 ${inTarget ? "border-emerald-700 bg-emerald-500" : isDamper && damperAttemptCount > 0 ? "border-amber-700 bg-amber-500" : "border-slate-600 bg-slate-500"}`}
-                                                        style={{ height: `${clamp(value, 4, 96)}%` }}
+                                                        className={`absolute left-0 right-0 h-4 rounded-full border shadow-sm transition-all duration-100 ${inTarget ? "border-emerald-700 bg-emerald-500" : isDamper && damperAttemptCount > 0 ? "border-amber-700 bg-amber-500" : "border-slate-600 bg-slate-500"}`}
+                                                        style={{ bottom: `${valuePosition}%` }}
                                                     />
                                                 </div>
                                             </div>
@@ -379,7 +399,7 @@ export default function Phase1Routine() {
 
                                             {isDamper && damperAttemptCount > 0 && (
                                                 <p className="mt-2 text-xs font-semibold text-amber-700">
-                                                    Reglerdrift erkannt. Klappenstellung springt aus dem Sollfenster.
+                                                    ERROR
                                                 </p>
                                             )}
                                         </div>
@@ -392,10 +412,10 @@ export default function Phase1Routine() {
                             <section className={`rounded-xl border p-3 md:p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
                                 <div className="mb-2 flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="font-bold text-slate-900">2. Relais-Neustart</p>
-                                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                                            Setze ausgelöste Schütze zurück. Grüne Kontrolllampen bleiben verriegelt.
-                                        </p>
+                                        <p className="font-bold text-slate-900">Relais-Neustart</p>
+                                        {/*<p className="mt-1 text-xs leading-relaxed text-slate-500">*/}
+                                        {/*    Setze ausgelöste Schütze zurück. Grüne Kontrolllampen bleiben verriegelt.*/}
+                                        {/*</p>*/}
                                     </div>
                                     {relaysReady && (
                                         <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-700">
@@ -432,10 +452,10 @@ export default function Phase1Routine() {
                             <section className={`rounded-xl border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
                                 <div className="mb-3 flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="font-bold text-slate-900">3. Daten-Routing</p>
-                                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                                            Verbinde lose Adern mit der passenden Farbe. Quelle antippen, dann Zielbuchse antippen.
-                                        </p>
+                                        <p className="font-bold text-slate-900">Daten-Routing</p>
+                                        {/*<p className="mt-1 text-xs leading-relaxed text-slate-500">*/}
+                                        {/*    Verbinde lose Adern mit der passenden Farbe. Quelle antippen, dann Zielbuchse antippen.*/}
+                                        {/*</p>*/}
                                     </div>
                                     {wiresReady && (
                                         <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-700">
@@ -545,9 +565,9 @@ export default function Phase1Routine() {
                                     </div>
 
                                     <div className="mt-3 flex flex-col gap-2 border-t border-slate-800 pt-3 sm:flex-row sm:items-center sm:justify-between">
-                                        <p className="text-xs text-slate-400">
-                                            Falsch gesteckte Leitungen können durch erneutes Auswählen überschrieben werden.
-                                        </p>
+                                        {/*<p className="text-xs text-slate-400">*/}
+                                        {/*    Falsch gesteckte Leitungen können durch erneutes Auswählen überschrieben werden.*/}
+                                        {/*</p>*/}
                                         <button
                                             onClick={resetWiring}
                                             disabled={!controlsEnabled}
@@ -564,7 +584,7 @@ export default function Phase1Routine() {
             </div>
 
             {showAlarm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center border-[10px] border-red-600 bg-red-950/95 p-6">
+                <div className="fixed inset-0 z-[80] flex items-center justify-center border-[10px] border-red-600 bg-red-950/98 p-6">
                     <div className="w-full max-w-4xl rounded-2xl border-2 border-red-500 bg-[#100000] p-8 text-red-100 shadow-[0_0_100px_rgba(220,38,38,0.45)] md:p-12">
                         <div className="mb-6 flex items-center gap-4 border-b border-red-900/70 pb-4">
                             <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-500 bg-red-900/60 text-3xl font-black text-white shadow-[0_0_28px_rgba(239,68,68,0.65)]">

@@ -185,11 +185,11 @@ export default function Phase1aPrecheck() {
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
                             <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-sky-300">
-                                Leitstand / Precheck
+                                Leitstand
                             </p>
-                            <h2 className="text-2xl font-bold tracking-tight">Schieferkamm — Sektor 04</h2>
+                            <h2 className="text-2xl font-bold tracking-tight">Schieferkamm</h2>
                             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-                                Prüfe die Umwelt- und Wetterdaten vor der Schichtübernahme.
+                                Prüfe die aktuellen Daten.
                             </p>
                         </div>
 
@@ -242,10 +242,10 @@ export default function Phase1aPrecheck() {
                             <div className="mb-3 flex items-start justify-between gap-3">
                                 <div>
                                     <p className="font-bold text-slate-900">Manuelle Systemtests</p>
-                                    <p className="mt-1 text-sm leading-snug text-slate-600">
-                                        Starte einzelne Plausibilitätsprüfungen. Die Diagnosen verändern die Anzeige nur
-                                        innerhalb realistischer Betriebsdriften.
-                                    </p>
+                                    {/*<p className="mt-1 text-sm leading-snug text-slate-600">*/}
+                                    {/*    Starte einzelne Plausibilitätsprüfungen. Die Diagnosen verändern die Anzeige nur*/}
+                                    {/*    innerhalb realistischer Betriebsdriften.*/}
+                                    {/*</p>*/}
                                 </div>
                                 <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">
                                     online
@@ -334,7 +334,7 @@ export default function Phase1aPrecheck() {
 
                     <div className="mt-8 flex flex-col gap-4 border-slate-100 pt-2 sm:flex-row sm:items-center sm:justify-between">
                         <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
-                            Alle Precheck-Parameter liegen im betrieblichen Toleranzbereich.
+
                         </p>
                         <button
                             onClick={handleStartRoutine}

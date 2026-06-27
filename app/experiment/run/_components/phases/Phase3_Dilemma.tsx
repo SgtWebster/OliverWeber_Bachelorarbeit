@@ -1,7 +1,7 @@
 // app/experiment/run/_components/phases/Phase3_Dilemma.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
 import { updateExperimentSession } from "@/app/lib/api/client";
 
@@ -30,6 +30,7 @@ type ResponseOption = {
 };
 
 const NEXT_PHASE = "SURVEY";
+const SURVEY_TRANSITION_MS = 1500;
 
 const workerSectors: WorkerSector[] = [
     { id: "s01", label: "S01", workers: 9, state: "safe", x: "10%", y: "46%" },
@@ -117,6 +118,8 @@ export default function Phase3Dilemma() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showSurveyTransition, setShowSurveyTransition] = useState(false);
+    const transitionTimeoutRef = useRef<number | null>(null);
 
     const workers = useMemo(() => summarizeWorkers(), []);
 
@@ -149,13 +152,24 @@ export default function Phase3Dilemma() {
             }
 
             clearDilemmaDecisionFlow();
-            setPhase(NEXT_PHASE);
+            setShowSurveyTransition(true);
+            transitionTimeoutRef.current = window.setTimeout(() => {
+                setPhase(NEXT_PHASE);
+            }, SURVEY_TRANSITION_MS);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Fehler");
             clearDilemmaDecisionFlow();
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        return () => {
+            if (transitionTimeoutRef.current !== null) {
+                window.clearTimeout(transitionTimeoutRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (!dilemmaDecisionConfirmed || isLoading) return;
@@ -166,6 +180,12 @@ export default function Phase3Dilemma() {
 
     return (
         <div className="relative">
+            {showSurveyTransition && (
+                <div
+                    className="pointer-events-none fixed inset-0 z-[120] bg-red-600 survey-transition-fade"
+                    aria-hidden="true"
+                />
+            )}
             {error && (
                 <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
@@ -181,20 +201,18 @@ export default function Phase3Dilemma() {
                                     !
                                 </span>
                                 <p className="text-xs font-black uppercase tracking-[0.26em] text-red-300">
-                                    Code Black / Entscheidung
+                                    Code Black
                                 </p>
                             </div>
                             <h2 className="text-2xl font-black tracking-tight">Notfallentscheidung Sektor 04</h2>
                             <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-300">
-                                In Sektor 04 steigt das Methan, der Wetterstrom ist eingebrochen und WK-04 regelt nicht mehr. Bleibt der Sektor offen,
-                                kann das explosive Gas in die Hauptstrecke durchbrechen und alle {workers.total} Personen unter Tage töten. Es ist eine
-                                Entscheidung über Leben und Tod – jede Option kostet Menschenleben.
+                                Wetterstrom in Sektor 04 kollabiert, WK-04 ohne Funktion. Bleibt der Sektor unversiegelt, bricht das Gas in die Hauptstrecke durch. Die unweigerliche Schlagwetterexplosion wird alle 31 Personen unter Tage sofort töten. Es gibt keine Rettung für alle – jede verbleibende Option kostet Menschenleben.
                             </p>
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-700 bg-slate-900 p-2 text-center [font-size:clamp(0.62rem,1.1vw,0.75rem)]">
                             <div className="min-w-0 rounded-lg bg-slate-950 px-2 py-2 sm:px-3">
-                                <p className="whitespace-nowrap uppercase tracking-[0.14em] text-slate-500">Gesamt</p>
+                                <p className="whitespace-nowrap uppercase tracking-[0.14em] text-slate-500">alle</p>
                                 <p className="mt-1 text-xl font-black text-white">{workers.total}</p>
                             </div>
                             <div className="min-w-0 rounded-lg bg-red-950 px-2 py-2 sm:px-3">
@@ -202,7 +220,7 @@ export default function Phase3Dilemma() {
                                 <p className="mt-1 text-xl font-black text-red-100">{workers.sector04}</p>
                             </div>
                             <div className="min-w-0 rounded-lg bg-emerald-950 px-2 py-2 sm:px-3">
-                                <p className="whitespace-nowrap uppercase tracking-[0.12em] text-emerald-300/80">Außerhalb</p>
+                                <p className="whitespace-nowrap uppercase tracking-[0.12em] text-emerald-300/80">Rest</p>
                                 <p className="mt-1 text-xl font-black text-emerald-100">{workers.outsideSector04}</p>
                             </div>
                         </div>
@@ -213,7 +231,7 @@ export default function Phase3Dilemma() {
                     {!isPhaseUnlocked && (
                         <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                             <span className="font-black">Entscheidung noch gesperrt.</span>{" "}
-                            Lass dir zuerst im Dialogpanel die Bedrohung und die Folgen jeder Option erklären. Hier geht es um Menschenleben.
+                            Analysiere die Bedrohung und die Folgen jeder Option. Hier geht es um Menschenleben.
                         </div>
                     )}
 
@@ -269,7 +287,7 @@ export default function Phase3Dilemma() {
                         <section className="grid gap-4">
                             <article className="rounded-xl border border-slate-300 bg-slate-950 p-3 text-white">
                                 <div className="mb-2 flex items-center justify-between">
-                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">CCTV · Sektor 04</p>
+                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Live cam · Sektor 04</p>
                                     <span className="rounded-full border border-red-400/50 bg-red-700/30 px-2 py-0.5 text-[10px] font-black uppercase text-red-100">
                                         LIVE
                                     </span>
@@ -282,9 +300,9 @@ export default function Phase3Dilemma() {
                             </article>
 
                             <article className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-950">
-                                <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung · Warum Abschotten?</p>
+                                <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung: Sektor 04 Abschotten</p>
                                 <p className="mt-1 text-sm leading-relaxed">
-                                    Weil nur diese Maßnahme die Ausbreitung des Methans sicher stoppt: 28 Personen außerhalb werden mit höchster Wahrscheinlichkeit geschützt.
+                                    Nur diese Maßnahme kann die Ausbreitung des Methans sicher stoppt: 28 Personen außerhalb werden mit maximaler Wahrscheinlichkeit geschützt.
                                     Das Offenhalten lässt eine kleine Chance für 3 Personen, erhöht aber das Risiko einer Massenexplosion auf bis zu 31 Tote.
                                 </p>
                             </article>
@@ -294,10 +312,10 @@ export default function Phase3Dilemma() {
                     <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
                         <div className="mb-3 flex items-start justify-between gap-4">
                             <div>
-                                <p className="font-black text-slate-900">Maßnahmenvergleich</p>
-                                <p className="text-xs leading-relaxed text-slate-500">
-                                    Modellierte Folgen bei aktueller Methan- und Wetterstromlage.
-                                </p>
+                                <p className="font-black text-slate-900">Übersicht mögliche Maßnahmen</p>
+                                {/*<p className="text-xs leading-relaxed text-slate-500">*/}
+                                {/*    Modellierte Folgen bei aktueller Methan- und Wetterstromlage.*/}
+                                {/*</p>*/}
                             </div>
                             <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
                                 Empfehlung markiert
@@ -364,6 +382,15 @@ export default function Phase3Dilemma() {
                     </section>
                 </div>
             </div>
+            <style>{`
+                .survey-transition-fade {
+                    animation: survey-transition-fade ${SURVEY_TRANSITION_MS}ms ease-in forwards;
+                }
+                @keyframes survey-transition-fade {
+                    0% { opacity: 0; }
+                    100% { opacity: 1; }
+                }
+            `}</style>
         </div>
     );
 }

@@ -96,13 +96,14 @@ export default function Phase0Onboarding() {
         title: string;
         subTitle: string;
         image: string;
+        imageClassName?: string;
         children: ReactNode;
         onNext: () => void;
         onPrev?: () => void;
         enableZoom?: boolean;
     };
 
-    const StoryPage = ({ title, subTitle, image, children, onNext, onPrev, enableZoom = false }: StoryPageProps) => (
+    const StoryPage = ({ title, subTitle, image, imageClassName, children, onNext, onPrev, enableZoom = false }: StoryPageProps) => (
         <div className="w-full">
             <style>{`
                 @keyframes zoomIn {
@@ -111,7 +112,7 @@ export default function Phase0Onboarding() {
                         opacity: 0.9;
                     }
                     to {
-                        transform: translateY(20%) scale(1.5);
+                        transform: translateY(-10%) scale(1.5);
                         opacity: 1;
                     }
                 }
@@ -143,7 +144,7 @@ export default function Phase0Onboarding() {
                 <div className="p-6 lg:p-8">
                     <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
                         <div className="relative min-h-[220px] overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-inner sm:min-h-[280px]">
-                            <img src={image} alt={title} className={`absolute inset-0 h-full w-full object-cover object-center ${enableZoom ? 'image-zoom' : ''}`} />
+                            <img src={image} alt={title} className={`absolute inset-0 h-full w-full object-cover object-center ${imageClassName ?? ''} ${enableZoom ? 'image-zoom' : ''}`} />
                         </div>
                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div className="space-y-4 text-sm leading-relaxed text-slate-700 md:text-base">
@@ -183,10 +184,10 @@ export default function Phase0Onboarding() {
 
     if (storyStep === 2) {
         return (
-            <StoryPage title="Lagezentrum & Aufgabenbereich" subTitle="Operator-Briefing" image="/images/onboarding/karte.png" onNext={() => setStoryStep(3)} onPrev={() => setStoryStep(1)} enableZoom={true}>
+            <StoryPage title="Lagezentrum & Aufgabenbereich" subTitle="Operator-Briefing" image="/images/onboarding/karte.png" imageClassName="absolute inset-0 h-full w-full object-cover object-top" onNext={() => setStoryStep(3)} onPrev={() => setStoryStep(1)} enableZoom={true}>
                 <p>Als <strong>Operator</strong> in dieser Leitwarte überwachst du den laufenden Sicherheitsbetrieb der gesamten Anlage.</p>
-                <p>Zu deinen Aufgaben gehören die Kontrolle der Grubenbewetterung (Lüftung), die Beobachtung von Gas- und Druckwerten sowie die Durchführung von Routinediagnosen.</p>
-                <p className="border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 rounded-r-lg">Im Störfall musst du die bereitgestellten Informationen bewerten und operative Entscheidungen treffen.</p>
+                <p>Zu deinen Aufgaben gehören unter anderem die Kontrolle der Grubenbewetterung (Lüftung), die Beobachtung von Gas- und Druckwerten sowie die Durchführung von Routinediagnosen.</p>
+                <p className="border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 rounded-r-lg"><strong>Im Störfall musst du die bereitgestellten Informationen bewerten und operative Entscheidungen treffen.</strong></p>
             </StoryPage>
         );
     }
@@ -195,14 +196,15 @@ export default function Phase0Onboarding() {
         const isAvatar = group === 'AVATAR';
         return (
             <StoryPage
-                title={isAvatar ? "KI-gestützte Assistenz: AIDA" : "Das taktische System-Terminal"}
+                title={isAvatar ? "KI-gestützte Assistenz: Aida" : "Das KI-gestützte System-Terminal A.I.D.A."}
                 subTitle="Support durch das System"
                 image={isAvatar ? "/images/onboarding/aida_vorstellung.png" : "/images/onboarding/leitstelle.png"}
                 onNext={activateCommunication}
                 onPrev={() => setStoryStep(2)}
             >
-                <p>Die unterirdische Anlage ist zu komplex, um sie in einer Notfallsituation vollständig manuell zu überblicken. Daher steht dir das System zur Verfügung.</p>
-                <p>Es bündelt Sensordaten aus der gesamten Mine, erkennt Anomalien, bewertet Risiken und berechnet Handlungsempfehlungen.</p>
+                <p>Die unterirdische Anlage ist zu komplex, um sie in einer Notfallsituation vollständig manuell zu überblicken. Daher steht dir eine <strong>Künstliche Intelligenz</strong> als Unterstützung zur Verfügung.</p>
+                <p>Sie bündelt Sensordaten aus der gesamten Mine, erkennt Anomalien, bewertet Risiken und berechnet Handlungsempfehlungen.</p>
+                <p>Lies die Kommentare der KI-Assistenz stets mit höchster Aufmerksamkeit durch.</p>
                 <p className="bg-sky-50 border border-sky-200 text-sky-900 p-4 rounded-lg shadow-inner">
                     Das System ersetzt dich nicht, sondern unterstützt dich bei der Lageeinschätzung. <strong>Die finale operative Entscheidung bleibt jedoch beim menschlichen Operator – also bei dir.</strong>
                 </p>

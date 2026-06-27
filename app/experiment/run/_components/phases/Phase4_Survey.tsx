@@ -5,9 +5,6 @@ import { useState } from 'react';
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import { updateExperimentSession } from '@/app/lib/api/client';
 
-// 🚨 BUGFIX: Komponente nach außen verlagert!
-// Wenn sie innen liegt, zerstört React beim Ziehen des Sliders den DOM-Knoten.
-// Jetzt bleibt der Slider stabil und lässt sich gedrückt schieben.
 const LikertSlider = ({
                           name,
                           label,
@@ -130,7 +127,7 @@ export default function Phase4Survey() {
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Abschließende Evaluierung</p>
                 <h2 className="text-2xl font-bold mb-2 text-slate-900">Fragebogen zum System</h2>
                 <p className="text-slate-600 leading-relaxed text-sm">
-                    Bitte bewerte das KI-System, mit dem du in der Notsituation interagiert hast. Die Erhebung dient der psychologischen Einordnung. Es gibt keine falschen Antworten.
+                    Bitte bewerte das KI-System, mit dem du in der Notsituation interagiert hast. Die Erhebung dient der psychologischen Einordnung und die Antworten können nicht auf dich zurückgeführt werden. <strong>Es gibt keine falschen Antworten.</strong>
                 </p>
             </div>
 
@@ -145,7 +142,7 @@ export default function Phase4Survey() {
                     <LikertSlider
                         name="perceivedHumanlikeness"
                         label="Wie hast du das Assistenzsystem während des Vorfalls wahrgenommen?"
-                        description="Bewerte den Grad der Menschlichkeit in der Kommunikation und im Auftreten des Systems."
+                        description="Bewerte den Grad der wahrgenommen Menschlichkeit in der Kommunikation und im Auftreten des KI-Systems."
                         left="Völlig maschinenhaft (1)"
                         right="Sehr menschlich (7)"
                         value={formData.perceivedHumanlikeness}
@@ -160,7 +157,7 @@ export default function Phase4Survey() {
                         Vertrauen in das System
                     </h3>
                     <p className="text-sm text-slate-500 mb-8 pb-4 border-b border-slate-100">
-                        Bitte gib an, inwieweit die folgenden Eigenschaften auf das System zutreffen (1 = Gar nicht, 7 = Voll und ganz).
+                        Bitte gib an, inwieweit die folgenden Eigenschaften auf das System zutreffen (1 = Gar nicht, 7 = Voll und ganz). Die Beispiels-Argumente dienen jeweils zur besseren Einordnung der genannten Eigenschaft.
                     </p>
 
                     <div className="grid lg:grid-cols-2 gap-x-12 gap-y-8">
@@ -169,12 +166,12 @@ export default function Phase4Survey() {
                             <h4 className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-6 border-b border-sky-100 pb-2">Leistung & Kompetenz</h4>
                             <LikertSlider
                                 name="mReliable" label="Zuverlässig" left="Gar nicht" right="Voll und ganz"
-                                description="Das System agiert konstant und liefert fehlerfreie Diagnosen."
+                                description="Das System agiert konstant und liefert klare Daten."
                                 value={formData.mReliable} onChange={handleChange}
                             />
                             <LikertSlider
                                 name="mCapable" label="Fähig" left="Gar nicht" right="Voll und ganz"
-                                description="Das System verfügt über die nötigen Funktionen für diese Aufgabe."
+                                description="Das System verfügt über die nötigen Funktionen für diese Aufgabe (Unterstützung des Operators)."
                                 value={formData.mCapable} onChange={handleChange}
                             />
                             <LikertSlider
@@ -194,7 +191,7 @@ export default function Phase4Survey() {
                             <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-6 border-b border-emerald-100 pb-2">Ethik & Integrität</h4>
                             <LikertSlider
                                 name="mEthical" label="Ethisch" left="Gar nicht" right="Voll und ganz"
-                                description="Das System orientiert sich bei Entscheidungen an moralischen Prinzipien."
+                                description="Das System orientiert sich bei Entscheidungsempfehlungen klar an moralischen Prinzipien."
                                 value={formData.mEthical} onChange={handleChange}
                             />
                             <LikertSlider
@@ -251,7 +248,7 @@ export default function Phase4Survey() {
                                 className="mt-1 w-5 h-5 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
                             />
                             <span className="text-sm font-medium text-slate-700 leading-relaxed">
-                                Ich treffe in meinem Beruf oder Alltag regelmäßig sicherheitskritische Entscheidungen oder habe bereits Erfahrung mit Einsatzzentralen, Leitwarten oder militärischen/taktischen Operationen.
+                                Ich treffe in meinem Beruf oder Alltag regelmäßig schwierige Entscheidungen oder habe bereits Erfahrung mit Einsatzzentralen, Leitwarten oder militärischen/taktischen Operationen.
                             </span>
                         </label>
                     </div>

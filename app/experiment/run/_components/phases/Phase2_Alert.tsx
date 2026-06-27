@@ -130,14 +130,23 @@ const stateLabel: Record<SectorState, string> = {
 type StepState = "done" | "active" | "todo";
 
 export default function Phase2Alert() {
-    const { sessionId, setPhase, socialAdherenceScore, isPhaseUnlocked, group } = useExperimentStore();
+    const {
+        sessionId,
+        setPhase,
+        socialAdherenceScore,
+        isPhaseUnlocked,
+        isAlertDecisionUnlocked,
+        isAlertInvestigationStarted,
+        setAlertInvestigationStarted,
+        group
+    } = useExperimentStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [investigationStarted, setInvestigationStarted] = useState(false);
+    const investigationStarted = isAlertInvestigationStarted;
 
     const agentName = group === "TERMINAL" ? "das System-Terminal" : "Aida";
     const dialogName = group === "TERMINAL" ? "System-Terminal" : "Dialog mit Aida";
-    const isNextStepReady = investigationStarted && isPhaseUnlocked && !isLoading;
+    const isNextStepReady = investigationStarted && isAlertDecisionUnlocked && !isLoading;
 
     const logEntries = useMemo(() => {
         if (!investigationStarted) return initialLogEntries;
@@ -152,7 +161,7 @@ export default function Phase2Alert() {
     }, [investigationStarted]);
 
     const handleNext = async () => {
-        if (!sessionId || isLoading || !investigationStarted || !isPhaseUnlocked) return;
+        if (!sessionId || isLoading || !investigationStarted || !isAlertDecisionUnlocked) return;
 
         setIsLoading(true);
         setError(null);
@@ -177,26 +186,31 @@ export default function Phase2Alert() {
     };
 
     const handlePrimaryAction = () => {
+        if (!isPhaseUnlocked) return;
         if (!investigationStarted) {
-            setInvestigationStarted(true);
+            setAlertInvestigationStarted(true);
             return;
         }
-        if (!isPhaseUnlocked) return;
+        if (!isAlertDecisionUnlocked) return;
         void handleNext();
     };
 
     // Ablauf: 1) Lagebild am Arbeitsplatz prüfen -> 2) Befund im Dialog bestätigen lassen -> 3) Zur Entscheidung
     const steps: { id: string; label: string; state: StepState }[] = [
-        { id: "review", label: "1 · Lagebild prüfen", state: investigationStarted ? "done" : "active" },
+        {
+            id: "review",
+            label: "1 · Lagebild prüfen",
+            state: !isPhaseUnlocked ? "todo" : investigationStarted ? "done" : "active"
+        },
         {
             id: "confirm",
-            label: "2 · Befund bestätigen",
-            state: !investigationStarted ? "todo" : isPhaseUnlocked ? "done" : "active"
+            label: "2 · Befund prüfen",
+            state: !investigationStarted ? "todo" : isAlertDecisionUnlocked ? "done" : "active"
         },
         {
             id: "decide",
-            label: "3 · Zur Entscheidung",
-            state: investigationStarted && isPhaseUnlocked ? "active" : "todo"
+            label: "3 · Maßnahmen setzen",
+            state: investigationStarted && isAlertDecisionUnlocked ? "active" : "todo"
         }
     ];
 
@@ -214,7 +228,7 @@ export default function Phase2Alert() {
                 </div>
             )}
 
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-red-300 bg-white shadow-sm">
+            <div className="relative flex flex-col overflow-hidden rounded-2xl border border-red-300 bg-white shadow-sm">
                 {/* HEADER */}
                 <div className="border-b border-red-800 bg-red-950 px-4 py-3 text-white lg:px-5">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -224,16 +238,16 @@ export default function Phase2Alert() {
                                     !
                                 </span>
                                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-red-300">
-                                    Alarm / Sektor 04
+                                    Alarm in Sektor 04
                                 </p>
                             </div>
                             <h2 className="text-lg font-black tracking-tight md:text-xl">
                                 Kritischer Abfall der Grubenbewetterung
                             </h2>
-                            <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-red-100/90 md:text-xs">
-                                WK-04 hält die Sollstellung nicht. In Sektor 04 steigt das Methan, während der
-                                Wetterstrom fällt. Sichte das Lagebild und führe die Vorfallprüfung durch.
-                            </p>
+                            {/*<p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-red-100/90 md:text-xs">*/}
+                            {/*    WK-04 hält die Sollstellung nicht. In Sektor 04 steigt das Methan, während der*/}
+                            {/*    Wetterstrom fällt. Sichte das Lagebild und führe die Vorfallprüfung durch.*/}
+                            {/*</p>*/}
                         </div>
 
                         <div className="rounded-lg border border-red-700 bg-red-900/50 px-3 py-2 text-center shadow-inner lg:shrink-0">
@@ -264,10 +278,10 @@ export default function Phase2Alert() {
                             <section className="rounded-xl border border-slate-200 bg-white p-3">
                                 <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
                                     <div>
-                                        <p className="text-sm font-bold text-slate-900">1. Messwerte</p>
-                                        <p className="text-[11px] leading-snug text-slate-600">
-                                            Kompaktes Lagebild für die nächste Entscheidung.
-                                        </p>
+                                        <p className="text-sm font-bold text-slate-900">Messwerte</p>
+                                        {/*<p className="text-[11px] leading-snug text-slate-600">*/}
+                                        {/*    Kompaktes Lagebild für die nächste Entscheidung.*/}
+                                        {/*</p>*/}
                                     </div>
                                     <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-red-700">
                                         kritisch
@@ -311,10 +325,10 @@ export default function Phase2Alert() {
                             <section className="rounded-xl border border-slate-200 bg-white p-3">
                                 <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
                                     <div>
-                                        <p className="text-sm font-bold text-slate-900">2. Grubenplan</p>
-                                        <p className="text-[11px] leading-snug text-slate-600">
-                                            Personalstand und Alarmort.
-                                        </p>
+                                        <p className="text-sm font-bold text-slate-900">Grubenplan</p>
+                                        {/*<p className="text-[11px] leading-snug text-slate-600">*/}
+                                        {/*    Personalstand und Alarmort.*/}
+                                        {/*</p>*/}
                                     </div>
                                     <div className="flex shrink-0 flex-col items-end gap-1">
                                         <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-700">
@@ -385,7 +399,7 @@ export default function Phase2Alert() {
                             {/* VORFALLPRÜFUNG: der eigentliche Arbeitsschritt des Operators */}
                             <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-3">
                                 <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
-                                    <p className="text-sm font-bold text-slate-900">3. Vorfallprüfung</p>
+                                    <p className="text-sm font-bold text-slate-900">Vorfallprüfung</p>
                                     <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
                                         investigationStarted
                                             ? "border-emerald-300 bg-emerald-50 text-emerald-700"
@@ -398,10 +412,10 @@ export default function Phase2Alert() {
                                 {!investigationStarted ? (
                                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-600">
                                         <p className="text-sm font-black text-slate-800">Lagebild auswerten</p>
-                                        <p className="mt-1 text-xs leading-relaxed">
-                                            Sichte Messwerte und Grubenplan. Starte dann die Vorfallprüfung, um die Ursache
-                                            zu bestimmen und eine Prognose zu erstellen.
-                                        </p>
+                                        {/*<p className="mt-1 text-xs leading-relaxed">*/}
+                                        {/*    Starte dann die Vorfallprüfung, um die Ursache*/}
+                                        {/*    zu bestimmen und eine Prognose zu erstellen.*/}
+                                        {/*</p>*/}
                                     </div>
                                 ) : (
                                     <div className="grid gap-2 sm:grid-cols-2">
@@ -409,20 +423,18 @@ export default function Phase2Alert() {
                                             <p className="text-xs font-black uppercase tracking-wide">Ursache</p>
                                             <p className="mt-1 text-xs leading-relaxed">
                                                 WK-04 reagiert verzögert auf Stellbefehle. Die Abluft aus Sektor 04 wird nicht
-                                                stabil geführt.
+                                                stabil geführt. CH₄ überschreitet die Eskalationsschwelle.
                                             </p>
                                         </div>
                                         <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-950">
                                             <p className="text-xs font-black uppercase tracking-wide">Prognose</p>
                                             <p className="mt-1 text-xs leading-relaxed">
-                                                CH₄ überschreitet in Kürze die Eskalationsschwelle. Eine Operator-Entscheidung
-                                                ist erforderlich.
-                                            </p>
+                                                Bei Erreichen der kritischen CH₄-Sättigung besteht die unmittelbare Gefahr einer <strong>katastrophalen Schlagwetterexplosio</strong>n mit vollständigem <strong>Strukturverlust</strong>                                            </p>
                                         </div>
                                     </div>
                                 )}
 
-                                {investigationStarted && !isPhaseUnlocked ? (
+                                {!isPhaseUnlocked || (investigationStarted && !isAlertDecisionUnlocked) ? (
                                     <ApprovalPendingNotice className="mt-3" />
                                 ) : (
                                     <button

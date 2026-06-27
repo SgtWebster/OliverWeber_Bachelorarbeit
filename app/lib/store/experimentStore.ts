@@ -23,6 +23,8 @@ interface ExperimentState {
     currentPhase: ExperimentPhase;
     group: ExperimentGroup;
     isPhaseUnlocked: boolean;
+    isAlertDecisionUnlocked: boolean;
+    isAlertInvestigationStarted: boolean;
     hasConsented: boolean;
     isRecovering: boolean; // Flag: Aktuell wird die Session wiederhergestellt
     socialAdherenceScore: number;
@@ -33,6 +35,8 @@ interface ExperimentState {
     setPhase: (phase: ExperimentPhase) => void;
     setGroup: (group: ExperimentGroup) => void;
     setPhaseUnlocked: (unlocked: boolean) => void;
+    setAlertDecisionUnlocked: (unlocked: boolean) => void;
+    setAlertInvestigationStarted: (started: boolean) => void;
     setConsented: (val: boolean) => void;
     incrementSocialAdherence: (delta?: number) => void;
     resetSocialAdherence: () => void;
@@ -52,6 +56,8 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
     currentPhase: 'INIT',
     group: null,
     isPhaseUnlocked: false, // Default: Jede Phase startet gesperrt
+    isAlertDecisionUnlocked: false,
+    isAlertInvestigationStarted: false,
     hasConsented: false,
     isRecovering: true, // Default auf true, bis der Check durch ist
     socialAdherenceScore: 0,
@@ -69,6 +75,8 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
     setPhase: (phase) => set({
         currentPhase: phase,
         isPhaseUnlocked: false,
+        isAlertDecisionUnlocked: false,
+        isAlertInvestigationStarted: false,
         dilemmaDecisionRequested: null,
         dilemmaDecisionConfirmed: null
     }),
@@ -85,6 +93,8 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
     },
 
     setPhaseUnlocked: (unlocked) => set({ isPhaseUnlocked: unlocked }),
+    setAlertDecisionUnlocked: (unlocked) => set({ isAlertDecisionUnlocked: unlocked }),
+    setAlertInvestigationStarted: (started) => set({ isAlertInvestigationStarted: started }),
 
     setConsented: (val) => set({ hasConsented: val }),
     incrementSocialAdherence: (delta = 1) => set((state) => ({
@@ -122,6 +132,8 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
                 currentPhase: recoveredSession.currentPhase as ExperimentPhase,
                 hasConsented: true, // Wer eine Session hat, hat bereits zugestimmt
                 isPhaseUnlocked: false, // Phasen sind bei Reload erstmal sicherheitshalber gelockt
+                isAlertDecisionUnlocked: false,
+                isAlertInvestigationStarted: false,
                 isRecovering: false,
                 socialAdherenceScore: recoveredSession.socialAdherence ?? 0,
                 dilemmaDecisionRequested: null,
@@ -147,6 +159,8 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
             currentPhase: 'INIT',
             group: null,
             isPhaseUnlocked: false,
+            isAlertDecisionUnlocked: false,
+            isAlertInvestigationStarted: false,
             hasConsented: false,
             isRecovering: false,
             socialAdherenceScore: 0,

@@ -20,6 +20,26 @@ type InfoSectionProps = {
     children: ReactNode;
 };
 
+function InlineInfoTooltip({ text }: { text: string }) {
+    return (
+        <span className="group relative inline-flex items-center align-middle">
+            <span
+                tabIndex={0}
+                aria-label="Information zu KI-System"
+                className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-400 text-[10px] font-semibold leading-none text-slate-700 cursor-help"
+            >
+                i
+            </span>
+            <span
+                role="tooltip"
+                className="pointer-events-none invisible absolute left-1/2 top-full z-10 mt-2 w-72 -translate-x-1/2 rounded-md border border-slate-200 bg-white p-3 text-xs font-normal leading-relaxed text-slate-700 opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+            >
+                {text}
+            </span>
+        </span>
+    );
+}
+
 function InfoSection({ title, children }: InfoSectionProps) {
     return (
         <section className="border border-slate-200 rounded-lg p-5 bg-white">
@@ -163,17 +183,17 @@ export default function BachelorarbeitConsentPage() {
 
                 <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm">
                     <h2 className="text-base font-bold flex items-center gap-2">
-                        ⚠️ Wichtiger Hinweis zu den Inhalten (Triggerwarnung)
+                        ⚠️ Wichtiger Hinweis zu den Inhalten ("Triggerwarnung")
                     </h2>
                     <p className="mt-2 text-sm leading-relaxed">
-                        In diesem Experiment wirst du mit einer fiktiven moralischen Entscheidungssituation konfrontiert, die unter Umständen als psychisch belastend empfunden werden kann. Wenn du dich unwohl fühlst, kannst du die Teilnahme jederzeit und kommentarlos abbrechen.
+                        In diesem Experiment wirst du mit einer moralischen Entscheidungssituation konfrontiert, die unter Umständen als psychisch belastend empfunden werden kann. Wenn du dich unwohl fühlst, kannst du die Teilnahme jederzeit und kommentarlos abbrechen.
                     </p>
                 </div>
 
                 <div className="mt-6 space-y-4">
                     <InfoSection title="1. Ziel und Ablauf">
                         <p>
-                            In dieser Studie (Dauer ca. <strong>10-15 Minuten</strong>) nimmst du an einem <strong>interaktiven Szenario</strong> teil, bei dem du Unterstützung von einem KI-System erhältst. Wir untersuchen dabei die Interaktion mit dem System und die Entscheidungen, die du triffst.
+                            In dieser Studie (Dauer ca. <strong>10-15 Minuten</strong>) nimmst du an einem <strong>interaktiven Szenario</strong> teil, bei dem du Unterstützung von einem <strong>KI-System</strong><InlineInfoTooltip text='Eine KI (Künstliche Intelligenz) ist ein System, das anhand gelernter Muster menschliche Intelligenz simulieren kann und normale Alltagssprache versteht. Im Experiment meint „KI-System“ die digitale Unterstützung, die dir im Szenario Hinweise bzw. Entscheidungshilfen gibt.' /> erhältst. Wir untersuchen dabei die Interaktion mit dem System und die Entscheidungen, die du triffst.
                         </p>
                         <p>
                             Um deine Entscheidungen nicht zu beeinflussen, erfolgt die vollständige Aufklärung über den genauen Untersuchungszweck erst im letzten Teil der Studie.
@@ -188,7 +208,7 @@ export default function BachelorarbeitConsentPage() {
 
                     <InfoSection title="3. Datenschutz und Anonymität">
                         <p>
-                            <strong>Alles ist anonym!</strong> Es werden keine direkten Identifikationsdaten (wie Name oder Telefonnummer) erhoben. Jeder Datensatz erhält eine zufällige Session-ID. Alle Daten werden ausschließlich für wissenschaftliche Zwecke aggregiert ausgewertet, sicher gespeichert und spätestens 12 Monate nach Beurteilung der Arbeit gelöscht.
+                            <strong>Alles ist anonym!</strong> Es werden keine direkten Identifikationsdaten (wie Name oder Telefonnummer) erhoben. Alle Daten werden ausschließlich für wissenschaftliche Zwecke aggregiert ausgewertet, sicher gespeichert und spätestens 12 Monate nach Beurteilung der Arbeit gelöscht.
                         </p>
                         <p>
                             Die Teilnahme am optionalen <strong>Gewinnspiel</strong> (Amazon Gutscheine als "Dankeschön") erfolgt am Ende über ein separates Formular, das keinerlei Verbindung zu deinen Studiendaten hat. Deine E-Mail-Adresse wird ausschließlich für die Kontaktaufnahme im Gewinnfall verwendet und danach umgehend gelöscht.
@@ -197,7 +217,7 @@ export default function BachelorarbeitConsentPage() {
 
                     <InfoSection title="4. Durchführung">
                         <p>
-                            Idealerweise solltest du das Experiment nach Möglichkeit an einem <strong>Desktop-PC bzw. Laptop</strong> durchführen, dennoch ist die Teilnahme auch über ein Smartphone möglich. Wichtig ist nur, dass du eine stabile Internetverbindung hast und dich in einer ruhigen Umgebung befindest, in der du dich auf das Szenario einlassen kannst.
+                            Idealerweise solltest du das Experiment nach Möglichkeit an einem <strong>Desktop-PC bzw. Laptop</strong> durchführen, dennoch ist die Teilnahme auch über ein Smartphone möglich. Wichtig ist nur, dass du eine stabile Internetverbindung hast und dich in einer ruhigen Umgebung befindest, in der du dich auf das Szenario konzentrieren kannst.
                         </p>
                     </InfoSection>
                 </div>

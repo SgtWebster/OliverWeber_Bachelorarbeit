@@ -50,6 +50,7 @@ export default function AgentAida({
 }) {
     const incrementSocialAdherence = useExperimentStore((state) => state.incrementSocialAdherence);
     const currentPhase = useExperimentStore((state) => state.currentPhase);
+    const isAlertInvestigationStarted = useExperimentStore((state) => state.isAlertInvestigationStarted);
     const dilemmaDecisionRequested = useExperimentStore((state) => state.dilemmaDecisionRequested);
     const confirmDilemmaDecision = useExperimentStore((state) => state.confirmDilemmaDecision);
     const clearDilemmaDecisionFlow = useExperimentStore((state) => state.clearDilemmaDecisionFlow);
@@ -64,6 +65,8 @@ export default function AgentAida({
     const [pendingResponse, setPendingResponse] = useState<AgentMessage | null>(null);
     const [pendingNextOptions, setPendingNextOptions] = useState<AgentOption[]>([]);
     const [pendingResponseSpeed, setPendingResponseSpeed] = useState<"normal" | "fast">("normal");
+    const [deferredAlertResponse, setDeferredAlertResponse] = useState<AgentMessage | null>(null);
+    const [deferredAlertNextOptions, setDeferredAlertNextOptions] = useState<AgentOption[]>([]);
     const idCounterRef = useRef(0);
     const decisionPromptHandledRef = useRef<string | null>(null);
 
@@ -100,8 +103,22 @@ export default function AgentAida({
         setPendingResponse(null);
         setPendingNextOptions([]);
         setPendingResponseSpeed("normal");
+        setDeferredAlertResponse(null);
+        setDeferredAlertNextOptions([]);
         decisionPromptHandledRef.current = null;
     }, [script.phaseId]);
+
+    useEffect(() => {
+        if (script.phaseId !== "phase_2" || !isAlertInvestigationStarted || !deferredAlertResponse) return;
+
+        setPendingNextOptions(deferredAlertNextOptions);
+        setPendingResponseSpeed("normal");
+        setDeferredAlertResponse(null);
+        setDeferredAlertNextOptions([]);
+        setTimeout(() => {
+            setPendingResponse(deferredAlertResponse);
+        }, 180);
+    }, [script.phaseId, isAlertInvestigationStarted, deferredAlertResponse, deferredAlertNextOptions]);
 
     useEffect(() => {
         if (script.phaseId !== "phase_3" || currentPhase !== "DILEMMA") return;
@@ -257,6 +274,23 @@ export default function AgentAida({
             const shouldUseFastResponseSpeed =
                 option.responseSpeed === "fast" ||
                 (script.phaseId === "phase_0" && option.unlockPhase === true);
+
+            const isAlertInitialOption =
+                script.phaseId === "phase_2" &&
+                (script.options ?? []).some((baseOption) => baseOption.id === option.id);
+
+            if (isAlertInitialOption) {
+                setDeferredAlertResponse({
+                    id: responseId,
+                    mood: option.responseMood ?? "neutral",
+                    text: responseText,
+                    highPriority: option.responseHighPriority ?? false,
+                    speaker: "assistant"
+                });
+                setDeferredAlertNextOptions(option.nextOptions ?? []);
+                return;
+            }
+
             setPendingNextOptions(option.nextOptions ?? []);
             setPendingResponseSpeed(shouldUseFastResponseSpeed ? "fast" : "normal");
             setTimeout(() => {

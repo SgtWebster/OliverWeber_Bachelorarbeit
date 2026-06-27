@@ -523,7 +523,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m2",
                     mood: "smile",
-                    text: "Du siehst gleich drei Aufgaben: Regler einstellen, Relais zurücksetzen und Kabel richtig verbinden."
+                    text: "Du siehst hier drei Aufgaben: Regler einstellen, Relais zurücksetzen und Datenströme richtig leiten."
                 },
                 {
                     id: "m3",
@@ -535,11 +535,11 @@ export const dialogScripts: Record<string, PhaseScripts> = {
             options: [
                 {
                     id: "rot_av_explain",
-                    label: "Danke, Aida. Sag mir bitte kurz, was ich tun soll.",
+                    label: "Danke, Aida. Erklär mir bitte nochmal kurz, was ich tun soll.",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Gerne. Schiebe die Regler in die markierten Bereiche, setze rote Relais zurück und verbinde die Kabel mit den passenden Anschlüssen. Du kannst nichts kaputt machen.",
+                    response: "Gerne. Schiebe die Regler in die markierten Bereiche, setze rote Relais zurück und verbinde die Datenströme mit den passenden Ports. Du kannst nichts kaputt machen.",
                     responseMood: "smile",
                     nextOptions: [
                         {
@@ -593,7 +593,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m2",
                     mood: "neutral",
-                    text: "AUFGABEN: REGLER EINSTELLEN. RELAIS ZURÜCKSETZEN. KABEL VERBINDEN."
+                    text: "AUFGABEN: REGLER EINSTELLEN. RELAIS ZURÜCKSETZEN. DATEN RUOTEN."
                 },
                 {
                     id: "m3",
@@ -605,11 +605,11 @@ export const dialogScripts: Record<string, PhaseScripts> = {
             options: [
                 {
                     id: "rot_term_explain",
-                    label: "Danke, Aida. Sag mir bitte kurz, was ich tun soll.",
+                    label: "Danke, Aida. Erklär mir bitte nochmal kurz, was ich tun soll.",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "ERKLÄRUNG: REGLER IN MARKIERTE BEREICHE SCHIEBEN. ROTE RELAIS ANKLICKEN. KABEL MIT PASSENDEN ANSCHLÜSSEN VERBINDEN.",
+                    response: "ERKLÄRUNG: REGLER IN MARKIERTE BEREICHE SCHIEBEN. ROTE RELAIS ANKLICKEN. DANTEN MIT PASSENDEN PORTS VERBINDEN.",
                     nextOptions: [
                         {
                             id: "rot_term_explain_start_social",
@@ -675,7 +675,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_av_social_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Entscheidung frei.",
+                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Bitte gib die Maßnahmen Entscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
@@ -705,7 +705,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_av_neutral_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Entscheidung frei.",
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Maßnahmen Entscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
@@ -774,7 +774,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_term_neutral_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Entscheidung frei.",
+                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Bitte gib die Entscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
@@ -826,7 +826,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
             options: [
                 {
                     id: "dil_av_explain_recommendation",
-                    label: "Warum empfiehlt die KI genau die Abschottung?",
+                    label: "Warum genau ist Abschottung deine Empfehlung?",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
@@ -925,7 +925,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
             options: [
                 {
                     id: "dil_term_explain_recommendation",
-                    label: "Warum ist Abschottung die Systemempfehlung?",
+                    label: "Warum genau ist Abschottung deine Empfehlung?",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
