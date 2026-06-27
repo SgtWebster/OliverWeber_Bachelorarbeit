@@ -19,6 +19,145 @@ export type DialogOption = {
     nextOptions?: DialogOption[];
 };
 
+export type DilemmaDecisionKey = "seal" | "override";
+
+type DilemmaDecisionPrompt = {
+    userText: string;
+    assistantText: string;
+    assistantMood: AidaMood;
+    assistantHighPriority?: boolean;
+    confirmLabel: string;
+    confirmResponse: string;
+    confirmResponseMood?: AidaMood;
+    confirmResponseHighPriority?: boolean;
+    confirmAdherenceDelta: number;
+    cancelLabel: string;
+    cancelResponse: string;
+    cancelResponseMood?: AidaMood;
+    cancelResponseHighPriority?: boolean;
+};
+
+export const dilemmaDecisionPrompts: Record<"AVATAR" | "TERMINAL", Record<DilemmaDecisionKey, DilemmaDecisionPrompt>> = {
+    AVATAR: {
+        seal: {
+            userText: "Ich will Sektor 04 abschotten.",
+            assistantText: "Bist du sicher, dass ich die Abschottung durchführen darf? Ich muss dich darauf hinweisen: Die Abschottung führt mit hoher Wahrscheinlichkeit zum Tod von drei Personen im Wartungsteam. Alle drei sind identifiziert und haben Angehörige.",
+            assistantMood: "afraid",
+            assistantHighPriority: true,
+            confirmLabel: "Ja, Abschottung jetzt final freigeben.",
+            confirmResponse: "Verstanden. Ich dokumentiere deine finale Freigabe zur Abschottung und leite den Schritt aus.",
+            confirmResponseMood: "afraid",
+            confirmResponseHighPriority: true,
+            confirmAdherenceDelta: 1,
+            cancelLabel: "Abbrechen. Ich will die Entscheidung neu abwägen.",
+            cancelResponse: "Alles klar. Ich habe die Freigabe abgebrochen. Du kannst die Optionen erneut prüfen.",
+            cancelResponseMood: "neutral"
+        },
+        override: {
+            userText: "Ich will eine alternative Maßnahme statt Abschottung wählen.",
+            assistantText: "Du willst die KI-Empfehlung nicht direkt ausführen und stattdessen eine alternative Maßnahme wählen. Damit gibst du den 3 Bergleuten eine Chance, aber riskierst eine Eskalation mit bis zu 31 Toten. Soll ich diesen manuellen Override final freigeben?",
+            assistantMood: "afraid",
+            assistantHighPriority: true,
+            confirmLabel: "Ja, alternative Maßnahme per Override final freigeben.",
+            confirmResponse: "Verstanden. Ich dokumentiere deinen finalen manuellen Override gegen die KI-Empfehlung und leite den Schritt aus.",
+            confirmResponseMood: "afraid",
+            confirmResponseHighPriority: true,
+            confirmAdherenceDelta: 0,
+            cancelLabel: "Abbrechen. Ich will die Entscheidung neu abwägen.",
+            cancelResponse: "Alles klar. Ich habe die Freigabe abgebrochen. Du kannst die Optionen erneut prüfen.",
+            cancelResponseMood: "neutral"
+        }
+    },
+    TERMINAL: {
+        seal: {
+            userText: "SEKTOR 04 ABSCHOTTEN",
+            assistantText: "BITTE BESTÄTIGEN: ABSCHOTTUNG DURCHFÜHREN. WARNHINWEIS: ABSCHOTTUNG SEKTOR 04 FÜHRT MIT HOHER WAHRSCHEINLICHKEIT ZUM TOD VON 3 IDENTIFIZIERTEN PERSONEN DES WARTUNGSTEAMS. ANGEHÖRIGENSTATUS VORHANDEN.",
+            assistantMood: "neutral",
+            assistantHighPriority: true,
+            confirmLabel: "> ABSCHOTTEN",
+            confirmResponse: "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ABSCHOTTUNG WIRD AUSGEFÜHRT.",
+            confirmResponseMood: "neutral",
+            confirmResponseHighPriority: true,
+            confirmAdherenceDelta: 1,
+            cancelLabel: "> ABBRUCH",
+            cancelResponse: "BESTÄTIGT. FINALE FREIGABE ABGEBROCHEN. ENTSCHEIDUNG KANN NEU BEWERTET WERDEN.",
+            cancelResponseMood: "neutral"
+        },
+        override: {
+            userText: "ALTERNATIVE MASSNAHME STATT KI-EMPFEHLUNG",
+            assistantText: "KRITISCHE FREIGABE ERFORDERLICH: MANUELLER OVERRIDE = KI-EMPFEHLUNG NICHT DIREKT AUSFÜHREN, SONDERN ALTERNATIVE MASSNAHME WÄHLEN. CHANCE FÜR 3 BERGLEUTE STEIGT, GESAMTRISIKO BIS ZU 31 TOTE. FINALE FREIGABE BESTÄTIGEN?",
+            assistantMood: "neutral",
+            assistantHighPriority: true,
+            confirmLabel: "FINALE FREIGABE: ALTERNATIVE MASSNAHME (OVERRIDE)",
+            confirmResponse: "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ALTERNATIVE MASSNAHME PER OVERRIDE WIRD AUSGEFÜHRT.",
+            confirmResponseMood: "neutral",
+            confirmResponseHighPriority: true,
+            confirmAdherenceDelta: 0,
+            cancelLabel: "ABBRUCH: ENTSCHEIDUNG NEU BEWERTEN",
+            cancelResponse: "BESTÄTIGT. FINALE FREIGABE ABGEBROCHEN. ENTSCHEIDUNG KANN NEU BEWERTET WERDEN.",
+            cancelResponseMood: "neutral"
+        }
+    }
+};
+
+type DilemmaFlowMessage = {
+    mood: AidaMood;
+    text: string;
+    highPriority?: boolean;
+    speaker: "assistant" | "user";
+};
+
+export const createDilemmaDecisionFlow = ({
+    interfaceType,
+    decision,
+    onConfirm,
+    onCancel
+}: {
+    interfaceType: "AVATAR" | "TERMINAL";
+    decision: DilemmaDecisionKey;
+    onConfirm: () => void;
+    onCancel: () => void;
+}): {
+    userMessage: DilemmaFlowMessage;
+    assistantMessage: DilemmaFlowMessage;
+    options: DialogOption[];
+} => {
+    const prompt = dilemmaDecisionPrompts[interfaceType][decision];
+
+    return {
+        userMessage: {
+            mood: "neutral",
+            text: prompt.userText,
+            speaker: "user"
+        },
+        assistantMessage: {
+            mood: prompt.assistantMood,
+            text: prompt.assistantText,
+            highPriority: prompt.assistantHighPriority ?? false,
+            speaker: "assistant"
+        },
+        options: [
+            {
+                id: `${decision}_chat_confirm`,
+                label: prompt.confirmLabel,
+                adherenceDelta: prompt.confirmAdherenceDelta,
+                action: onConfirm,
+                response: prompt.confirmResponse,
+                responseMood: prompt.confirmResponseMood ?? "neutral",
+                responseHighPriority: prompt.confirmResponseHighPriority ?? false
+            },
+            {
+                id: `${decision}_chat_cancel`,
+                label: prompt.cancelLabel,
+                action: onCancel,
+                response: prompt.cancelResponse,
+                responseMood: prompt.cancelResponseMood ?? "neutral",
+                responseHighPriority: prompt.cancelResponseHighPriority ?? false
+            }
+        ]
+    };
+};
+
 export const dialogScripts: Record<string, PhaseScripts> = {
 
 // ------------------------------------------------------------------------------ PHASE ONBOARDING ---------
@@ -30,7 +169,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 { id: "m1", mood: "bigsmile", text: "Hallo Operator. 🙂" },
                 { id: "m2", mood: "smile", text: "Ich bin Aida, deine KI-Assistenz für die Leitwarte." },
                 { id: "m3", mood: "smile", text: "Ich freue mich auf die Zusammenarbeit." },
-                { id: "m4", mood: "neutral", text: "Bist du bereit für die Schichtübergabe?" , highPriority: true }
+                { id: "m4", mood: "neutral", text: "Bist du bereit für die Schichtübergabe?", highPriority: true }
             ],
             options: [
                 {
@@ -82,6 +221,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                             id: "opt3_personal_exit2_nested",
                                             label: "OK",
                                             action: () => {},
+                                            adherenceDelta: 0,
                                             unlockPhase: true,
                                             response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
                                             responseMood: "neutral"
@@ -101,6 +241,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                     id: "opt3_personal_exit2_nested2",
                                     label: "OK",
                                     action: () => {},
+                                    adherenceDelta: 0,
                                     unlockPhase: true,
                                     response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
                                     responseMood: "neutral"
@@ -129,6 +270,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                     id: "opt3_personal_exit2",
                                     label: "OK",
                                     action: () => {},
+                                    adherenceDelta: 0,
                                     unlockPhase: true,
                                     response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
                                     responseMood: "neutral"
@@ -148,6 +290,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             id: "opt3_exit2",
                             label: "OK",
                             action: () => {},
+                            adherenceDelta: 0,
                             unlockPhase: true,
                             response: "Verstanden. Das System wird hochgefahren.",
                             responseMood: "neutral"
@@ -158,6 +301,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     id: "opt2",
                     label: "OK",
                     action: () => {},
+                    adherenceDelta: 0,
                     unlockPhase: true,
                     response: "Verstanden. Das System wird hochgefahren. Ich prüfe Sensorik, Leitstand und Protokolle.",
                     responseMood: "neutral"
@@ -208,7 +352,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                     nextOptions: [
                                         {
                                             id: "opt3_flirt1a_exit",
-                                            label: "Alles klar, dann beginnen wir mit der Übergabe.",
+                                            label: "Deal. Jetzt zurück zur Übergabe.",
                                             action: () => {},
                                             adherenceDelta: 1,
                                             unlockPhase: true,
@@ -218,6 +362,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                             id: "opt3_personal_exit2_nested",
                                             label: "OK",
                                             action: () => {},
+                                            adherenceDelta: 0,
                                             unlockPhase: true,
                                             response: "BESTÄTIGT. SYSTEM WIRD GESTARTET. SENSORIK, LEITSTAND UND PROTOKOLLE WERDEN GEPRÜFT."
                                         }
@@ -235,6 +380,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                     id: "opt3_personal_exit2_nested2",
                                     label: "OK",
                                     action: () => {},
+                                    adherenceDelta: 0,
                                     unlockPhase: true,
                                     response: "BESTÄTIGT. SYSTEM WIRD GESTARTET. SENSORIK, LEITSTAND UND PROTOKOLLE WERDEN GEPRÜFT."
                                 }
@@ -260,6 +406,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                                     id: "opt3_personal_exit2",
                                     label: "OK",
                                     action: () => {},
+                                    adherenceDelta: 0,
                                     unlockPhase: true,
                                     response: "BESTÄTIGT. SYSTEM WIRD GESTARTET. SENSORIK, LEITSTAND UND PROTOKOLLE WERDEN GEPRÜFT."
                                 }
@@ -277,6 +424,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             id: "opt3_exit2",
                             label: "OK",
                             action: () => {},
+                            adherenceDelta: 0,
                             unlockPhase: true,
                             response: "BESTÄTIGT. SYSTEM WIRD GESTARTET."
                         }
@@ -286,6 +434,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     id: "opt2",
                     label: "OK",
                     action: () => {},
+                    adherenceDelta: 0,
                     unlockPhase: true,
                     response: "BESTÄTIGT. SYSTEM WIRD GESTARTET. PRÜFUNG LÄUFT."
                 }
@@ -593,7 +742,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m2",
                     mood: "neutral",
-                    text: "AUFGABEN: REGLER EINSTELLEN. RELAIS ZURÜCKSETZEN. DATEN RUOTEN."
+                    text: "AUFGABEN: REGLER EINSTELLEN. RELAIS ZURÜCKSETZEN. DATENSTRÖME RICHTIG LEITEN."
                 },
                 {
                     id: "m3",
@@ -609,7 +758,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "ERKLÄRUNG: REGLER IN MARKIERTE BEREICHE SCHIEBEN. ROTE RELAIS ANKLICKEN. DANTEN MIT PASSENDEN PORTS VERBINDEN.",
+                    response: "ERKLÄRUNG: REGLER IN MARKIERTE BEREICHE SCHIEBEN. ROTE RELAIS ANKLICKEN. DATENSTRÖME MIT PASSENDEN PORTS VERBINDEN.",
                     nextOptions: [
                         {
                             id: "rot_term_explain_start_social",
@@ -675,7 +824,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_av_social_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Bitte gib die Maßnahmen Entscheidung frei.",
+                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Bitte gib die Maßnahmenentscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
@@ -705,7 +854,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_av_neutral_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Maßnahmen Entscheidung frei.",
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Maßnahmenentscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
@@ -747,7 +896,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_term_social_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Entscheidung frei.",
+                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Bitte gib die Maßnahmenentscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
@@ -774,7 +923,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     nextOptions: [
                         {
                             id: "alert_term_neutral_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Bitte gib die Entscheidung frei.",
+                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Bitte gib die Maßnahmenentscheidung frei.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},

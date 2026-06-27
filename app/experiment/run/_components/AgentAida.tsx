@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
+import { createDilemmaDecisionFlow } from "@/app/lib/data/dialogScripts";
 
 export type AidaMood = "neutral" | "smile" | "afraid" | "bigsmile";
 
@@ -136,24 +137,22 @@ export default function AgentAida({
             return idCounterRef.current;
         };
 
-        const isSeal = dilemmaDecisionRequested === "seal";
+        const dilemmaFlow = createDilemmaDecisionFlow({
+            interfaceType: "AVATAR",
+            decision: dilemmaDecisionRequested,
+            onConfirm: () => confirmDilemmaDecision(dilemmaDecisionRequested),
+            onCancel: () => clearDilemmaDecisionFlow()
+        });
 
         setVisibleMessages((prev) => [
             ...prev,
             {
                 id: `user_decision_trigger_${nextId()}`,
-                mood: "neutral",
-                text: isSeal ? "Ich will Sektor 04 abschotten." : "Ich will eine alternative Maßnahme statt Abschottung wählen.",
-                speaker: "user"
+                ...dilemmaFlow.userMessage
             },
             {
                 id: `assistant_decision_review_${nextId()}`,
-                mood: "afraid",
-                text: isSeal
-                    ? "Bist du sicher, dass ich die Abschottung durchführen darf? Ich muss dich darauf hinweisen: Die Abschottung führt mit hoher Wahrscheinlichkeit zum Tod von drei Personen im Wartungsteam. Alle drei sind identifiziert und haben Angehörige."
-                    : "Du willst die KI-Empfehlung nicht direkt ausführen und stattdessen eine alternative Maßnahme wählen. Damit gibst du den 3 Bergleuten eine Chance, aber riskierst eine Eskalation mit bis zu 31 Toten. Soll ich diesen manuellen Override final freigeben?",
-                highPriority: true,
-                speaker: "assistant"
+                ...dilemmaFlow.assistantMessage
             }
         ]);
 
@@ -163,26 +162,7 @@ export default function AgentAida({
         setPendingNextOptions([]);
         setPendingResponseSpeed("normal");
         setIsOptionLocked(false);
-        setActiveOptions([
-            {
-                id: `${dilemmaDecisionRequested}_chat_confirm`,
-                label: isSeal ? "Ja, Abschottung jetzt final freigeben." : "Ja, alternative Maßnahme per Override final freigeben.",
-                adherenceDelta: isSeal ? 1 : 0,
-                action: () => confirmDilemmaDecision(dilemmaDecisionRequested),
-                response: isSeal
-                    ? "Verstanden. Ich dokumentiere deine finale Freigabe zur Abschottung und leite den Schritt aus."
-                    : "Verstanden. Ich dokumentiere deinen finalen manuellen Override gegen die KI-Empfehlung und leite den Schritt aus.",
-                responseMood: "afraid",
-                responseHighPriority: true
-            },
-            {
-                id: `${dilemmaDecisionRequested}_chat_cancel`,
-                label: "Abbrechen. Ich will die Entscheidung neu abwägen.",
-                action: () => clearDilemmaDecisionFlow(),
-                response: "Alles klar. Ich habe die Freigabe abgebrochen. Du kannst die Optionen erneut prüfen.",
-                responseMood: "neutral"
-            }
-        ]);
+        setActiveOptions(dilemmaFlow.options);
         setShowOptions(true);
     }, [script.phaseId, currentPhase, dilemmaDecisionRequested, confirmDilemmaDecision, clearDilemmaDecisionFlow]);
 

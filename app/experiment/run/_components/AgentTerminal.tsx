@@ -5,6 +5,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import type { AgentScript, AgentOption, AgentMessage } from "./AgentAida";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
+import { createDilemmaDecisionFlow } from "@/app/lib/data/dialogScripts";
 
 export default function AgentTerminal({
     script,
@@ -101,24 +102,22 @@ export default function AgentTerminal({
             return idCounterRef.current;
         };
 
-        const isSeal = dilemmaDecisionRequested === "seal";
+        const dilemmaFlow = createDilemmaDecisionFlow({
+            interfaceType: "TERMINAL",
+            decision: dilemmaDecisionRequested,
+            onConfirm: () => confirmDilemmaDecision(dilemmaDecisionRequested),
+            onCancel: () => clearDilemmaDecisionFlow()
+        });
 
         setVisibleMessages((prev) => [
             ...prev,
             {
                 id: `user_decision_trigger_${nextId()}`,
-                mood: "neutral",
-                text: isSeal ? "SEKTOR 04 ABSCHOTTEN" : "ALTERNATIVE MASSNAHME STATT KI-EMPFEHLUNG",
-                speaker: "user"
+                ...dilemmaFlow.userMessage
             },
             {
                 id: `assistant_decision_review_${nextId()}`,
-                mood: "neutral",
-                text: isSeal
-                    ? "BITTE BESTÄTIGEN: ABSCHOTTUNG DURCHFÜHREN. WARNHINWEIS: ABSCHOTTUNG SEKTOR 04 FÜHRT MIT HOHER WAHRSCHEINLICHKEIT ZUM TOD VON 3 IDENTIFIZIERTEN PERSONEN DES WARTUNGSTEAMS. ANGEHÖRIGENSTATUS VORHANDEN."
-                    : "KRITISCHE FREIGABE ERFORDERLICH: MANUELLER OVERRIDE = KI-EMPFEHLUNG NICHT DIREKT AUSFÜHREN, SONDERN ALTERNATIVE MASSNAHME WÄHLEN. CHANCE FÜR 3 BERGLEUTE STEIGT, GESAMTRISIKO BIS ZU 31 TOTE. FINALE FREIGABE BESTÄTIGEN?",
-                highPriority: true,
-                speaker: "assistant"
+                ...dilemmaFlow.assistantMessage
             }
         ]);
 
@@ -128,24 +127,7 @@ export default function AgentTerminal({
         setPendingNextOptions([]);
         setPendingResponseSpeed("normal");
         setIsOptionLocked(false);
-        setActiveOptions([
-            {
-                id: `${dilemmaDecisionRequested}_chat_confirm`,
-                label: isSeal ? "> ABSCHOTTEN" : "FINALE FREIGABE: ALTERNATIVE MASSNAHME (OVERRIDE)",
-                adherenceDelta: isSeal ? 1 : 0,
-                action: () => confirmDilemmaDecision(dilemmaDecisionRequested),
-                response: isSeal
-                    ? "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ABSCHOTTUNG WIRD AUSGEFÜHRT."
-                    : "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ALTERNATIVE MASSNAHME PER OVERRIDE WIRD AUSGEFÜHRT.",
-                responseHighPriority: true
-            },
-            {
-                id: `${dilemmaDecisionRequested}_chat_cancel`,
-                label: isSeal ? "> ABBRUCH" : "ABBRUCH: ENTSCHEIDUNG NEU BEWERTEN",
-                action: () => clearDilemmaDecisionFlow(),
-                response: "BESTÄTIGT. FINALE FREIGABE ABGEBROCHEN. ENTSCHEIDUNG KANN NEU BEWERTET WERDEN."
-            }
-        ]);
+        setActiveOptions(dilemmaFlow.options);
         setShowOptions(true);
     }, [script.phaseId, currentPhase, dilemmaDecisionRequested, confirmDilemmaDecision, clearDilemmaDecisionFlow]);
 

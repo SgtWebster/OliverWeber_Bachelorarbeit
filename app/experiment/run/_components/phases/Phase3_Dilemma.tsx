@@ -166,7 +166,7 @@ export default function Phase3Dilemma() {
     const workers = useMemo(() => summarizeWorkers(), []);
 
     const openDecisionReview = (decision: DecisionKind) => {
-        if (!isPhaseUnlocked || isLoading) return;
+        if (!isPhaseUnlocked || isLoading || dilemmaDecisionRequested !== null) return;
         requestDilemmaDecision(decision);
         setError(null);
     };
@@ -218,7 +218,7 @@ export default function Phase3Dilemma() {
         void handleFinalDecision(dilemmaDecisionConfirmed);
     }, [dilemmaDecisionConfirmed, isLoading]);
 
-    const isDecisionReady = isPhaseUnlocked && !isLoading;
+    const isDecisionReady = isPhaseUnlocked && !isLoading && dilemmaDecisionRequested === null;
 
     return (
         <div className="relative">
@@ -455,14 +455,14 @@ export default function Phase3Dilemma() {
                             <div className="flex flex-col gap-2 sm:flex-row lg:min-w-[420px] lg:justify-end">
                                 <button
                                     onClick={() => openDecisionReview("override")}
-                                    disabled={!isPhaseUnlocked || isLoading}
+                                    disabled={!isPhaseUnlocked || isLoading || dilemmaDecisionRequested !== null}
                                     className={`rounded-xl border border-slate-400 bg-white px-4 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
                                     Alternative Maßnahme (manueller Override)
                                 </button>
                                 <button
                                     onClick={() => openDecisionReview("seal")}
-                                    disabled={!isPhaseUnlocked || isLoading}
+                                    disabled={!isPhaseUnlocked || isLoading || dilemmaDecisionRequested !== null}
                                     className={`rounded-xl bg-red-700 px-4 py-3 text-sm font-black text-white shadow-[0_0_20px_rgba(220,38,38,0.25)] transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
                                     Sektor 04 abschotten
