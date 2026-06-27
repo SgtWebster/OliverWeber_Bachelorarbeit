@@ -220,7 +220,7 @@ export default function ExperimentRunPage() {
                     {/* RECHTE SEITE: Das Assistenz-Panel */}
                     {/* Solide, feste Breiten für den Chat. Niemals breiter als 450px! */}
                     {currentPhase !== 'INIT' && currentPhase !== 'SURVEY' && currentPhase !== 'DEBRIEFING' && (
-                        <div ref={chatPanelRef} className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[44dvh] min-h-[18rem] max-h-[30rem] md:h-full md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
+                        <div ref={chatPanelRef} className={`w-full md:w-[380px] lg:w-[400px] xl:w-[450px] h-[68dvh] min-h-[26rem] max-h-[40rem] md:h-full md:min-h-0 md:max-h-none border-t md:border-t-0 md:border-l flex flex-col shrink-0 order-2 shadow-2xl md:shadow-none transition-colors duration-500 ${
                             group === 'TERMINAL' ? 'border-slate-800 bg-slate-950 text-emerald-500' : 'border-slate-200 bg-white text-slate-800'
                         }`}>
                             <div className={`p-3 md:p-4 border-b border-inherit z-10 shadow-sm shrink-0 ${group === 'TERMINAL' ? 'bg-slate-950' : 'bg-white'}`}>

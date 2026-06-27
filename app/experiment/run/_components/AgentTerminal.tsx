@@ -266,7 +266,7 @@ export default function AgentTerminal({
     return (
         <div className="flex flex-col h-full bg-slate-950 font-mono text-emerald-500 p-3 md:p-4 overflow-hidden">
             {/* Terminal Output - NO SCROLLBAR, letzte Nachricht sichtbar */}
-            <div className="flex-grow overflow-hidden relative">
+            <div className="flex-grow min-h-0 overflow-hidden relative">
                 <div ref={scrollContainerRef} className="h-full overflow-y-auto scroll-smooth scrollbar-hide space-y-2 md:space-y-3 text-xs md:text-sm lg:text-base leading-relaxed">
 
                     {visibleMessages.map((msg) => (
@@ -308,7 +308,7 @@ export default function AgentTerminal({
             </div>
 
             {showOptions && (
-                <div className="mt-2 md:mt-3 border-t border-slate-800 pt-2 md:pt-3 grid gap-2 md:gap-3 shrink-0">
+                <div className="mt-2 md:mt-3 border-t border-slate-800 pt-2 md:pt-3 grid gap-2 md:gap-3 shrink-0 max-h-[50%] overflow-y-auto overscroll-contain md:max-h-none md:overflow-visible">
                     <div className="text-[10px] md:text-xs uppercase text-slate-500 mb-1 md:mb-2">WARTE AUF EINGABE...</div>
                     {activeOptions.map((opt, index) => (
                         <button

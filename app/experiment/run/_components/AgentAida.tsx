@@ -329,7 +329,7 @@ export default function AgentAida({
     return (
         <div className="flex flex-col h-full bg-slate-50">
             {/* Chat Verlauf - NO SCROLLBAR, letzte Nachricht sichtbar */}
-            <div className="flex-grow p-3 md:p-4 overflow-hidden relative">
+            <div className="flex-grow min-h-0 p-3 md:p-4 overflow-hidden relative">
                 {/* Scrollable content, aber hidden scrollbar */}
                 <div ref={scrollContainerRef} className="h-full overflow-y-auto scroll-smooth scrollbar-hide">
                     <div className="space-y-3 md:space-y-4">
@@ -364,7 +364,7 @@ export default function AgentAida({
 
             {/* Quick Response Buttons - reduzierter Padding auf Mobile */}
             {showOptions && (
-                <div className="px-3 py-2 md:p-4 md:py-6 bg-white border-t border-slate-100 grid gap-2 md:gap-3 shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+                <div className="px-3 py-2 md:p-4 md:py-6 bg-white border-t border-slate-100 grid gap-2 md:gap-3 shrink-0 max-h-[50%] overflow-y-auto overscroll-contain md:max-h-none md:overflow-visible shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
                     {activeOptions.map((opt) => (
                         <button
                             key={opt.id}
