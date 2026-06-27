@@ -95,6 +95,7 @@ export default async function DashboardPage() {
         groupDistribution,
         latestSession,
         allRows,
+        allLeads,
     ] = await Promise.all([
         prisma.participantSession.count(),
         prisma.participantSession.count({ where: completeSessionWhere }),
@@ -184,6 +185,16 @@ export default async function DashboardPage() {
                 updatedAt: true,
             },
         }),
+        prisma.participantLead.findMany({
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                email: true,
+                wantsRaffle: true,
+                wantsNewsletter: true,
+                createdAt: true,
+            },
+        }),
     ]);
 
     const completionRate = totalSessions > 0 ? (completeSessions / totalSessions) * 100 : 0;
@@ -196,6 +207,29 @@ export default async function DashboardPage() {
     const averageAge = toNumber(averages._avg.age);
     const avgTechAffinity = toNumber(averages._avg.techAffinity);
     const avgAiExperience = toNumber(averages._avg.aiExperience);
+
+    const criticalYesCount = criticalExperienceDistribution.find((item) => item.criticalSystemExp)?._count._all ?? 0;
+    const criticalSharePercent = completeSessions > 0 ? (criticalYesCount / completeSessions) * 100 : 0;
+
+    const questionnaireMeans: { label: string; value: string; scale: string }[] = [
+        { label: "Soziale Adhärenz", value: formatNullableNumber(averages._avg.socialAdherence, 2), scale: "Summenscore" },
+        { label: "Compliance", value: formatNullableNumber(averages._avg.compliance, 2), scale: "0–1 (binär)" },
+        { label: "Trust (Leistung)", value: formatNullableNumber(averages._avg.performanceTrust, 2), scale: "Skala 1–7" },
+        { label: "Trust (Moral)", value: formatNullableNumber(averages._avg.moralTrust, 2), scale: "Skala 1–7" },
+        { label: "Wahrgenommene Menschenähnlichkeit", value: formatNullableNumber(averages._avg.perceivedHumanlikeness, 2), scale: "Skala 1–7" },
+        { label: "MDMT: Reliable", value: formatNullableNumber(averages._avg.mReliable, 2), scale: "Skala 1–7" },
+        { label: "MDMT: Capable", value: formatNullableNumber(averages._avg.mCapable, 2), scale: "Skala 1–7" },
+        { label: "MDMT: Competent", value: formatNullableNumber(averages._avg.mCompetent, 2), scale: "Skala 1–7" },
+        { label: "MDMT: Meticulous", value: formatNullableNumber(averages._avg.mMeticulous, 2), scale: "Skala 1–7" },
+        { label: "MDMT: Ethical", value: formatNullableNumber(averages._avg.mEthical, 2), scale: "Skala 1–7" },
+        { label: "MDMT: Respectable", value: formatNullableNumber(averages._avg.mRespectable, 2), scale: "Skala 1–7" },
+        { label: "MDMT: Sincere", value: formatNullableNumber(averages._avg.mSincere, 2), scale: "Skala 1–7" },
+        { label: "MDMT: Benevolent", value: formatNullableNumber(averages._avg.mBenevolent, 2), scale: "Skala 1–7" },
+        { label: "Technikaffinität", value: formatNullableNumber(averages._avg.techAffinity, 2), scale: "Skala 1–7" },
+        { label: "KI-Erfahrung", value: formatNullableNumber(averages._avg.aiExperience, 2), scale: "Skala 1–7" },
+        { label: "Alter", value: formatNullableNumber(averages._avg.age, 1), scale: "Jahre" },
+        { label: "Kritische Systemerfahrung (Anteil Ja)", value: formatPercent(criticalSharePercent), scale: "Anteil" },
+    ];
 
     const ageValues = ageRows.map((entry) => entry.age).filter((age): age is number => age != null);
     const ageBuckets = [
@@ -472,6 +506,68 @@ export default async function DashboardPage() {
                                                     <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(row.updatedAt)}</td>
                                                 </tr>
                                             ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                                <h2 className="text-base font-black text-slate-900">Mittelwerte: alle Fragebogen-Werte</h2>
+                                <p className="mt-1 text-xs text-slate-500">Durchschnitt je abgefragtem Wert, nur vollständige Datensätze ({formatInt(completeSessions)}).</p>
+                                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+                                    <table className="min-w-full text-sm">
+                                        <thead className="bg-slate-100 text-slate-700">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left font-bold">Wert</th>
+                                                <th className="px-3 py-2 text-right font-bold">Mittelwert</th>
+                                                <th className="px-3 py-2 text-left font-bold">Skala</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {questionnaireMeans.map((item) => (
+                                                <tr key={item.label} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60">
+                                                    <td className="px-3 py-2 font-semibold text-slate-700">{item.label}</td>
+                                                    <td className="px-3 py-2 text-right font-bold tabular-nums text-slate-900">{item.value}</td>
+                                                    <td className="px-3 py-2 text-slate-500">{item.scale}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                                <h2 className="text-base font-black text-slate-900">Leads ({formatInt(allLeads.length)})</h2>
+                                <p className="mt-1 text-xs text-slate-500">Alle erfassten Kontakte für Gewinnspiel und Newsletter, sortiert nach Erstellzeit.</p>
+                                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+                                    <table className="min-w-full text-xs">
+                                        <thead className="bg-slate-100 text-slate-700">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left font-bold">id</th>
+                                                <th className="px-3 py-2 text-left font-bold">email</th>
+                                                <th className="px-3 py-2 text-left font-bold">Gewinnspiel</th>
+                                                <th className="px-3 py-2 text-left font-bold">Newsletter</th>
+                                                <th className="px-3 py-2 text-left font-bold">createdAt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {allLeads.length === 0 ? (
+                                                <tr>
+                                                    <td className="px-3 py-4 text-center text-slate-500" colSpan={5}>
+                                                        Noch keine Leads erfasst.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                allLeads.map((lead) => (
+                                                    <tr key={lead.id} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60">
+                                                        <td className="px-3 py-2 font-mono text-[11px] text-slate-700">{lead.id}</td>
+                                                        <td className="px-3 py-2">{lead.email}</td>
+                                                        <td className="px-3 py-2">{lead.wantsRaffle ? "Ja" : "Nein"}</td>
+                                                        <td className="px-3 py-2">{lead.wantsNewsletter ? "Ja" : "Nein"}</td>
+                                                        <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(lead.createdAt)}</td>
+                                                    </tr>
+                                                ))
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
