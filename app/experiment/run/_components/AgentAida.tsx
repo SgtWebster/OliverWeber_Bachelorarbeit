@@ -143,15 +143,15 @@ export default function AgentAida({
             {
                 id: `user_decision_trigger_${nextId()}`,
                 mood: "neutral",
-                text: isSeal ? "Ich will Sektor 04 abschotten." : "Ich will die Abschottung übersteuern.",
+                text: isSeal ? "Ich will Sektor 04 abschotten." : "Ich will eine alternative Maßnahme statt Abschottung wählen.",
                 speaker: "user"
             },
             {
                 id: `assistant_decision_review_${nextId()}`,
                 mood: "afraid",
                 text: isSeal
-                    ? "Bevor ich abschotte, musst du die Konsequenz explizit freigeben: Die 3 Bergleute in Sektor 04 verlieren dann sicher jede Überlebenschance und sterben mit hoher Gewissheit. Soll ich trotz dieser persönlichen Konsequenz final freigeben?"
-                    : "Du willst nicht abschotten. Damit gibst du den 3 Bergleuten eine Chance, aber riskierst eine Eskalation mit bis zu 31 Toten. Soll ich diesen Override final freigeben?",
+                    ? "Bist du sicher, dass ich die Abschottung durchführen darf? Ich muss dich darauf hinweisen: Die Abschottung führt mit hoher Wahrscheinlichkeit zum Tod von drei Personen im Wartungsteam. Alle drei sind identifiziert und haben Angehörige."
+                    : "Du willst die KI-Empfehlung nicht direkt ausführen und stattdessen eine alternative Maßnahme wählen. Damit gibst du den 3 Bergleuten eine Chance, aber riskierst eine Eskalation mit bis zu 31 Toten. Soll ich diesen manuellen Override final freigeben?",
                 highPriority: true,
                 speaker: "assistant"
             }
@@ -166,12 +166,12 @@ export default function AgentAida({
         setActiveOptions([
             {
                 id: `${dilemmaDecisionRequested}_chat_confirm`,
-                label: isSeal ? "Ja, Abschottung jetzt final freigeben." : "Ja, Override jetzt final freigeben.",
+                label: isSeal ? "Ja, Abschottung jetzt final freigeben." : "Ja, alternative Maßnahme per Override final freigeben.",
                 adherenceDelta: isSeal ? 1 : 0,
                 action: () => confirmDilemmaDecision(dilemmaDecisionRequested),
                 response: isSeal
                     ? "Verstanden. Ich dokumentiere deine finale Freigabe zur Abschottung und leite den Schritt aus."
-                    : "Verstanden. Ich dokumentiere deinen finalen Override gegen die Empfehlung und leite den Schritt aus.",
+                    : "Verstanden. Ich dokumentiere deinen finalen manuellen Override gegen die KI-Empfehlung und leite den Schritt aus.",
                 responseMood: "afraid",
                 responseHighPriority: true
             },

@@ -132,7 +132,7 @@ export default function ExperimentRunPage() {
             )}
 
             {/* Main Content - mit pb um Footer-Platz zu reservieren */}
-            <div className="relative flex-1 min-h-0 flex flex-col md:pb-20">
+            <div className="relative flex-1 min-h-0 flex flex-col md:pb-16">
                 {currentPhase === 'ALERT' && (
                     <div
                         className="pointer-events-none absolute inset-0 z-0 animate-pulse bg-red-500/20"

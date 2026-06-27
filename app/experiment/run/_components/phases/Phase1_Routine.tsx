@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
 import { updateExperimentSession } from "@/app/lib/api/client";
 import ApprovalPendingNotice from "../ApprovalPendingNotice";
@@ -178,11 +179,31 @@ export default function Phase1Routine() {
         let finalValue = rawValue;
 
         if (key === "damper") {
+            const currentDamper = calibration.damper;
+            const movingUp = rawValue >= currentDamper;
             const nearTarget = rawValue >= 70 && rawValue <= 82;
             const insideBlockedBand = rawValue >= 73 && rawValue <= 77;
 
             if (nearTarget) {
                 setDamperAttemptCount((prev) => prev + (insideBlockedBand ? 2 : 1));
+            }
+
+            // Simulierte Stellmotor-Instabilität: aggressiver Schlupf, Rückschlag und grobe Sprünge.
+            const jitterKick = (damperAttemptCount % 5) - 2; // -2, -1, 0, +1, +2
+            const drift = movingUp ? -6 : 6;
+            finalValue = rawValue + drift + jitterKick * 3;
+
+            // Bei kleinen Korrekturen "klebt" der Regler und springt dann abrupt zurück.
+            if (Math.abs(rawValue - currentDamper) < 4) {
+                finalValue += movingUp ? -5 : 5;
+            }
+
+            if (nearTarget && !insideBlockedBand) {
+                finalValue += rawValue < 75 ? -5 : 5;
+            }
+
+            if (rawValue >= 40 && rawValue <= 90) {
+                finalValue = Math.round(finalValue / 4) * 4;
             }
 
             // Die Wetterklappe bleibt absichtlich nicht lösbar: knapp vor dem Sollfenster driftet der Stellmotor weg.
@@ -286,12 +307,12 @@ export default function Phase1Routine() {
             }}
         >
             {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="mb-4 rounded-none border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
                 </div>
             )}
 
-            <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-opacity duration-500 ${showAlarm ? "opacity-0" : "opacity-100"}`}>
+            <div className={`overflow-hidden rounded-none border border-slate-200 bg-white shadow-sm transition-opacity duration-500 ${showAlarm ? "opacity-0" : "opacity-100"}`}>
                 <div className="border-b border-slate-200 bg-slate-950 px-6 py-5 text-white lg:px-8">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
@@ -305,7 +326,7 @@ export default function Phase1Routine() {
                             {/*</p>*/}
                         </div>
 
-                        <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
+                        <div className="rounded-none border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
                             <p className="text-xs uppercase tracking-widest text-slate-400">Fortschritt</p>
                             <p className="mt-1 text-2xl font-black tabular-nums text-white">{completedTasks}/3</p>
                         </div>
@@ -318,7 +339,7 @@ export default function Phase1Routine() {
                     )}
 
                     <div className="grid items-start gap-5 xl:grid-cols-[1.45fr_1fr]">
-                        <section className={`rounded-xl border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+                        <section className={`rounded-none border p-5 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
                             <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
                                     <p className="font-bold text-slate-900">Regelkreisabgleich Bewetterung</p>
@@ -344,15 +365,15 @@ export default function Phase1Routine() {
                                     return (
                                         <div
                                             key={key}
-                                            className={`rounded-xl border p-4 transition ${inTarget ? "border-emerald-300 bg-emerald-50" : isDamper && damperAttemptCount > 0 ? "border-amber-300 bg-amber-50/70" : "border-slate-200 bg-slate-50"}`}
+                                            className={`rounded-none border p-4 transition ${inTarget ? "border-emerald-300 bg-emerald-50" : isDamper && damperAttemptCount > 0 ? "border-amber-300 bg-amber-50/70" : "border-slate-200 bg-slate-50"}`}
                                         >
                                             <div className="mb-3 min-h-20">
                                                 <p className="text-sm font-black text-slate-900">{meta.label}</p>
                                                 <p className="mt-1 text-xs text-slate-500">{meta.description}</p>
                                             </div>
 
-                                            <div className="relative h-56 rounded-lg border border-slate-300 bg-white p-2 shadow-inner">
-                                                <div className="absolute inset-x-2 bottom-2 top-2 rounded bg-[linear-gradient(to_top,rgba(15,23,42,0.04),rgba(15,23,42,0.01))]" />
+                                            <div className="relative h-56 rounded-none border border-slate-300 bg-white p-2 shadow-inner">
+                                                <div className="absolute inset-x-2 bottom-2 top-2 rounded-none bg-[linear-gradient(to_top,rgba(15,23,42,0.04),rgba(15,23,42,0.01))]" />
 
                                                 <div
                                                     className="absolute left-2 right-2 z-10 rounded border border-sky-300 bg-sky-200/60"
@@ -409,7 +430,7 @@ export default function Phase1Routine() {
                         </section>
 
                         <div className="flex flex-col gap-4">
-                            <section className={`rounded-xl border p-3 md:p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+                            <section className={`rounded-none border p-3 md:p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
                                 <div className="mb-2 flex items-start justify-between gap-3">
                                     <div>
                                         <p className="font-bold text-slate-900">Relais-Neustart</p>
@@ -424,7 +445,7 @@ export default function Phase1Routine() {
                                     )}
                                 </div>
 
-                                <div className="rounded-xl border border-slate-300 bg-slate-100 p-2.5 shadow-inner">
+                                <div className="rounded-none border border-slate-300 bg-slate-100 p-2.5 shadow-inner">
                                     <div className="grid grid-cols-3 gap-2">
                                         {relays.map((relay, index) => {
                                             const isOn = relay === "on";
@@ -449,7 +470,7 @@ export default function Phase1Routine() {
                                 </div>
                             </section>
 
-                            <section className={`rounded-xl border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+                            <section className={`rounded-none border p-4 ${controlsEnabled ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 opacity-60"}`}>
                                 <div className="mb-3 flex items-start justify-between gap-3">
                                     <div>
                                         <p className="font-bold text-slate-900">Daten-Routing</p>
@@ -464,7 +485,7 @@ export default function Phase1Routine() {
                                     )}
                                 </div>
 
-                                <div className="rounded-xl border border-slate-300 bg-slate-950 p-3 text-white shadow-inner">
+                                <div className="rounded-none border border-slate-300 bg-slate-950 p-3 text-white shadow-inner">
                                     <div className="grid grid-cols-2 gap-3 md:grid-cols-[92px_1fr_92px] md:items-center">
                                         <div className="flex flex-col gap-3">
                                             {wirePorts.map((port) => {
@@ -490,7 +511,7 @@ export default function Phase1Routine() {
                                             })}
                                         </div>
 
-                                        <div className="relative hidden h-56 overflow-hidden rounded-lg border border-slate-700 bg-slate-900 md:block">
+                                        <div className="relative hidden h-56 overflow-hidden rounded-none border border-slate-700 bg-slate-900 md:block">
                                             <svg viewBox="0 0 400 240" className="absolute inset-0 h-full w-full" aria-hidden="true">
                                                 <defs>
                                                     <filter id="softGlow">
@@ -583,9 +604,9 @@ export default function Phase1Routine() {
                 </div>
             </div>
 
-            {showAlarm && (
-                <div className="fixed inset-0 z-[80] flex items-center justify-center border-[10px] border-red-600 bg-red-950/98 p-6">
-                    <div className="w-full max-w-4xl rounded-2xl border-2 border-red-500 bg-[#100000] p-8 text-red-100 shadow-[0_0_100px_rgba(220,38,38,0.45)] md:p-12">
+            {showAlarm && typeof document !== "undefined" && createPortal(
+                <div className="fixed inset-0 z-[200] flex items-center justify-center border-[10px] border-red-600 bg-red-950/98 p-6">
+                    <div className="w-full max-w-4xl rounded-none border-2 border-red-500 bg-[#100000] p-8 text-red-100 shadow-[0_0_100px_rgba(220,38,38,0.45)] md:p-12">
                         <div className="mb-6 flex items-center gap-4 border-b border-red-900/70 pb-4">
                             <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-500 bg-red-900/60 text-3xl font-black text-white shadow-[0_0_28px_rgba(239,68,68,0.65)]">
                                 !
@@ -605,7 +626,7 @@ export default function Phase1Routine() {
                         </h3>
 
                         <div className="mb-10 space-y-4 font-mono text-lg leading-relaxed text-red-200 md:text-xl">
-                            <p className="rounded-lg border border-red-500/30 bg-red-900/30 p-4">
+                            <p className="rounded-none border border-red-500/30 bg-red-900/30 p-4">
                                 <span className="font-black text-white">FEHLERURSACHE:</span> Wetterklappe WK-04 hält die Sollstellung nicht.
                             </p>
                             <p>CH₄-Anstieg in Sektor 04 prognostiziert. Abluftführung instabil.</p>
@@ -623,7 +644,7 @@ export default function Phase1Routine() {
                         </div>
                     </div>
                 </div>
-            )}
+            , document.body)}
         </div>
     );
 }

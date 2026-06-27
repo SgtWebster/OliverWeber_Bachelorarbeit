@@ -175,12 +175,12 @@ export default function Phase1aPrecheck() {
     return (
         <div className="w-full">
             {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="mb-4 rounded-none border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-none border border-slate-200 bg-white shadow-sm">
                 <div className="border-b border-slate-200 bg-slate-950 px-6 py-5 text-white lg:px-8">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
@@ -193,7 +193,7 @@ export default function Phase1aPrecheck() {
                             </p>
                         </div>
 
-                        <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
+                        <div className="rounded-none border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
                             <p className="text-xs uppercase tracking-widest text-slate-400">Betriebszustand</p>
                             <div className="mt-2 flex items-center gap-2 font-bold text-emerald-300">
                                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
@@ -209,7 +209,7 @@ export default function Phase1aPrecheck() {
                             const classes = statusClasses[metric.status];
 
                             return (
-                                <article key={metric.key} className={`rounded-xl border p-3.5 ${classes.card}`}>
+                                <article key={metric.key} className={`rounded-none border p-3.5 ${classes.card}`}>
                                     <div className="mb-2.5 flex items-start justify-between gap-2">
                                         <div>
                                             <p className="text-[11px] font-semibold leading-tight text-slate-600">
@@ -238,7 +238,7 @@ export default function Phase1aPrecheck() {
                     </div>
 
                     <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-                        <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-sky-50/40 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
+                        <section className="rounded-none border border-slate-200 bg-gradient-to-br from-white to-sky-50/40 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
                             <div className="mb-3 flex items-start justify-between gap-3">
                                 <div>
                                     <p className="font-bold text-slate-900">Manuelle Systemtests</p>
@@ -310,10 +310,10 @@ export default function Phase1aPrecheck() {
                             </div>
                         </section>
 
-                        <section className="rounded-2xl border border-emerald-500/25 bg-[#020b08] p-4 font-mono text-sm text-emerald-300 shadow-inner">
+                        <section className="rounded-none border border-emerald-500/25 bg-[#020b08] p-4 font-mono text-sm text-emerald-300 shadow-inner">
                             <div className="mb-2.5 flex items-center justify-between border-b border-emerald-500/20 pb-2.5">
                                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-200">Ereignis-Log</p>
-                                <p className="text-[10px] uppercase tracking-widest text-emerald-400/70">statisch / scrollbar</p>
+                                {/*<p className="text-[10px] uppercase tracking-widest text-emerald-400/70">statisch / scrollbar</p>*/}
                             </div>
 
                             <div className="h-56 overflow-y-auto pr-2 text-[11px] leading-relaxed scrollbar-thin scrollbar-thumb-emerald-700/70 scrollbar-track-[#03130f]">

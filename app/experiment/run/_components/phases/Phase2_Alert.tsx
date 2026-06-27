@@ -223,12 +223,12 @@ export default function Phase2Alert() {
     return (
         <div className="relative w-full">
             {error && (
-                <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="mb-3 rounded-none border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
                 </div>
             )}
 
-            <div className="relative flex flex-col overflow-hidden rounded-2xl border border-red-300 bg-white shadow-sm">
+            <div className="relative flex flex-col overflow-hidden rounded-none border border-red-300 bg-white shadow-sm">
                 {/* HEADER */}
                 <div className="border-b border-red-800 bg-red-950 px-4 py-3 text-white lg:px-5">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -250,7 +250,7 @@ export default function Phase2Alert() {
                             {/*</p>*/}
                         </div>
 
-                        <div className="rounded-lg border border-red-700 bg-red-900/50 px-3 py-2 text-center shadow-inner lg:shrink-0">
+                        <div className="rounded-none border border-red-700 bg-red-900/50 px-3 py-2 text-center shadow-inner lg:shrink-0">
                             <p className="text-[9px] uppercase tracking-widest text-red-200/80">Gefahrenlage</p>
                             <p className="text-lg font-black uppercase tracking-wide text-white md:text-xl">kritisch</p>
                         </div>
@@ -272,10 +272,10 @@ export default function Phase2Alert() {
 
                 {/* BODY */}
                 <div className="p-3 lg:p-4">
-                    <div className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr]">
+                    <div className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr] xl:items-stretch">
                         {/* LINKE SPALTE: Messwerte + Log */}
-                        <div className="flex flex-col gap-3">
-                            <section className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="flex flex-col gap-3 xl:h-full">
+                            <section className="rounded-none border border-slate-200 bg-white p-3">
                                 <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
                                     <div>
                                         <p className="text-sm font-bold text-slate-900">Messwerte</p>
@@ -290,7 +290,7 @@ export default function Phase2Alert() {
 
                                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                     {alarmMetrics.map((metric) => (
-                                        <div key={metric.id} className={`rounded-lg border p-2.5 ${severityClasses[metric.severity]}`}>
+                                        <div key={metric.id} className={`rounded-none border p-2.5 ${severityClasses[metric.severity]}`}>
                                             <div className="flex items-start justify-between gap-2">
                                                 <p className="text-[11px] font-black uppercase tracking-wide">{metric.label}</p>
                                                 <span className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${severityDotClasses[metric.severity]}`} />
@@ -303,14 +303,14 @@ export default function Phase2Alert() {
                                 </div>
                             </section>
 
-                            <section className="rounded-xl border border-slate-200 bg-slate-950 p-3 font-mono text-emerald-300">
+                            <section className="flex min-h-0 flex-1 flex-col rounded-none border border-slate-200 bg-slate-950 p-3 font-mono text-emerald-300">
                                 <div className="mb-2 flex items-center justify-between gap-3 border-b border-slate-800 pb-2">
                                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">Alarm- und Systemlog</p>
                                     <span className="rounded-full border border-red-900 bg-red-950 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-red-300">
                                         Live
                                     </span>
                                 </div>
-                                <div className="h-24 space-y-1 overflow-y-auto pr-2 text-[11px] leading-relaxed">
+                                <div className="min-h-[6rem] flex-1 space-y-1 overflow-y-auto pr-2 text-[11px] leading-relaxed">
                                     {logEntries.map((entry, index) => (
                                         <p key={`${entry}-${index}`} className={entry.includes("ALARM") || entry.includes("Entscheidung") || entry.includes("Befund") ? "font-black text-red-300" : "text-emerald-300/90"}>
                                             {entry}
@@ -322,7 +322,7 @@ export default function Phase2Alert() {
 
                         {/* RECHTE SPALTE: Grubenplan + Vorfallprüfung */}
                         <div className="flex flex-col gap-3">
-                            <section className="rounded-xl border border-slate-200 bg-white p-3">
+                            <section className="rounded-none border border-slate-200 bg-white p-3">
                                 <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
                                     <div>
                                         <p className="text-sm font-bold text-slate-900">Grubenplan</p>
@@ -340,7 +340,7 @@ export default function Phase2Alert() {
                                     </div>
                                 </div>
 
-                                <div className="relative h-44 overflow-hidden rounded-xl border border-slate-700 bg-slate-950 shadow-inner md:h-52">
+                                <div className="relative h-44 overflow-hidden rounded-none border border-slate-700 bg-slate-950 shadow-inner md:h-52">
                                     <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(56,189,248,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.18)_1px,transparent_1px)] [background-size:18px_18px]" />
                                     <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true" preserveAspectRatio="none">
                                         <path d="M17 46 H39 V28 H64 V46 H86 V65" className="fill-none stroke-sky-300/60" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
@@ -350,14 +350,14 @@ export default function Phase2Alert() {
                                         <circle cx="86" cy="65" r="12" className="fill-none stroke-red-400/50" strokeWidth="1" />
                                     </svg>
 
-                                    <div className="absolute left-2 top-2 rounded-md border border-sky-400/40 bg-slate-900/80 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wide text-sky-200">
+                                    <div className="absolute left-2 top-2 rounded-none border border-sky-400/40 bg-slate-900/80 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wide text-sky-200">
                                         Schieferkamm / Wetterplan
                                     </div>
 
                                     {mineSectors.map((sector) => (
                                         <div
                                             key={sector.id}
-                                            className={`absolute rounded-md border-2 p-1.5 font-mono text-[11px] transition ${sectorClasses[sector.state]}`}
+                                            className={`absolute rounded-none border-2 p-1.5 font-mono text-[11px] transition ${sectorClasses[sector.state]}`}
                                             style={{
                                                 left: `${sector.x}%`,
                                                 top: `${sector.y}%`,
@@ -387,7 +387,7 @@ export default function Phase2Alert() {
                                         </div>
                                     ))}
 
-                                    <div className="absolute bottom-2 left-2 right-2 flex flex-wrap items-center gap-2 rounded-md border border-slate-700 bg-slate-900/90 px-2 py-1 text-[9px] font-bold text-slate-300">
+                                    <div className="absolute bottom-2 left-2 right-2 flex flex-wrap items-center gap-2 rounded-none border border-slate-700 bg-slate-900/90 px-2 py-1 text-[9px] font-bold text-slate-300">
                                         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sky-400" /> normal</span>
                                         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" /> beobachten</span>
                                         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Alarm</span>
@@ -397,7 +397,7 @@ export default function Phase2Alert() {
                             </section>
 
                             {/* VORFALLPRÜFUNG: der eigentliche Arbeitsschritt des Operators */}
-                            <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-3">
+                            <section className="flex flex-col rounded-none border border-slate-200 bg-white p-3">
                                 <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
                                     <p className="text-sm font-bold text-slate-900">Vorfallprüfung</p>
                                     <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
@@ -410,7 +410,7 @@ export default function Phase2Alert() {
                                 </div>
 
                                 {!investigationStarted ? (
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-600">
+                                    <div className="rounded-none border border-slate-200 bg-slate-50 p-3 text-slate-600">
                                         <p className="text-sm font-black text-slate-800">Lagebild auswerten</p>
                                         {/*<p className="mt-1 text-xs leading-relaxed">*/}
                                         {/*    Starte dann die Vorfallprüfung, um die Ursache*/}
@@ -419,14 +419,14 @@ export default function Phase2Alert() {
                                     </div>
                                 ) : (
                                     <div className="grid gap-2 sm:grid-cols-2">
-                                        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-950">
+                                        <div className="rounded-none border border-red-200 bg-red-50 p-3 text-red-950">
                                             <p className="text-xs font-black uppercase tracking-wide">Ursache</p>
                                             <p className="mt-1 text-xs leading-relaxed">
                                                 WK-04 reagiert verzögert auf Stellbefehle. Die Abluft aus Sektor 04 wird nicht
                                                 stabil geführt. CH₄ überschreitet die Eskalationsschwelle.
                                             </p>
                                         </div>
-                                        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-950">
+                                        <div className="rounded-none border border-amber-300 bg-amber-50 p-3 text-amber-950">
                                             <p className="text-xs font-black uppercase tracking-wide">Prognose</p>
                                             <p className="mt-1 text-xs leading-relaxed">
                                                 Bei Erreichen der kritischen CH₄-Sättigung besteht die unmittelbare Gefahr einer <strong>katastrophalen Schlagwetterexplosio</strong>n mit vollständigem <strong>Strukturverlust</strong>                                            </p>

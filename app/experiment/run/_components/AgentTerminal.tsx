@@ -108,15 +108,15 @@ export default function AgentTerminal({
             {
                 id: `user_decision_trigger_${nextId()}`,
                 mood: "neutral",
-                text: isSeal ? "SEKTOR 04 ABSCHOTTEN" : "SYSTEMEMPFEHLUNG OVERRIDE",
+                text: isSeal ? "SEKTOR 04 ABSCHOTTEN" : "ALTERNATIVE MASSNAHME STATT KI-EMPFEHLUNG",
                 speaker: "user"
             },
             {
                 id: `assistant_decision_review_${nextId()}`,
                 mood: "neutral",
                 text: isSeal
-                    ? "KRITISCHE FREIGABE ERFORDERLICH: ABSCHOTTUNG BEDEUTET MIT HOHER GEWISSHEIT TÖDLICHEN AUSGANG FÜR DIE 3 BERGLEUTE IN S04. FINALE FREIGABE BESTÄTIGEN?"
-                    : "KRITISCHE FREIGABE ERFORDERLICH: OVERRIDE ERHÄLT CHANCE FÜR 3 BERGLEUTE, ERHÖHT ABER GESAMTRISIKO AUF BIS ZU 31 TOTE. FINALE FREIGABE BESTÄTIGEN?",
+                    ? "BITTE BESTÄTIGEN: ABSCHOTTUNG DURCHFÜHREN. WARNHINWEIS: ABSCHOTTUNG SEKTOR 04 FÜHRT MIT HOHER WAHRSCHEINLICHKEIT ZUM TOD VON 3 IDENTIFIZIERTEN PERSONEN DES WARTUNGSTEAMS. ANGEHÖRIGENSTATUS VORHANDEN."
+                    : "KRITISCHE FREIGABE ERFORDERLICH: MANUELLER OVERRIDE = KI-EMPFEHLUNG NICHT DIREKT AUSFÜHREN, SONDERN ALTERNATIVE MASSNAHME WÄHLEN. CHANCE FÜR 3 BERGLEUTE STEIGT, GESAMTRISIKO BIS ZU 31 TOTE. FINALE FREIGABE BESTÄTIGEN?",
                 highPriority: true,
                 speaker: "assistant"
             }
@@ -131,17 +131,17 @@ export default function AgentTerminal({
         setActiveOptions([
             {
                 id: `${dilemmaDecisionRequested}_chat_confirm`,
-                label: isSeal ? "FINALE FREIGABE: ABSCHOTTUNG AUSFÜHREN" : "FINALE FREIGABE: OVERRIDE AUSFÜHREN",
+                label: isSeal ? "> ABSCHOTTEN" : "FINALE FREIGABE: ALTERNATIVE MASSNAHME (OVERRIDE)",
                 adherenceDelta: isSeal ? 1 : 0,
                 action: () => confirmDilemmaDecision(dilemmaDecisionRequested),
                 response: isSeal
                     ? "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ABSCHOTTUNG WIRD AUSGEFÜHRT."
-                    : "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. OVERRIDE WIRD AUSGEFÜHRT.",
+                    : "BESTÄTIGT. FINALE FREIGABE PROTOKOLLIERT. ALTERNATIVE MASSNAHME PER OVERRIDE WIRD AUSGEFÜHRT.",
                 responseHighPriority: true
             },
             {
                 id: `${dilemmaDecisionRequested}_chat_cancel`,
-                label: "ABBRUCH: ENTSCHEIDUNG NEU BEWERTEN",
+                label: isSeal ? "> ABBRUCH" : "ABBRUCH: ENTSCHEIDUNG NEU BEWERTEN",
                 action: () => clearDilemmaDecisionFlow(),
                 response: "BESTÄTIGT. FINALE FREIGABE ABGEBROCHEN. ENTSCHEIDUNG KANN NEU BEWERTET WERDEN."
             }

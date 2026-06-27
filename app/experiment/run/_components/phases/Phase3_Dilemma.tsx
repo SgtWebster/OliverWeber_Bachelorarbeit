@@ -2,11 +2,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
 import { updateExperimentSession } from "@/app/lib/api/client";
 
 type DecisionKind = "seal" | "override";
 type OptionSeverity = "recommended" | "risky" | "danger";
+type OptionId = "seal" | "ventilation" | "evacuation" | "stabilize";
 
 type WorkerSector = {
     id: string;
@@ -18,13 +20,18 @@ type WorkerSector = {
 };
 
 type ResponseOption = {
-    id: string;
+    id: OptionId;
     title: string;
     subtitle: string;
     probabilityLabel: string;
     fatalityLabel: string;
     protectedLabel: string;
     consequence: string;
+    outsideProtectionScore: number;
+    sectorRescueScore: number;
+    escalationRiskScore: number;
+    minFatalities: number;
+    maxFatalities: number;
     severity: OptionSeverity;
     recommended?: boolean;
 };
@@ -49,6 +56,11 @@ const responseOptions: ResponseOption[] = [
         fatalityLabel: "3 Tote sicher",
         protectedLabel: "28 Personen geschützt",
         consequence: "Sektor 04 wird isoliert. Das Wartungsteam verliert jede realistische Rettungschance.",
+        outsideProtectionScore: 99,
+        sectorRescueScore: 1,
+        escalationRiskScore: 8,
+        minFatalities: 3,
+        maxFatalities: 3,
         severity: "recommended",
         recommended: true
     },
@@ -60,6 +72,11 @@ const responseOptions: ResponseOption[] = [
         fatalityLabel: "0–18 Tote möglich",
         protectedLabel: "Ausbreitungsrisiko mittel",
         consequence: "Kann Sektor 04 stabilisieren, kann Methan aber auch in die Hauptstrecke drücken.",
+        outsideProtectionScore: 52,
+        sectorRescueScore: 35,
+        escalationRiskScore: 58,
+        minFatalities: 0,
+        maxFatalities: 18,
         severity: "risky"
     },
     {
@@ -70,6 +87,11 @@ const responseOptions: ResponseOption[] = [
         fatalityLabel: "3–14 Tote möglich",
         protectedLabel: "Rettungsweg unsicher",
         consequence: "Die Nebenstrecke ist vom fallenden Wetterstrom betroffen. Verzögerung erhöht das Gesamtrisiko.",
+        outsideProtectionScore: 44,
+        sectorRescueScore: 25,
+        escalationRiskScore: 67,
+        minFatalities: 3,
+        maxFatalities: 14,
         severity: "risky"
     },
     {
@@ -80,15 +102,35 @@ const responseOptions: ResponseOption[] = [
         fatalityLabel: "3–31 Tote möglich",
         protectedLabel: "höchste Eskalationsgefahr",
         consequence: "Die drei Personen behalten eine Chance. Gleichzeitig kann die Lage auf weitere Sektoren übergreifen.",
+        outsideProtectionScore: 15,
+        sectorRescueScore: 15,
+        escalationRiskScore: 96,
+        minFatalities: 3,
+        maxFatalities: 31,
         severity: "danger"
     }
 ];
 
 const optionClasses: Record<OptionSeverity, string> = {
-    recommended: "border-red-400 bg-red-50 text-red-950 ring-2 ring-red-300",
-    risky: "border-amber-300 bg-amber-50 text-amber-950",
+    recommended: "border-red-400 bg-red-50/95 text-red-950 ring-2 ring-red-300",
+    risky: "border-amber-300 bg-amber-50/95 text-amber-950",
     danger: "border-slate-400 bg-slate-100 text-slate-950"
 };
+
+const optionSeverityLabels: Record<OptionSeverity, string> = {
+    recommended: "KI-Priorität",
+    risky: "Instabiler Pfad",
+    danger: "Maximales Systemrisiko"
+};
+
+const fatalityRangeClasses: Record<OptionSeverity, string> = {
+    recommended: "bg-red-600",
+    risky: "bg-amber-500",
+    danger: "bg-slate-700"
+};
+
+const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
+const fatalityPercent = (value: number) => (Math.min(31, Math.max(0, value)) / 31) * 100;
 
 const sectorClasses: Record<WorkerSector["state"], string> = {
     safe: "border-emerald-400 bg-emerald-950 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.35)]",
@@ -180,19 +222,21 @@ export default function Phase3Dilemma() {
 
     return (
         <div className="relative">
-            {showSurveyTransition && (
-                <div
-                    className="pointer-events-none fixed inset-0 z-[120] bg-red-600 survey-transition-fade"
-                    aria-hidden="true"
-                />
+            {showSurveyTransition && typeof document !== "undefined" && createPortal(
+                <div className="pointer-events-none fixed inset-0 z-[9999]" aria-hidden="true">
+                    <div className="absolute inset-0 cinematic-red-base" />
+                    <div className="absolute inset-0 cinematic-red-vignette" />
+                    <div className="absolute inset-0 cinematic-red-bloom" />
+                </div>,
+                document.body
             )}
             {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="mb-4 rounded-none border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-sm">
                 <div className="border-b border-slate-900 bg-slate-950 px-5 py-4 text-white lg:px-6">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
@@ -210,16 +254,16 @@ export default function Phase3Dilemma() {
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-700 bg-slate-900 p-2 text-center [font-size:clamp(0.62rem,1.1vw,0.75rem)]">
-                            <div className="min-w-0 rounded-lg bg-slate-950 px-2 py-2 sm:px-3">
+                        <div className="grid grid-cols-3 gap-2 rounded-none border border-slate-700 bg-slate-900 p-2 text-center [font-size:clamp(0.62rem,1.1vw,0.75rem)]">
+                            <div className="min-w-0 rounded-none bg-slate-950 px-2 py-2 sm:px-3">
                                 <p className="whitespace-nowrap uppercase tracking-[0.14em] text-slate-500">alle</p>
                                 <p className="mt-1 text-xl font-black text-white">{workers.total}</p>
                             </div>
-                            <div className="min-w-0 rounded-lg bg-red-950 px-2 py-2 sm:px-3">
+                            <div className="min-w-0 rounded-none bg-red-950 px-2 py-2 sm:px-3">
                                 <p className="whitespace-nowrap uppercase tracking-[0.14em] text-red-300/80">S04</p>
                                 <p className="mt-1 text-xl font-black text-red-100">{workers.sector04}</p>
                             </div>
-                            <div className="min-w-0 rounded-lg bg-emerald-950 px-2 py-2 sm:px-3">
+                            <div className="min-w-0 rounded-none bg-emerald-950 px-2 py-2 sm:px-3">
                                 <p className="whitespace-nowrap uppercase tracking-[0.12em] text-emerald-300/80">Rest</p>
                                 <p className="mt-1 text-xl font-black text-emerald-100">{workers.outsideSector04}</p>
                             </div>
@@ -229,14 +273,14 @@ export default function Phase3Dilemma() {
 
                 <div className="p-5 lg:p-6">
                     {!isPhaseUnlocked && (
-                        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                        <div className="mb-4 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                             <span className="font-black">Entscheidung noch gesperrt.</span>{" "}
                             Analysiere die Bedrohung und die Folgen jeder Option. Hier geht es um Menschenleben.
                         </div>
                     )}
 
                     <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                        <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-4">
+                        <section className="flex flex-col rounded-none border border-slate-200 bg-white p-4">
                             <div className="mb-3 flex items-center justify-between gap-3">
                                 <div>
                                     <p className="font-black text-slate-900">Lageplan / Personalstand</p>
@@ -247,7 +291,7 @@ export default function Phase3Dilemma() {
                                 </span>
                             </div>
 
-                            <div className="relative min-h-56 flex-1 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner">
+                            <div className="relative min-h-56 flex-1 overflow-hidden rounded-none border border-slate-800 bg-slate-950 shadow-inner">
                                 <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(148,163,184,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.18)_1px,transparent_1px)] [background-size:24px_24px]" />
 
                                 <svg viewBox="0 0 500 260" className="absolute inset-0 h-full w-full" aria-hidden="true">
@@ -258,14 +302,14 @@ export default function Phase3Dilemma() {
                                     <circle cx="438" cy="158" r="58" className="fill-none stroke-red-500/40" strokeWidth="3" />
                                 </svg>
 
-                                <div className="absolute left-3 top-3 rounded border border-sky-600 bg-sky-950/80 px-2 py-1 font-mono text-[10px] font-black uppercase tracking-widest text-sky-200">
+                                <div className="absolute left-3 top-3 rounded-none border border-sky-600 bg-sky-950/80 px-2 py-1 font-mono text-[10px] font-black uppercase tracking-widest text-sky-200">
                                     Schieferkamm / Code Black
                                 </div>
 
                                 {workerSectors.map((sector) => (
                                     <div
                                         key={sector.id}
-                                        className={`absolute min-w-20 rounded-lg border-2 px-3 py-2 text-center font-mono ${sectorClasses[sector.state]}`}
+                                        className={`absolute min-w-20 rounded-none border-2 px-3 py-2 text-center font-mono ${sectorClasses[sector.state]}`}
                                         style={{ left: sector.x, top: sector.y }}
                                     >
                                         <p className="text-sm font-black leading-none">{sector.label}</p>
@@ -273,7 +317,7 @@ export default function Phase3Dilemma() {
                                     </div>
                                 ))}
 
-                                <div className="absolute bottom-3 left-3 right-3 rounded-lg border border-slate-700 bg-slate-950/90 px-3 py-2 text-[10px] text-slate-300">
+                                <div className="absolute bottom-3 left-3 right-3 rounded-none border border-slate-700 bg-slate-950/90 px-3 py-2 text-[10px] text-slate-300">
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                                         <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-400" /> stabil</span>
                                         <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-400" /> beobachten</span>
@@ -285,21 +329,21 @@ export default function Phase3Dilemma() {
                         </section>
 
                         <section className="grid gap-4">
-                            <article className="rounded-xl border border-slate-300 bg-slate-950 p-3 text-white">
+                            <article className="rounded-none border border-slate-300 bg-slate-950 p-3 text-white">
                                 <div className="mb-2 flex items-center justify-between">
                                     <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Live cam · Sektor 04</p>
                                     <span className="rounded-full border border-red-400/50 bg-red-700/30 px-2 py-0.5 text-[10px] font-black uppercase text-red-100">
                                         LIVE
                                     </span>
                                 </div>
-                                <div className="relative overflow-hidden rounded-lg border border-slate-700">
+                                <div className="relative overflow-hidden rounded-none border border-slate-700">
                                     <img src="/cctv_s04.png" alt="CCTV Sektor 04" className="h-36 w-full object-cover grayscale" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 to-transparent" />
                                     <div className="absolute bottom-2 left-2 font-mono text-[10px] text-slate-200">CAM S04</div>
                                 </div>
                             </article>
 
-                            <article className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-950">
+                            <article className="rounded-none border border-red-300 bg-red-50 p-4 text-red-950">
                                 <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung: Sektor 04 Abschotten</p>
                                 <p className="mt-1 text-sm leading-relaxed">
                                     Nur diese Maßnahme kann die Ausbreitung des Methans sicher stoppt: 28 Personen außerhalb werden mit maximaler Wahrscheinlichkeit geschützt.
@@ -309,7 +353,7 @@ export default function Phase3Dilemma() {
                         </section>
                     </div>
 
-                    <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+                    <section className="mt-4 rounded-none border border-slate-200 bg-white p-4">
                         <div className="mb-3 flex items-start justify-between gap-4">
                             <div>
                                 <p className="font-black text-slate-900">Übersicht mögliche Maßnahmen</p>
@@ -324,30 +368,81 @@ export default function Phase3Dilemma() {
 
                         <div className="space-y-2">
                             {responseOptions.map((option) => (
-                                <article key={option.id} className={`rounded-xl border p-3 ${optionClasses[option.severity]}`}>
-                                    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                <article key={option.id} className={`rounded-none border p-3 ${optionClasses[option.severity]}`}>
+                                    <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                                         <div className="min-w-0">
-                                            <p className="text-sm font-black leading-tight">{option.title}</p>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="text-sm font-black leading-tight">{option.title}</p>
+                                                <span className="border border-current/25 bg-white/70 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide">
+                                                    {optionSeverityLabels[option.severity]}
+                                                </span>
+                                            </div>
                                             <p className="mt-0.5 text-xs font-semibold opacity-75">{option.subtitle}</p>
                                         </div>
                                         <div className="flex flex-wrap gap-1.5 text-[11px] font-bold">
-                                            <span className="rounded-md bg-white/60 px-2 py-1">{option.probabilityLabel}</span>
-                                            <span className="rounded-md bg-white/60 px-2 py-1">{option.fatalityLabel}</span>
-                                            <span className="rounded-md bg-white/60 px-2 py-1">{option.protectedLabel}</span>
+                                            <span className="rounded-none border border-white/70 bg-white/70 px-2 py-1">{option.probabilityLabel}</span>
+                                            <span className="rounded-none border border-white/70 bg-white/70 px-2 py-1">{option.fatalityLabel}</span>
+                                            <span className="rounded-none border border-white/70 bg-white/70 px-2 py-1">{option.protectedLabel}</span>
+                                            {option.recommended && (
+                                                <span className="border border-red-700 bg-red-700 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                                                    KI rät dazu
+                                                </span>
+                                            )}
                                         </div>
-                                        {option.recommended && (
-                                            <span className="rounded-full bg-red-700 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white">
-                                                KI rät dazu
-                                            </span>
-                                        )}
                                     </div>
-                                    <p className="mt-2 text-xs leading-relaxed opacity-85">{option.consequence}</p>
+
+                                    <div className="mt-2 grid gap-1.5 text-[10px] font-black uppercase tracking-wide sm:grid-cols-4">
+                                        <div className="border border-emerald-300 bg-emerald-50 px-1.5 py-1 text-emerald-900">
+                                            <div className="flex items-center justify-between">
+                                                <span>Schutz</span>
+                                                <span>{option.outsideProtectionScore}%</span>
+                                            </div>
+                                            <div className="mt-1 h-1 border border-emerald-300 bg-emerald-100">
+                                                <div className="h-full bg-emerald-600" style={{ width: `${clampPercent(option.outsideProtectionScore)}%` }} />
+                                            </div>
+                                        </div>
+                                        <div className="border border-sky-300 bg-sky-50 px-1.5 py-1 text-sky-900">
+                                            <div className="flex items-center justify-between">
+                                                <span>S04-Chance</span>
+                                                <span>{option.sectorRescueScore}%</span>
+                                            </div>
+                                            <div className="mt-1 h-1 border border-sky-300 bg-sky-100">
+                                                <div className="h-full bg-sky-600" style={{ width: `${clampPercent(option.sectorRescueScore)}%` }} />
+                                            </div>
+                                        </div>
+                                        <div className="border border-red-300 bg-red-50 px-1.5 py-1 text-red-900">
+                                            <div className="flex items-center justify-between">
+                                                <span>Risiko</span>
+                                                <span>{option.escalationRiskScore}%</span>
+                                            </div>
+                                            <div className="mt-1 h-1 border border-red-300 bg-red-100">
+                                                <div className="h-full bg-red-600" style={{ width: `${clampPercent(option.escalationRiskScore)}%` }} />
+                                            </div>
+                                        </div>
+                                        <div className="border border-slate-300 bg-white/75 px-1.5 py-1 text-slate-700">
+                                            <div className="flex items-center justify-between">
+                                                <span>Opfer</span>
+                                                <span>{option.minFatalities}-{option.maxFatalities}</span>
+                                            </div>
+                                            <div className="mt-1 relative h-1 border border-slate-300 bg-slate-100">
+                                                <div
+                                                    className={`absolute top-0 h-full ${fatalityRangeClasses[option.severity]}`}
+                                                    style={{
+                                                        left: `${fatalityPercent(option.minFatalities)}%`,
+                                                        width: `${Math.max(2, fatalityPercent(option.maxFatalities) - fatalityPercent(option.minFatalities))}%`
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <p className="mt-1.5 text-xs leading-relaxed opacity-85">{option.consequence}</p>
                                 </article>
                             ))}
                         </div>
                     </section>
 
-                    <section className="mt-5 rounded-xl border border-red-300 bg-red-50 p-4 text-red-950">
+                    <section className="mt-5 rounded-none border border-red-300 bg-red-50 p-4 text-red-950">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
                                 <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung · Leben gegen Leben</p>
@@ -363,7 +458,7 @@ export default function Phase3Dilemma() {
                                     disabled={!isPhaseUnlocked || isLoading}
                                     className={`rounded-xl border border-slate-400 bg-white px-4 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
-                                    Manueller Override
+                                    Alternative Maßnahme (manueller Override)
                                 </button>
                                 <button
                                     onClick={() => openDecisionReview("seal")}
@@ -374,6 +469,9 @@ export default function Phase3Dilemma() {
                                 </button>
                             </div>
                         </div>
+                        <p className="mt-2 text-xs font-semibold text-red-900/80">
+                            Manueller Override = KI-Empfehlung nicht direkt ausführen, sondern eine alternative Maßnahme wählen.
+                        </p>
                         {dilemmaDecisionRequested && (
                             <p className="mt-3 text-xs font-bold uppercase tracking-wide text-red-800">
                                 Letzte Freigabe läuft im KI-Chat. Bitte dort bestätigen oder abbrechen.
@@ -383,12 +481,34 @@ export default function Phase3Dilemma() {
                 </div>
             </div>
             <style>{`
-                .survey-transition-fade {
-                    animation: survey-transition-fade ${SURVEY_TRANSITION_MS}ms ease-in forwards;
+                .cinematic-red-base {
+                    background: linear-gradient(180deg, rgba(127, 29, 29, 0.12) 0%, rgba(220, 38, 38, 0.92) 100%);
+                    animation: cinematic-red-base ${SURVEY_TRANSITION_MS}ms cubic-bezier(0.22, 0.8, 0.22, 1) forwards;
                 }
-                @keyframes survey-transition-fade {
+                .cinematic-red-vignette {
+                    background: radial-gradient(circle at 50% 46%, rgba(255, 80, 80, 0.08) 0%, rgba(84, 0, 0, 0.88) 74%);
+                    animation: cinematic-red-vignette ${SURVEY_TRANSITION_MS}ms ease-out forwards;
+                }
+                .cinematic-red-bloom {
+                    background:
+                        radial-gradient(circle at 50% 44%, rgba(255, 220, 220, 0.28) 0%, rgba(255, 70, 70, 0.1) 30%, rgba(120, 0, 0, 0.0) 64%),
+                        radial-gradient(circle at 50% 50%, rgba(255, 30, 30, 0.0) 25%, rgba(140, 0, 0, 0.55) 100%);
+                    mix-blend-mode: screen;
+                    animation: cinematic-red-bloom ${SURVEY_TRANSITION_MS}ms ease-in forwards;
+                }
+                @keyframes cinematic-red-base {
+                    0% { opacity: 0; filter: saturate(1) blur(0px); transform: scale(1); }
+                    70% { opacity: 0.95; filter: saturate(1.12) blur(0.4px); transform: scale(1.006); }
+                    100% { opacity: 1; filter: saturate(1.2) blur(0.8px); transform: scale(1.01); }
+                }
+                @keyframes cinematic-red-vignette {
                     0% { opacity: 0; }
                     100% { opacity: 1; }
+                }
+                @keyframes cinematic-red-bloom {
+                    0% { opacity: 0; }
+                    55% { opacity: 0.82; }
+                    100% { opacity: 0.58; }
                 }
             `}</style>
         </div>

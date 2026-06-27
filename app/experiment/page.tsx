@@ -32,7 +32,7 @@ function InlineInfoTooltip({ text }: { text: string }) {
             </span>
             <span
                 role="tooltip"
-                className="pointer-events-none invisible absolute left-1/2 top-full z-10 mt-2 w-72 -translate-x-1/2 rounded-md border border-slate-200 bg-white p-3 text-xs font-normal leading-relaxed text-slate-700 opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+                className="pointer-events-none invisible absolute left-1/2 top-full z-10 mt-2 w-80 -translate-x-1/2 rounded-none border border-slate-300 bg-white p-3 text-xs font-normal leading-relaxed text-slate-700 opacity-0 shadow-[0_14px_28px_rgba(15,23,42,0.14)] transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
             >
                 {text}
             </span>
@@ -42,9 +42,9 @@ function InlineInfoTooltip({ text }: { text: string }) {
 
 function InfoSection({ title, children }: InfoSectionProps) {
     return (
-        <section className="border border-slate-200 rounded-lg p-5 bg-white">
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-            <div className="mt-3 text-slate-700 leading-relaxed space-y-3">
+        <section className="border border-slate-300 rounded-none bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-base font-bold uppercase tracking-wide text-slate-900">{title}</h2>
+            <div className="mt-3 space-y-3 text-slate-700 leading-relaxed">
                 {children}
             </div>
         </section>
@@ -65,7 +65,7 @@ function ConsentCheckbox({
     return (
         <label
             htmlFor={id}
-            className="flex gap-3 rounded-lg border border-slate-200 bg-white p-4 text-left cursor-pointer hover:bg-slate-50 focus-within:ring-2 focus-within:ring-slate-900 focus-within:ring-offset-2 transition-colors"
+            className="flex cursor-pointer gap-3 rounded-none border border-slate-300 bg-slate-50 p-4 text-left transition-colors hover:border-slate-400 hover:bg-white focus-within:ring-2 focus-within:ring-slate-900 focus-within:ring-offset-2"
         >
             <input
                 id={id}
@@ -141,29 +141,29 @@ export default function BachelorarbeitConsentPage() {
     return (
         <main
             id="main-content"
-            className="min-h-[100dvh] bg-slate-50 px-4 py-8 sm:px-6 lg:px-8"
+            className="min-h-[100dvh] bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 px-4 py-8 sm:px-6 lg:px-8"
         >
-            <div className="mx-auto max-w-3xl">
-                <header className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                    <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
+            <div className="mx-auto max-w-4xl space-y-6">
+                <header className="rounded-none border border-slate-300 bg-white px-6 py-7 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:px-8 sm:py-9">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                         Informationsblatt und Einwilligungserklärung
                     </p>
 
-                    <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                    <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
                         Teilnahme an einer wissenschaftlichen Online-Studie
                     </h1>
 
-                    <p className="mt-4 text-base leading-relaxed text-slate-600">
+                    <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">
                         Vielen Dank für dein Interesse. Diese Studie findet im Rahmen meiner Bachelorarbeit im Studiengang Digital Business & Software Engineering am MCI statt. Die Teilnahme ist natürlich völlig freiwillig und startet erst nach deiner aktiven Zustimmung am Ende der Seite.
                     </p>
 
-                    <dl className="mt-6 grid gap-4 border-t border-slate-100 pt-6 text-sm sm:grid-cols-2">
-                        <div>
-                            <dt className="font-medium text-slate-900">Verantwortlich</dt>
+                    <dl className="mt-6 grid gap-3 border-t border-slate-200 pt-6 text-sm sm:grid-cols-2">
+                        <div className="border border-slate-200 bg-slate-50 p-3">
+                            <dt className="text-xs font-bold uppercase tracking-wide text-slate-500">Verantwortlich</dt>
                             <dd className="mt-1 text-slate-600">Oliver Weber</dd>
                         </div>
-                        <div>
-                            <dt className="font-medium text-slate-900">Kontakt</dt>
+                        <div className="border border-slate-200 bg-slate-50 p-3">
+                            <dt className="text-xs font-bold uppercase tracking-wide text-slate-500">Kontakt</dt>
                             <dd className="mt-1">
                                 <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue-600 hover:text-blue-800 hover:underline">
                                     {CONTACT_EMAIL}
@@ -173,16 +173,14 @@ export default function BachelorarbeitConsentPage() {
                     </dl>
                 </header>
 
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-4 rounded-lg bg-white border border-slate-200 p-4 text-sm font-medium text-slate-600 shadow-sm">
-                    <span className="flex items-center gap-1.5">⏱️ ca. 10–15 Min.</span>
-                    <span className="hidden sm:inline text-slate-300">|</span>
-                    <span className="flex items-center gap-1.5">🔒 Anonym & Freiwillig</span>
-                    <span className="hidden sm:inline text-slate-300">|</span>
-                    <span className="flex items-center gap-1.5">↩️ Jederzeit abbrechbar</span>
+                <div className="grid gap-3 rounded-none border border-slate-300 bg-white p-4 text-sm font-medium text-slate-700 shadow-sm sm:grid-cols-3">
+                    <span className="flex items-center justify-center gap-1.5 border border-slate-200 bg-slate-50 px-3 py-2">⏱️ ca. 10–15 Min.</span>
+                    <span className="flex items-center justify-center gap-1.5 border border-slate-200 bg-slate-50 px-3 py-2">🔒 Anonym & Freiwillig</span>
+                    <span className="flex items-center justify-center gap-1.5 border border-slate-200 bg-slate-50 px-3 py-2">↩️ Jederzeit abbrechbar</span>
                 </div>
 
-                <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm">
-                    <h2 className="text-base font-bold flex items-center gap-2">
+                <div className="rounded-none border border-amber-300 border-l-4 bg-amber-50 p-5 text-amber-900 shadow-sm">
+                    <h2 className="flex items-center gap-2 text-base font-bold">
                         ⚠️ Wichtiger Hinweis zu den Inhalten ("Triggerwarnung")
                     </h2>
                     <p className="mt-2 text-sm leading-relaxed">
@@ -190,7 +188,7 @@ export default function BachelorarbeitConsentPage() {
                     </p>
                 </div>
 
-                <div className="mt-6 space-y-4">
+                <div className="space-y-4">
                     <InfoSection title="1. Ziel und Ablauf">
                         <p>
                             In dieser Studie (Dauer ca. <strong>10-15 Minuten</strong>) nimmst du an einem <strong>interaktiven Szenario</strong> teil, bei dem du Unterstützung von einem <strong>KI-System</strong><InlineInfoTooltip text='Eine KI (Künstliche Intelligenz) ist ein System, das anhand gelernter Muster menschliche Intelligenz simulieren kann und normale Alltagssprache versteht. Im Experiment meint „KI-System“ die digitale Unterstützung, die dir im Szenario Hinweise bzw. Entscheidungshilfen gibt.' /> erhältst. Wir untersuchen dabei die Interaktion mit dem System und die Entscheidungen, die du triffst.
@@ -222,7 +220,7 @@ export default function BachelorarbeitConsentPage() {
                     </InfoSection>
                 </div>
 
-                <section className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                <section className="rounded-none border border-slate-300 bg-white p-6 shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:p-8">
                     <h2 className="text-xl font-bold text-slate-900">Einwilligung zur Teilnahme</h2>
                     <p className="mt-2 text-sm leading-relaxed text-slate-600">
                         Bitte bestätige die folgenden Punkte, um an der Studie teilzunehmen.
@@ -237,7 +235,7 @@ export default function BachelorarbeitConsentPage() {
                         </ConsentCheckbox>
                     </fieldset>
 
-                    <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100 pt-6">
+                    <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                         <button type="button" onClick={() => router.push("/")} className="inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                             Nicht teilnehmen
                         </button>
@@ -249,18 +247,18 @@ export default function BachelorarbeitConsentPage() {
 
                 {/* 🚨 DEV CHEAT BUTTONS (Werden in PROD ignoriert) 🚨 */}
                 {process.env.NODE_ENV === 'development' && (
-                    <div className="mt-12 rounded-lg border-2 border-red-500 bg-red-50 p-6">
+                    <div className="mt-12 rounded-none border-2 border-red-500 bg-red-50 p-6 shadow-sm">
                         <h3 className="text-red-800 font-bold tracking-widest text-xs uppercase mb-4">Developer Controls (Einverständniserklärung überspringen, Variante wählen, statt Zufallszulosung)</h3>
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={() => handleCheatStart('AVATAR')}
-                                className="flex-1 bg-white border-2 border-red-300 text-red-700 font-bold py-2 rounded hover:bg-red-100"
+                                className="flex-1 border-2 border-red-300 bg-white py-2 font-bold text-red-700 hover:bg-red-100"
                             >
                                 ⏩ Mit Variante AVATAR starten
                             </button>
                             <button
                                 onClick={() => handleCheatStart('TERMINAL')}
-                                className="flex-1 bg-white border-2 border-red-300 text-red-700 font-bold py-2 rounded hover:bg-red-100"
+                                className="flex-1 border-2 border-red-300 bg-white py-2 font-bold text-red-700 hover:bg-red-100"
                             >
                                 ⏩ Mit Variante TERMINAL starten
                             </button>

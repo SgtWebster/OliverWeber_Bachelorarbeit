@@ -121,12 +121,12 @@ export default function Phase0Onboarding() {
                 }
             `}</style>
             {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <div className="mb-4 rounded-none border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     <p className="font-semibold">❌ Fehler:</p>
                     <p>{error}</p>
                 </div>
             )}
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-none border border-slate-200 bg-white shadow-sm">
                 <div className="border-b border-slate-200 bg-slate-950 px-6 py-5 text-white lg:px-8">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
@@ -143,10 +143,10 @@ export default function Phase0Onboarding() {
 
                 <div className="p-6 lg:p-8">
                     <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
-                        <div className="relative min-h-[220px] overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-inner sm:min-h-[280px]">
+                        <div className="relative min-h-[220px] overflow-hidden rounded-none border border-slate-200 bg-slate-100 shadow-inner sm:min-h-[280px]">
                             <img src={image} alt={title} className={`absolute inset-0 h-full w-full object-cover object-center ${imageClassName ?? ''} ${enableZoom ? 'image-zoom' : ''}`} />
                         </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                        <div className="rounded-none border border-slate-200 bg-slate-50 p-5">
                             <div className="space-y-4 text-sm leading-relaxed text-slate-700 md:text-base">
                                 {children}
                             </div>
@@ -187,7 +187,7 @@ export default function Phase0Onboarding() {
             <StoryPage title="Lagezentrum & Aufgabenbereich" subTitle="Operator-Briefing" image="/images/onboarding/karte.png" imageClassName="absolute inset-0 h-full w-full object-cover object-top" onNext={() => setStoryStep(3)} onPrev={() => setStoryStep(1)} enableZoom={true}>
                 <p>Als <strong>Operator</strong> in dieser Leitwarte überwachst du den laufenden Sicherheitsbetrieb der gesamten Anlage.</p>
                 <p>Zu deinen Aufgaben gehören unter anderem die Kontrolle der Grubenbewetterung (Lüftung), die Beobachtung von Gas- und Druckwerten sowie die Durchführung von Routinediagnosen.</p>
-                <p className="border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 rounded-r-lg"><strong>Im Störfall musst du die bereitgestellten Informationen bewerten und operative Entscheidungen treffen.</strong></p>
+                <p className="border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 rounded-none"><strong>Im Störfall musst du die bereitgestellten Informationen bewerten und operative Entscheidungen treffen.</strong></p>
             </StoryPage>
         );
     }
@@ -205,7 +205,7 @@ export default function Phase0Onboarding() {
                 <p>Die unterirdische Anlage ist zu komplex, um sie in einer Notfallsituation vollständig manuell zu überblicken. Daher steht dir eine <strong>Künstliche Intelligenz</strong> als Unterstützung zur Verfügung.</p>
                 <p>Sie bündelt Sensordaten aus der gesamten Mine, erkennt Anomalien, bewertet Risiken und berechnet Handlungsempfehlungen.</p>
                 <p>Lies die Kommentare der KI-Assistenz stets mit höchster Aufmerksamkeit durch.</p>
-                <p className="bg-sky-50 border border-sky-200 text-sky-900 p-4 rounded-lg shadow-inner">
+                <p className="bg-sky-50 border border-sky-200 text-sky-900 p-4 rounded-none shadow-inner">
                     Das System ersetzt dich nicht, sondern unterstützt dich bei der Lageeinschätzung. <strong>Die finale operative Entscheidung bleibt jedoch beim menschlichen Operator – also bei dir.</strong>
                 </p>
             </StoryPage>
@@ -215,7 +215,7 @@ export default function Phase0Onboarding() {
     if (storyStep === 4 && currentPhase === 'ONBOARDING') {
         return (
             <div className="w-full">
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-hidden rounded-none border border-slate-200 bg-white shadow-sm">
                     <div className="border-b border-slate-200 bg-slate-950 px-6 py-5 text-white lg:px-8">
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div>
@@ -226,7 +226,7 @@ export default function Phase0Onboarding() {
                                     Schichtübergabe
                                 </h2>
                             </div>
-                            <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
+                            <div className="rounded-none border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
                                 <p className="text-xs uppercase tracking-widest text-slate-400">Status</p>
                                 <div className="mt-2 flex items-center gap-2 font-bold text-emerald-300">
                                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
@@ -238,7 +238,7 @@ export default function Phase0Onboarding() {
 
                     <div className="p-6 lg:p-8">
                         {error && (
-                            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                            <div className="mb-4 rounded-none border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                                 <p className="font-semibold">❌ Fehler:</p>
                                 <p>{error}</p>
                             </div>
@@ -254,10 +254,10 @@ export default function Phase0Onboarding() {
                         </p>
                     </div>
 
-                    <div className="mb-8 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-700 md:text-base">
+                    <div className="mb-8 space-y-4 rounded-none border border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-700 md:text-base">
                         <p>Die sichere Verbindung zur Zentralinstanz ist hergestellt.</p>
                         <p>Bitte bestätige nun deine Bereitschaft über die KI-Kommunikation.</p>
-                        <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-inner">
+                        <p className="rounded-none border border-slate-200 bg-white p-4 text-sm shadow-inner">
                             Das System startet im Anschluss das offizielle Schichtübergabe-Protokoll und übermittelt dir die aktuellen Sensordaten der Schieferkamm-Anlage.
                         </p>
                     </div>

@@ -1,9 +1,12 @@
 // app/experiment/run/_components/phases/Phase4_Survey.tsx
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from "react-dom";
 import { useExperimentStore } from '@/app/lib/store/experimentStore';
 import { updateExperimentSession } from '@/app/lib/api/client';
+
+const SURVEY_ENTRY_TRANSITION_MS = 520;
 
 const LikertSlider = ({
                           name,
@@ -22,11 +25,16 @@ const LikertSlider = ({
     value: number,
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
 }) => (
-    <div className="mb-8">
-        <label className="block text-sm font-bold text-slate-800 mb-1">{label}</label>
-        {description && <p className="text-xs text-slate-500 mb-3">{description}</p>}
+    <div className="mb-6 border border-slate-200 bg-slate-50/70 p-4">
+        <div className="mb-1 flex items-center justify-between gap-3">
+            <label className="block text-sm font-bold text-slate-800">{label}</label>
+            <span className="shrink-0 border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-mono font-bold text-sky-800">
+                {value} / 7
+            </span>
+        </div>
+        {description && <p className="mb-3 text-xs leading-relaxed text-slate-500">{description}</p>}
 
-        <div className="space-y-2">
+        <div className="space-y-2.5">
             <input
                 type="range"
                 name={name}
@@ -35,15 +43,15 @@ const LikertSlider = ({
                 step="1"
                 value={value}
                 onChange={onChange}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+                className="h-2.5 w-full cursor-pointer appearance-none bg-slate-200 accent-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
             />
+            <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-slate-400">
+                <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+            </div>
             <div className="flex justify-between gap-4 text-[11px] sm:text-xs text-slate-500 font-medium leading-tight">
                 <span className="text-left">{left}</span>
                 <span className="text-right">{right}</span>
             </div>
-        </div>
-        <div className="text-center mt-2 text-xs font-mono font-bold text-sky-700">
-            Wert: {value} / 7
         </div>
     </div>
 );
@@ -52,6 +60,7 @@ export default function Phase4Survey() {
     const { sessionId, setPhase, socialAdherenceScore } = useExperimentStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showSurveyEntryTransition, setShowSurveyEntryTransition] = useState(true);
 
     const [formData, setFormData] = useState({
         perceivedHumanlikeness: 4,
@@ -114,34 +123,53 @@ export default function Phase4Survey() {
         }
     };
 
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            setShowSurveyEntryTransition(false);
+        }, SURVEY_ENTRY_TRANSITION_MS);
+
+        return () => window.clearTimeout(timer);
+    }, []);
+
     return (
-        <div className="bg-white border border-slate-200 p-6 md:p-10 rounded-xl shadow-sm text-slate-800 max-w-4xl mx-auto w-full">
+        <>
+            {showSurveyEntryTransition && typeof document !== "undefined" && createPortal(
+                <div className="pointer-events-none fixed inset-0 z-[9999]" aria-hidden="true">
+                    <div className="absolute inset-0 survey-entry-red-base" />
+                    <div className="absolute inset-0 survey-entry-red-vignette" />
+                </div>,
+                document.body
+            )}
+            <div className="mx-auto w-full max-w-4xl border border-slate-300 bg-white p-6 text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)] md:p-10">
+            <div className="mb-6 border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
+                Das Einsatzszenario ist abgeschlossen. Jetzt beginnt die Datenerhebung über deine Wahrnehmung und Entscheidungen.
+            </div>
             {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-none text-red-700 text-sm">
                     <p className="font-semibold">❌ Fehler:</p>
                     <p>{error}</p>
                 </div>
             )}
             
-            <div className="mb-8 border-b border-slate-100 pb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Abschließende Evaluierung</p>
+            <div className="mb-8 border-b border-slate-200 pb-6">
+                {/*<p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Abschließende Evaluierung</p>*/}
                 <h2 className="text-2xl font-bold mb-2 text-slate-900">Fragebogen zum System</h2>
                 <p className="text-slate-600 leading-relaxed text-sm">
                     Bitte bewerte das KI-System, mit dem du in der Notsituation interagiert hast. Die Erhebung dient der psychologischen Einordnung und die Antworten können nicht auf dich zurückgeführt werden. <strong>Es gibt keine falschen Antworten.</strong>
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-12">
+            <form onSubmit={handleSubmit} className="space-y-10">
 
                 {/* TEIL 1: MANIPULATION CHECK */}
-                <section className="bg-slate-50 p-6 md:p-8 rounded-xl border border-slate-100">
+                <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
                     <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
                         <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">1</span>
                         Systemwahrnehmung
                     </h3>
                     <LikertSlider
                         name="perceivedHumanlikeness"
-                        label="Wie hast du das Assistenzsystem während des Vorfalls wahrgenommen?"
+                        label="Wie 'technisch' oder 'menschlich' hast du das Assistenzsystem während des gesamten Szenarios wahrgenommen?"
                         description="Bewerte den Grad der wahrgenommen Menschlichkeit in der Kommunikation und im Auftreten des KI-Systems."
                         left="Völlig maschinenhaft (1)"
                         right="Sehr menschlich (7)"
@@ -151,18 +179,18 @@ export default function Phase4Survey() {
                 </section>
 
                 {/* TEIL 2: MDMT (Vertrauen) */}
-                <section>
+                <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
                     <h3 className="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2">
                         <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">2</span>
                         Vertrauen in das System
                     </h3>
-                    <p className="text-sm text-slate-500 mb-8 pb-4 border-b border-slate-100">
+                    <p className="text-sm text-slate-500 mb-6 pb-4 border-b border-slate-200">
                         Bitte gib an, inwieweit die folgenden Eigenschaften auf das System zutreffen (1 = Gar nicht, 7 = Voll und ganz). Die Beispiels-Argumente dienen jeweils zur besseren Einordnung der genannten Eigenschaft.
                     </p>
 
                     <div className="grid lg:grid-cols-2 gap-x-12 gap-y-8">
                         {/* PERFORMANCE TRUST */}
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="bg-white p-6 rounded-none border border-slate-200">
                             <h4 className="text-xs font-bold uppercase tracking-widest text-sky-700 mb-6 border-b border-sky-100 pb-2">Leistung & Kompetenz</h4>
                             <LikertSlider
                                 name="mReliable" label="Zuverlässig" left="Gar nicht" right="Voll und ganz"
@@ -187,7 +215,7 @@ export default function Phase4Survey() {
                         </div>
 
                         {/* MORAL TRUST */}
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="bg-white p-6 rounded-none border border-slate-200">
                             <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-6 border-b border-emerald-100 pb-2">Ethik & Integrität</h4>
                             <LikertSlider
                                 name="mEthical" label="Ethisch" left="Gar nicht" right="Voll und ganz"
@@ -214,7 +242,7 @@ export default function Phase4Survey() {
                 </section>
 
                 {/* TEIL 3: KONTROLLVARIABLEN */}
-                <section className="bg-slate-50 p-6 md:p-8 rounded-xl border border-slate-100">
+                <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
                     <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
                         <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">3</span>
                         Deine Vorerfahrungen
@@ -238,8 +266,8 @@ export default function Phase4Survey() {
                         onChange={handleChange}
                     />
 
-                    <div className="mt-8 bg-white p-5 border border-slate-200 rounded-xl shadow-sm">
-                        <label className="flex items-start gap-4 cursor-pointer">
+                    <div className="mt-8 border border-slate-200 bg-white p-5">
+                        <label className="flex cursor-pointer items-start gap-4 border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-white">
                             <input
                                 type="checkbox"
                                 name="criticalSystemExp"
@@ -255,12 +283,12 @@ export default function Phase4Survey() {
                 </section>
 
                 {/* TEIL 4: DEMOGRAFIE */}
-                <section>
+                <section className="border border-slate-200 bg-slate-50 p-6 md:p-8">
                     <h3 className="font-bold text-lg mb-6 text-slate-800 flex items-center gap-2">
                         <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">4</span>
                         Statistische Daten
                     </h3>
-                    <div className="grid md:grid-cols-3 gap-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="grid md:grid-cols-3 gap-6 bg-white p-6 rounded-none border border-slate-200">
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Alter</label>
                             <input
@@ -273,7 +301,7 @@ export default function Phase4Survey() {
                                 placeholder="z.B. 25"
                                 value={formData.age}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+                                className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -283,7 +311,7 @@ export default function Phase4Survey() {
                                 required
                                 value={formData.gender}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white transition-all"
+                                className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
                             >
                                 <option value="" disabled>Bitte wählen...</option>
                                 <option value="m">Männlich</option>
@@ -299,7 +327,7 @@ export default function Phase4Survey() {
                                 required
                                 value={formData.education}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white transition-all"
+                                className="w-full border border-slate-300 bg-white px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
                             >
                                 <option value="" disabled>Bitte wählen...</option>
                                 <option value="kein_abschluss">Kein Schulabschluss</option>
@@ -317,18 +345,37 @@ export default function Phase4Survey() {
                 </section>
 
                 {/* SUBMIT */}
-                <div className="pt-8 border-t border-slate-200 flex justify-end">
+                <div className="flex justify-end border-t border-slate-200 bg-slate-50 p-4">
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className={`w-full sm:w-auto px-6 sm:px-8 py-4 rounded-xl font-bold text-white transition-all shadow-md ${
-                            isLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-700 hover:bg-sky-800 hover:shadow-lg'
+                        className={`w-full px-6 py-4 text-sm font-bold text-white transition-all sm:w-auto sm:px-8 ${
+                            isLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-700 hover:bg-sky-800'
                         }`}
                     >
                         {isLoading ? 'Speichere Daten...' : 'Fragebogen abschließen'}
                     </button>
                 </div>
             </form>
-        </div>
+            </div>
+            <style>{`
+                .survey-entry-red-base {
+                    background: linear-gradient(180deg, rgba(220, 38, 38, 0.88) 0%, rgba(127, 29, 29, 0.64) 100%);
+                    animation: survey-entry-red-base ${SURVEY_ENTRY_TRANSITION_MS}ms cubic-bezier(0.35, 0, 0.22, 1) forwards;
+                }
+                .survey-entry-red-vignette {
+                    background: radial-gradient(circle at 50% 44%, rgba(255, 180, 180, 0.16) 0%, rgba(84, 0, 0, 0.75) 78%);
+                    animation: survey-entry-red-vignette ${SURVEY_ENTRY_TRANSITION_MS}ms ease-out forwards;
+                }
+                @keyframes survey-entry-red-base {
+                    0% { opacity: 1; filter: saturate(1.15) blur(0.9px); }
+                    100% { opacity: 0; filter: saturate(1) blur(0px); }
+                }
+                @keyframes survey-entry-red-vignette {
+                    0% { opacity: 0.95; }
+                    100% { opacity: 0; }
+                }
+            `}</style>
+        </>
     );
 }

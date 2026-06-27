@@ -238,11 +238,11 @@ export default async function DashboardPage() {
                 <header className="border-b border-slate-200 bg-slate-950 px-8 py-7 text-white 2xl:px-10">
                     <div className="flex items-end justify-between gap-8">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Leitstand / Zwischenbetrachtung</p>
+                            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Was gibts neues?</p>
                             <h1 className="mt-2 text-4xl font-black tracking-tight">Experiment Control Dashboard</h1>
-                            <p className="mt-2 max-w-4xl text-sm text-slate-300">
-                                Desktop-optimiert für schnelle Lageeinschätzung, Treiberanalyse und konkrete nächste Maßnahmen.
-                            </p>
+                            {/*<p className="mt-2 max-w-4xl text-sm text-slate-300">*/}
+                            {/*    Desktop-optimiert für schnelle Lageeinschätzung, Treiberanalyse und konkrete nächste Maßnahmen.*/}
+                            {/*</p>*/}
                         </div>
                         <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-right">
                             <p className="text-xs uppercase tracking-wide text-slate-400">Letzte Datenaktualisierung</p>
@@ -256,26 +256,26 @@ export default async function DashboardPage() {
                     </div>
                 </header>
 
-                <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-8 py-3 backdrop-blur 2xl:px-10">
-                    <div className="grid grid-cols-4 gap-3 text-xs">
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                            <p className="font-semibold text-slate-500">Zeitraum</p>
-                            <p className="mt-0.5 font-bold text-slate-800">Gesamtdatenstand</p>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                            <p className="font-semibold text-slate-500">Analysefokus</p>
-                            <p className="mt-0.5 font-bold text-slate-800">Zwischenstand & Datengüte</p>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                            <p className="font-semibold text-slate-500">Segmente</p>
-                            <p className="mt-0.5 font-bold text-slate-800">Geschlecht, Alter, Bildung, Gruppe</p>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                            <p className="font-semibold text-slate-500">Mode</p>
-                            <p className="mt-0.5 font-bold text-slate-800">Desktop / FullHD+</p>
-                        </div>
-                    </div>
-                </div>
+                {/*<div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-8 py-3 backdrop-blur 2xl:px-10">*/}
+                {/*    <div className="grid grid-cols-4 gap-3 text-xs">*/}
+                {/*        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">*/}
+                {/*            <p className="font-semibold text-slate-500">Zeitraum</p>*/}
+                {/*            <p className="mt-0.5 font-bold text-slate-800">Gesamtdatenstand</p>*/}
+                {/*        </div>*/}
+                {/*        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">*/}
+                {/*            <p className="font-semibold text-slate-500">Analysefokus</p>*/}
+                {/*            <p className="mt-0.5 font-bold text-slate-800">Zwischenstand & Datengüte</p>*/}
+                {/*        </div>*/}
+                {/*        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">*/}
+                {/*            <p className="font-semibold text-slate-500">Segmente</p>*/}
+                {/*            <p className="mt-0.5 font-bold text-slate-800">Geschlecht, Alter, Bildung, Gruppe</p>*/}
+                {/*        </div>*/}
+                {/*        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">*/}
+                {/*            <p className="font-semibold text-slate-500">Mode</p>*/}
+                {/*            <p className="mt-0.5 font-bold text-slate-800">Desktop / FullHD+</p>*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
+                {/*</div>*/}
 
                 <div className="px-8 py-7 2xl:px-10">
                     <section className="grid gap-4 xl:grid-cols-4 2xl:grid-cols-8">
