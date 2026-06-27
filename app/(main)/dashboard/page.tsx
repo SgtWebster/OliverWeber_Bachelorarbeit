@@ -30,6 +30,8 @@ const formatDateTime = (value: Date) =>
         dateStyle: "short",
         timeStyle: "short",
     }).format(value);
+const formatNullableNumber = (value: number | null | undefined, digits = 1) =>
+    value == null ? "-" : value.toFixed(digits);
 
 type StatusTone = "good" | "neutral" | "critical";
 
@@ -58,6 +60,8 @@ export default async function DashboardPage() {
         currentPhase: "DEBRIEFING",
         socialAdherence: { not: null },
         compliance: { not: null },
+        performanceTrust: { not: null },
+        moralTrust: { not: null },
         perceivedHumanlikeness: { not: null },
         mReliable: { not: null },
         mCapable: { not: null },
@@ -82,9 +86,6 @@ export default async function DashboardPage() {
     const [
         totalSessions,
         completeSessions,
-        totalLeads,
-        raffleParticipants,
-        newsletterParticipants,
         averages,
         genderDistribution,
         educationDistribution,
@@ -93,19 +94,17 @@ export default async function DashboardPage() {
         phaseDistribution,
         groupDistribution,
         latestSession,
-        latestLead,
-        latestRows,
+        allRows,
     ] = await Promise.all([
         prisma.participantSession.count(),
         prisma.participantSession.count({ where: completeSessionWhere }),
-        prisma.participantLead.count(),
-        prisma.participantLead.count({ where: { wantsRaffle: true } }),
-        prisma.participantLead.count({ where: { wantsNewsletter: true } }),
         prisma.participantSession.aggregate({
             where: completeSessionWhere,
             _avg: {
                 socialAdherence: true,
                 compliance: true,
+                performanceTrust: true,
+                moralTrust: true,
                 perceivedHumanlikeness: true,
                 mReliable: true,
                 mCapable: true,
@@ -156,22 +155,28 @@ export default async function DashboardPage() {
             orderBy: { updatedAt: "desc" },
             select: { updatedAt: true },
         }),
-        prisma.participantLead.findFirst({
-            orderBy: { createdAt: "desc" },
-            select: { createdAt: true },
-        }),
         prisma.participantSession.findMany({
             orderBy: { createdAt: "desc" },
-            take: 30,
             select: {
                 id: true,
                 group: true,
                 currentPhase: true,
                 socialAdherence: true,
                 compliance: true,
+                mReliable: true,
+                mCapable: true,
+                mCompetent: true,
+                mMeticulous: true,
+                mEthical: true,
+                mRespectable: true,
+                mSincere: true,
+                mBenevolent: true,
                 performanceTrust: true,
                 moralTrust: true,
                 perceivedHumanlikeness: true,
+                techAffinity: true,
+                aiExperience: true,
+                criticalSystemExp: true,
                 age: true,
                 gender: true,
                 education: true,
@@ -183,25 +188,14 @@ export default async function DashboardPage() {
 
     const completionRate = totalSessions > 0 ? (completeSessions / totalSessions) * 100 : 0;
     const incompleteSessions = totalSessions - completeSessions;
-    const raffleRate = totalLeads > 0 ? (raffleParticipants / totalLeads) * 100 : 0;
-    const newsletterRate = totalLeads > 0 ? (newsletterParticipants / totalLeads) * 100 : 0;
-
-    const avgPerformanceTrust =
-        (toNumber(averages._avg.mReliable) +
-            toNumber(averages._avg.mCapable) +
-            toNumber(averages._avg.mCompetent) +
-            toNumber(averages._avg.mMeticulous)) /
-        4;
-    const avgMoralTrust =
-        (toNumber(averages._avg.mEthical) +
-            toNumber(averages._avg.mRespectable) +
-            toNumber(averages._avg.mSincere) +
-            toNumber(averages._avg.mBenevolent)) /
-        4;
+    const avgPerformanceTrust = toNumber(averages._avg.performanceTrust);
+    const avgMoralTrust = toNumber(averages._avg.moralTrust);
     const complianceRate = toNumber(averages._avg.compliance) * 100;
     const avgHumanlikeness = toNumber(averages._avg.perceivedHumanlikeness);
     const avgSocialAdherence = toNumber(averages._avg.socialAdherence);
     const averageAge = toNumber(averages._avg.age);
+    const avgTechAffinity = toNumber(averages._avg.techAffinity);
+    const avgAiExperience = toNumber(averages._avg.aiExperience);
 
     const ageValues = ageRows.map((entry) => entry.age).filter((age): age is number => age != null);
     const ageBuckets = [
@@ -214,9 +208,6 @@ export default async function DashboardPage() {
     const qualityTone = ratioTone(completionRate, 80, 65);
     const complianceTone = ratioTone(complianceRate, 75, 60);
     const trustTone = ratioTone(((avgPerformanceTrust + avgMoralTrust) / 2) * 14.2857, 70, 55);
-
-    const leadConversionTone = ratioTone(raffleRate, 40, 25);
-    const newsletterTone = ratioTone(newsletterRate, 25, 12);
 
     const alerts: string[] = [];
     if (completionRate < 70) alerts.push("Vollständigkeitsquote unter 70%: zusätzliche Nachvervollständigung priorisieren.");
@@ -248,9 +239,6 @@ export default async function DashboardPage() {
                             <p className="text-xs uppercase tracking-wide text-slate-400">Letzte Datenaktualisierung</p>
                             <p className="mt-1 text-sm font-semibold text-slate-100">
                                 {latestSession?.updatedAt ? formatDateTime(latestSession.updatedAt) : "Keine Daten"}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-400">
-                                Lead-Update: {latestLead?.createdAt ? formatDateTime(latestLead.createdAt) : "Keine Daten"}
                             </p>
                         </div>
                     </div>
@@ -315,20 +303,14 @@ export default async function DashboardPage() {
                             <p className="mt-1 text-xs text-slate-600">Humanlikeness: {format1(avgHumanlikeness)}</p>
                         </article>
                         <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Leads gesamt</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{formatInt(totalLeads)}</p>
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Technikaffinität (Ø)</p>
+                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{format1(avgTechAffinity)}</p>
+                            <p className="mt-1 text-xs text-slate-600">Skala 1–7</p>
                         </article>
                         <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Lead-Interesse</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{formatPercent(raffleRate)}</p>
-                            <div className="mt-2 flex gap-2">
-                                <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${statusClasses(leadConversionTone)}`}>
-                                    Gewinnspiel
-                                </span>
-                                <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${statusClasses(newsletterTone)}`}>
-                                    Newsletter {formatPercent(newsletterRate)}
-                                </span>
-                            </div>
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">KI-Erfahrung (Ø)</p>
+                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{format1(avgAiExperience)}</p>
+                            <p className="mt-1 text-xs text-slate-600">Skala 1–7</p>
                         </article>
                     </section>
 
@@ -429,8 +411,8 @@ export default async function DashboardPage() {
                             </section>
 
                             <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                                <h2 className="text-base font-black text-slate-900">Detailansicht: letzte 30 Sessions</h2>
-                                <p className="mt-1 text-xs text-slate-500">Operativer Blick auf Rohdaten für Zwischenentscheidungen.</p>
+                                <h2 className="text-base font-black text-slate-900">Detailansicht: alle Sessions & alle Experimentfelder</h2>
+                                <p className="mt-1 text-xs text-slate-500">Vollständige Rohdatenansicht ohne Leads, sortiert nach Erstellzeit.</p>
                                 <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
                                     <table className="min-w-full text-xs">
                                         <thead className="bg-slate-100 text-slate-700">
@@ -440,29 +422,53 @@ export default async function DashboardPage() {
                                                 <th className="px-3 py-2 text-left font-bold">phase</th>
                                                 <th className="px-3 py-2 text-right font-bold">social</th>
                                                 <th className="px-3 py-2 text-right font-bold">compliance</th>
+                                                <th className="px-3 py-2 text-right font-bold">mRel</th>
+                                                <th className="px-3 py-2 text-right font-bold">mCap</th>
+                                                <th className="px-3 py-2 text-right font-bold">mCom</th>
+                                                <th className="px-3 py-2 text-right font-bold">mMet</th>
+                                                <th className="px-3 py-2 text-right font-bold">mEth</th>
+                                                <th className="px-3 py-2 text-right font-bold">mRes</th>
+                                                <th className="px-3 py-2 text-right font-bold">mSin</th>
+                                                <th className="px-3 py-2 text-right font-bold">mBen</th>
                                                 <th className="px-3 py-2 text-right font-bold">pTrust</th>
                                                 <th className="px-3 py-2 text-right font-bold">mTrust</th>
                                                 <th className="px-3 py-2 text-right font-bold">human</th>
+                                                <th className="px-3 py-2 text-right font-bold">tech</th>
+                                                <th className="px-3 py-2 text-right font-bold">aiExp</th>
+                                                <th className="px-3 py-2 text-left font-bold">criticalExp</th>
                                                 <th className="px-3 py-2 text-right font-bold">age</th>
                                                 <th className="px-3 py-2 text-left font-bold">gender</th>
                                                 <th className="px-3 py-2 text-left font-bold">education</th>
+                                                <th className="px-3 py-2 text-left font-bold">createdAt</th>
                                                 <th className="px-3 py-2 text-left font-bold">updatedAt</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {latestRows.map((row) => (
+                                            {allRows.map((row) => (
                                                 <tr key={row.id} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60">
-                                                    <td className="px-3 py-2 font-mono text-[11px] text-slate-700">{row.id.slice(0, 8)}…</td>
+                                                    <td className="px-3 py-2 font-mono text-[11px] text-slate-700">{row.id}</td>
                                                     <td className="px-3 py-2">{row.group}</td>
                                                     <td className="px-3 py-2">{row.currentPhase}</td>
                                                     <td className="px-3 py-2 text-right">{row.socialAdherence ?? "-"}</td>
                                                     <td className="px-3 py-2 text-right">{row.compliance ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.performanceTrust != null ? format1(row.performanceTrust) : "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.moralTrust != null ? format1(row.moralTrust) : "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.mReliable ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.mCapable ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.mCompetent ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.mMeticulous ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.mEthical ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.mRespectable ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.mSincere ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.mBenevolent ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(row.performanceTrust)}</td>
+                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(row.moralTrust)}</td>
                                                     <td className="px-3 py-2 text-right">{row.perceivedHumanlikeness ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.techAffinity ?? "-"}</td>
+                                                    <td className="px-3 py-2 text-right">{row.aiExperience ?? "-"}</td>
+                                                    <td className="px-3 py-2">{row.criticalSystemExp == null ? "-" : row.criticalSystemExp ? "Ja" : "Nein"}</td>
                                                     <td className="px-3 py-2 text-right">{row.age ?? "-"}</td>
                                                     <td className="px-3 py-2">{genderLabels[row.gender ?? ""] ?? row.gender ?? "-"}</td>
                                                     <td className="px-3 py-2">{educationLabels[row.education ?? ""] ?? row.education ?? "-"}</td>
+                                                    <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(row.createdAt)}</td>
                                                     <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(row.updatedAt)}</td>
                                                 </tr>
                                             ))}

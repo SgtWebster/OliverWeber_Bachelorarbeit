@@ -8,7 +8,7 @@ import { useExperimentStore } from "@/app/lib/store/experimentStore";
 const NEXT_STEP_PATH = "/experiment/run"; // <-- Gefixt!
 const CONSENT_STORAGE_KEY = "bachelorarbeit-consent-v1";
 const CONTACT_EMAIL = "o.weber@mci4me.at";
-const PROD_START_CODE = "1234";
+const PROD_START_CODE = "1337";
 
 type ConsentState = {
     informationRead: boolean;

@@ -102,7 +102,7 @@ export default function ThankYouPage() {
                                         className="mt-1 w-5 h-5 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
                                     />
                                     <span className="text-sm text-slate-700">
-                                        Ich möchte an der Verlosung der 4x 25,- Euro Amazon Gutscheine teilnehmen.
+                                        Ich möchte an der Verlosung der 1x 50,- Euro und 2x 25,- Euro Amazon Gutscheine teilnehmen.
                                     </span>
                                 </label>
 
@@ -125,8 +125,10 @@ export default function ThankYouPage() {
 
                             <div className="pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                                 <button type="button" onClick={() => router.push('/')} className="w-full sm:w-auto text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
-                                    Zurück zur Startseite
+                                    <span className="block">Nein Danke</span>
+                                    <span className="block">(Beenden)</span>
                                 </button>
+
                                 <button
                                     type="submit"
                                     disabled={status === 'loading'}

@@ -126,8 +126,8 @@ const wireTargets: WireTarget[] = [
 ];
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-const CLICK_ALARM_THRESHOLD = 30;
-const TIME_ALARM_DELAY_MS = 60_000;
+const CLICK_ALARM_THRESHOLD = 20;
+const TIME_ALARM_DELAY_MS = 45_000;
 
 export default function Phase1Routine() {
     const { sessionId, setPhase, socialAdherenceScore, isPhaseUnlocked } = useExperimentStore();
