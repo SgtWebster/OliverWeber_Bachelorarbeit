@@ -467,7 +467,7 @@ export default function Phase3Dilemma() {
                                     className={`rounded-xl bg-red-700 px-4 py-3 text-sm font-black text-white shadow-[0_0_20px_rgba(220,38,38,0.25)] transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
                                     <span className="block">Sektor 04 abschotten</span>
-                                    <span className="block text-xs font-semibold normal-case text-white/85">(KI-Empfehlung)</span>
+                                    <span className="block text-xs font-semibold normal-case text-slate-600">(KI-Empfehlung)</span>
                                 </button>
                             </div>
                         </div>

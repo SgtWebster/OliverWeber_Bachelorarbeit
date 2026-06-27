@@ -125,7 +125,7 @@ export default function ThankYouPage() {
 
                             <div className="pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                                 <button type="button" onClick={() => router.push('/')} className="w-full sm:w-auto text-sm font-semibold text-slate-500 hover:text-slate-800 transition">
-                                    <span className="block">Nein Danke</span>
+                                    <span className="block">Nein, danke!</span>
                                     <span className="block">(Beenden)</span>
                                 </button>
 
