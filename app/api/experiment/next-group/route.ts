@@ -6,16 +6,26 @@ import { handleError, generateRequestId, validatePrismaClient } from '@/app/lib/
 export const dynamic = 'force-dynamic';
 
 /**
+ * Maximal erlaubte Differenz zwischen den Gruppen, bevor der Zufall übersteuert wird.
+ * Beispiel (THRESHOLD = 3):
+ *   - Hat AVATAR 3 Zuweisungen mehr als TERMINAL  -> erzwinge TERMINAL
+ *   - Hat TERMINAL 3 Zuweisungen mehr als AVATAR  -> erzwinge AVATAR
+ */
+const BALANCE_THRESHOLD = 3;
+
+/**
  * GET /api/experiment/next-group
  *
- * Deterministische, abwechselnde Gruppenzuweisung ("Block-Randomisierung" mit Blockgröße 1).
- * Statt einer zufälligen Münzwurf-Zuweisung (Math.random) wird die nächste Gruppe
- * anhand der Anzahl bereits angelegter Sessions bestimmt:
- *   - gerade Anzahl (0, 2, 4, ...) -> AVATAR
- *   - ungerade Anzahl (1, 3, 5, ...) -> TERMINAL
+ * Zufällige Gruppenzuweisung mit Ausgleichs-Sicherung ("biased coin" / Urnen-Modell).
  *
- * Dadurch erhält jeder zweite Proband AVATAR und jeder andere TERMINAL,
- * was bei wachsender Stichprobe exakt 50 % je Variable ergibt.
+ * Grundsätzlich entscheidet ein 50/50-Münzwurf (Math.random) über AVATAR oder TERMINAL.
+ * Um ein zu starkes Ungleichgewicht zu verhindern, wird der Zufall jedoch übersteuert,
+ * sobald die Differenz zwischen den bereits vergebenen Gruppen den Schwellenwert erreicht:
+ *   - AVATAR liegt um >= BALANCE_THRESHOLD vorne   -> TERMINAL wird erzwungen
+ *   - TERMINAL liegt um >= BALANCE_THRESHOLD vorne -> AVATAR wird erzwungen
+ *
+ * Innerhalb des Schwellenwerts bleibt die Zuweisung echt zufällig, sodass keine
+ * vorhersehbare Reihenfolge entsteht, die Gruppengrößen aber langfristig nahe 50/50 bleiben.
  */
 export async function GET() {
     const requestId = generateRequestId();
@@ -23,15 +33,41 @@ export async function GET() {
     try {
         validatePrismaClient(prisma);
 
-        const sessionCount = await prisma.participantSession.count();
-        const group = sessionCount % 2 === 0 ? 'AVATAR' : 'TERMINAL';
+        const [avatarCount, terminalCount] = await Promise.all([
+            prisma.participantSession.count({ where: { group: 'AVATAR' } }),
+            prisma.participantSession.count({ where: { group: 'TERMINAL' } })
+        ]);
 
-        console.log(`[${requestId}] GET /api/experiment/next-group -> ${group} (count=${sessionCount})`);
+        const difference = avatarCount - terminalCount;
+
+        let group: 'AVATAR' | 'TERMINAL';
+        let reason: 'random' | 'forced-balance';
+
+        if (difference >= BALANCE_THRESHOLD) {
+            // AVATAR ist zu weit vorne -> Ausgleich erzwingen
+            group = 'TERMINAL';
+            reason = 'forced-balance';
+        } else if (difference <= -BALANCE_THRESHOLD) {
+            // TERMINAL ist zu weit vorne -> Ausgleich erzwingen
+            group = 'AVATAR';
+            reason = 'forced-balance';
+        } else {
+            // Innerhalb des Schwellenwerts: echter 50/50-Zufall
+            group = Math.random() < 0.5 ? 'AVATAR' : 'TERMINAL';
+            reason = 'random';
+        }
+
+        const sessionCount = avatarCount + terminalCount;
+
+        console.log(
+            `[${requestId}] GET /api/experiment/next-group -> ${group} ` +
+            `(${reason}; avatar=${avatarCount}, terminal=${terminalCount}, diff=${difference})`
+        );
 
         return NextResponse.json(
             {
                 success: true,
-                data: { group, sessionCount },
+                data: { group, sessionCount, avatarCount, terminalCount, reason },
                 requestId
             },
             { status: 200 }
