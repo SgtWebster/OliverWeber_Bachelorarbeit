@@ -171,6 +171,22 @@ export function ParticipantAnalysisModal({
               {/* Tab Content */}
               <div className={styles.tabContent}>
                 <p>{getTabContent(activeTab)}</p>
+
+                {/* Abschlussbotschaft der KI (nur im "Du bist"-Tab) */}
+                {activeTab === "personal" && analysis.closingMessage && (
+                  <div
+                    className={`${styles.closingBox} ${
+                      analysis.group === "AVATAR"
+                        ? styles.closingAida
+                        : styles.closingTerminal
+                    }`}
+                  >
+                    <p className={styles.closingText}>{analysis.closingMessage}</p>
+                    <p className={styles.closingSignature}>
+                      {analysis.closingSignature}
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}

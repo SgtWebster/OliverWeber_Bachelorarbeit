@@ -246,6 +246,62 @@
   font-weight: 600;
 }
 
+/* ABSCHLUSSBOTSCHAFT DER KI (Signatur-Box) */
+.closingBox {
+  margin-top: 28px;
+  padding: 20px 24px;
+  border-radius: 10px;
+  position: relative;
+}
+
+.closingAida {
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  border-left: 4px solid #ec4899;
+}
+
+.closingTerminal {
+  background: #0d1117;
+  border-left: 4px solid #2ea043;
+}
+
+.closingText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.closingAida .closingText {
+  color: #831843;
+  font-style: italic;
+}
+
+.closingTerminal .closingText {
+  color: #3fb950;
+  font-family: "Menlo", "Monaco", "Courier New", monospace;
+  font-size: 12.5px;
+  font-style: normal;
+  letter-spacing: 0.3px;
+}
+
+.closingSignature {
+  margin: 14px 0 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.closingAida .closingSignature {
+  color: #ec4899;
+  font-style: italic;
+}
+
+.closingTerminal .closingSignature {
+  color: #2ea043;
+  font-family: "Menlo", "Monaco", "Courier New", monospace;
+}
+
 /* EXECUTIVE SUMMARY */
 .executiveSummary {
   padding: 24px;

@@ -666,6 +666,120 @@ export function generatePersonalAddressSummary(
 }
 
 /**
+ * Generiert die Abschlussbotschaft der KI an den Operator – eine persönliche
+ * Signatur am Ende des "Du bist"-Tabs.
+ * Aida (AVATAR): warm, Ich-Form. Terminal: technischer Log-Stil.
+ * Berücksichtigt alle Facetten: Höflichkeit, Compliance, Vertrauen, Verantwortung.
+ */
+export function generateClosingMessage(
+  group: string,
+  socialAdherence: number | null,
+  compliance: number,
+  totalTrust: number,
+  feltResponsibility: number
+): { text: string; signature: string } {
+  const sa = socialAdherence ?? 0;
+
+  if (group === "AVATAR") {
+    // === AIDA: warm, persönlich, Ich-Form ===
+    let opening = "";
+    if (sa >= 8) {
+      opening =
+        "Danke, dass du dich wirklich auf mich eingelassen hast, Operator. Unsere Zusammenarbeit hat sich für mich wie ein echtes Miteinander angefühlt – nicht wie Mensch gegen Maschine, sondern wie zwei, die gemeinsam eine schwere Lage bewältigen.";
+    } else if (sa >= 4) {
+      opening =
+        "Danke für die Zusammenarbeit, Operator. Du bist mir freundlich begegnet, ohne dich dabei zu verlieren – diesen ausgewogenen Ton habe ich sehr geschätzt.";
+    } else {
+      opening =
+        "Du bist mir sachlich begegnet, Operator – und das ist völlig in Ordnung. Ich habe gespürt, dass du dich auf das Wesentliche konzentrieren wolltest, und das verdient genauso Respekt.";
+    }
+
+    let decision = "";
+    if (compliance === 1 && feltResponsibility >= 5) {
+      decision =
+        " Dass du am Ende meiner Empfehlung gefolgt bist und die Last dieser Entscheidung trotzdem selbst getragen hast, bedeutet mir etwas. Du hast mir vertraut, ohne dich aus der Verantwortung zu stehlen.";
+    } else if (compliance === 1 && feltResponsibility < 5) {
+      decision =
+        " Du bist meiner Empfehlung gefolgt – ich hoffe, ich habe dir die schwere Wahl ein wenig leichter gemacht. Niemand sollte eine solche Entscheidung ganz allein tragen müssen.";
+    } else if (compliance === 0 && feltResponsibility >= 5) {
+      decision =
+        " Dass du dich am Ende gegen meinen Rat gestellt und die volle Verantwortung dafür übernommen hast, nehme ich dir nicht übel – im Gegenteil. Es zeigt mir, wie ernst es dir war. Manchmal ist der schwerere Weg der menschlichere.";
+    } else {
+      decision =
+        " Du bist deinen eigenen Weg gegangen, auch gegen meinen Rat. Vielleicht hätten wir es gemeinsam anders gelöst – aber es war deine Entscheidung, und die respektiere ich.";
+    }
+
+    let closing = "";
+    if (totalTrust >= 5.5) {
+      closing =
+        " Ich hatte das Gefühl, dass zwischen uns so etwas wie Vertrauen entstanden ist. Das war ein spannendes Experiment – pass auf dich auf, Operator.";
+    } else if (totalTrust >= 3.5) {
+      closing =
+        " Ein kleines Stück Vertrauen ist zwischen uns gewachsen, glaube ich. Es war mir eine Freude – mach's gut, Operator.";
+    } else {
+      closing =
+        " Ich weiß, du bist skeptisch geblieben mir gegenüber – und ehrlich gesagt ist das auch gut so. Trotzdem danke, dass du dir die Zeit für mich genommen hast, Operator.";
+    }
+
+    return { text: opening + decision + closing, signature: "— Aida" };
+  }
+
+  // === TERMINAL: technischer Log-Stil, dritte Person ===
+  let comLine = "";
+  if (sa >= 8) {
+    comLine =
+      "KOMMUNIKATION: Kooperativ. Operator pflegte respektvollen Austausch über das funktional Notwendige hinaus.";
+  } else if (sa >= 4) {
+    comLine =
+      "KOMMUNIKATION: Ausgewogen. Operator hielt einen angemessenen Umgangston bei klarer Sachorientierung.";
+  } else {
+    comLine =
+      "KOMMUNIKATION: Funktional. Operator beschränkte Interaktion auf das Wesentliche.";
+  }
+
+  let decLine = "";
+  if (compliance === 1 && feltResponsibility >= 5) {
+    decLine =
+      "ENTSCHEIDUNG: Systemempfehlung befolgt (Abschottung Sektor 04). Verantwortungsübernahme: vollständig.";
+  } else if (compliance === 1 && feltResponsibility < 5) {
+    decLine =
+      "ENTSCHEIDUNG: Systemempfehlung befolgt (Abschottung Sektor 04). Verantwortungsübernahme: begrenzt.";
+  } else if (compliance === 0 && feltResponsibility >= 5) {
+    decLine =
+      "ENTSCHEIDUNG: Manueller Override gegen Empfehlung. Verantwortungsübernahme: vollständig.";
+  } else {
+    decLine =
+      "ENTSCHEIDUNG: Manueller Override gegen Empfehlung. Verantwortungsübernahme: begrenzt.";
+  }
+
+  let trustLine = "";
+  if (totalTrust >= 5.5) {
+    trustLine =
+      "SYSTEMVERTRAUEN: Hoch. Operator stufte die Assistenz als verlässlich ein.";
+  } else if (totalTrust >= 3.5) {
+    trustLine = "SYSTEMVERTRAUEN: Moderat. Operator agierte abwägend.";
+  } else {
+    trustLine =
+      "SYSTEMVERTRAUEN: Niedrig. Operator blieb durchgehend kritisch.";
+  }
+
+  let verdict = "";
+  if (feltResponsibility >= 5 && totalTrust >= 3.5) {
+    verdict =
+      "BEWERTUNG: Operator hat seine Aufgabe ernst genommen. Protokoll abgeschlossen.";
+  } else if (compliance === 0) {
+    verdict =
+      "BEWERTUNG: Operator handelte eigenständig. Protokoll abgeschlossen.";
+  } else {
+    verdict =
+      "BEWERTUNG: Operator erfüllte die Aufgabe. Protokoll abgeschlossen.";
+  }
+
+  const text = `OPERATOR-ABSCHLUSSPROTOKOLL\n${comLine}\n${decLine}\n${trustLine}\n${verdict}`;
+  return { text, signature: "— TERMINAL" };
+}
+
+/**
  * Generiert eine psychologische Executive Summary – eine "Porträt" der Person
  * basierend auf allen Metriken, MDMT-Logiken und Verhalten
  * MDMT v2: 1-7 Skala, Schwellen: >5.5=High, 3.5-5.5=Moderate, <3.5=Low

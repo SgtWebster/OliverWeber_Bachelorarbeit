@@ -1,5 +1,5 @@
 import { ParticipantSession } from "@prisma/client";
-import { textBlocks, isDatasetComplete, generateExecutiveSummary, generatePersonalAddressSummary } from "./textBlocks";
+import { textBlocks, isDatasetComplete, generateExecutiveSummary, generatePersonalAddressSummary, generateClosingMessage } from "./textBlocks";
 
 export interface ParticipantAnalysis {
   id: string;
@@ -8,6 +8,8 @@ export interface ParticipantAnalysis {
   summary: string;
   executiveSummary: string;
   personalAddress: string;
+  closingMessage: string;
+  closingSignature: string;
   group: string;
   sections: {
     personality: string;
@@ -36,6 +38,8 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
         "Diese Teilnehmer-Session ist unvollständig und kann nicht analysiert werden.",
       executiveSummary: "Keine Analyse verfügbar.",
       personalAddress: "Keine Daten verfügbar.",
+      closingMessage: "",
+      closingSignature: "",
       group: "UNKNOWN",
       sections: {
         personality: "Keine Daten verfügbar.",
@@ -221,6 +225,15 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
     shutdownPreference
   );
 
+  // === ABSCHLUSSBOTSCHAFT DER KI ===
+  const closing = generateClosingMessage(
+    group,
+    socialAdherence,
+    compliance,
+    totalTrust,
+    feltResponsibility
+  );
+
   return {
     id: session.id,
     isComplete: true,
@@ -228,6 +241,8 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
     summary,
     executiveSummary,
     personalAddress,
+    closingMessage: closing.text,
+    closingSignature: closing.signature,
     group,
     sections: {
       personality,
