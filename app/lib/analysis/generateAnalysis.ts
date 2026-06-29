@@ -1,59 +1,71 @@
 import { ParticipantSession } from "@prisma/client";
-import { textBlocks, isDatasetComplete } from "./textBlocks";
+import { textBlocks, isDatasetComplete, generateExecutiveSummary } from "./textBlocks";
 
 export interface ParticipantAnalysis {
   id: string;
   isComplete: boolean;
   title: string;
   summary: string;
+  executiveSummary: string;
+  group: string;
   sections: {
     personality: string;
     perception: string;
     decision: string;
-    insights: string;
+    interaction: string;
+    patterns: string;
+    causal: string;
   };
 }
 
 /**
- * Generiert eine ausführliche, psychologisch fundierte Analyse eines Teilnehmers
- * aus seinen quantitativen Daten, indem intelligente Textbausteine kombiniert werden.
+ * Generiert eine intensive, immersive psychologische Analyse mit Group-Dynamiken,
+ * Interaktionsmustern, Höflichkeit und Kausalitätsketten
  */
 export function generateAnalysis(session: ParticipantSession): ParticipantAnalysis {
   const isComplete = isDatasetComplete(session);
 
-  if (!isComplete || !session.age || !session.education) {
+  if (!isComplete || !session.age || !session.education || !session.group) {
     return {
       id: session.id,
       isComplete: false,
       title: "Unvollständiger Datensatz",
       summary:
         "Diese Teilnehmer-Session ist unvollständig und kann nicht analysiert werden.",
+      executiveSummary: "Keine Analyse verfügbar.",
+      group: "UNKNOWN",
       sections: {
         personality: "Keine Daten verfügbar.",
         perception: "Keine Daten verfügbar.",
         decision: "Keine Daten verfügbar.",
-        insights: "Keine Daten verfügbar.",
+        interaction: "Keine Daten verfügbar.",
+        patterns: "Keine Daten verfügbar.",
+        causal: "Keine Daten verfügbar.",
       },
     };
   }
 
-  // Sichere Werte - bei diesem Punkt sollten alle nicht-null sein
+  // Sichere Werte
   const age = session.age!;
   const education = session.education!;
+  const group = session.group!;
   const techAffinity = session.techAffinity!;
   const aiExperience = session.aiExperience!;
   const totalTrust = session.totalTrust!;
   const compliance = session.compliance!;
   const reliableTrust = session.reliableTrust!;
   const competentTrust = session.competentTrust!;
+  const ethicalTrust = session.ethicalTrust!;
   const moralTrust = session.moralTrust!;
   const performanceTrust = session.performanceTrust!;
+  const sincereTrust = session.sincereTrust!;
   const perceivedHumanlikeness = session.perceivedHumanlikeness!;
   const perceivedSocialPresence = session.perceivedSocialPresence!;
   const scenarioSeriousness = session.scenarioSeriousness!;
   const consequenceClarity = session.consequenceClarity!;
   const shutdownPreference = session.shutdownPreference!;
   const feltResponsibility = session.feltResponsibility!;
+  const socialAdherence = session.socialAdherence;
 
   // === SECTION 1: PERSÖNLICHKEIT ===
   const personalityIntro = textBlocks.personality.intro(age, education, techAffinity);
@@ -69,7 +81,6 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
     perceivedSocialPresence
   );
 
-  // Zusätzliche Kontextinformation
   let contextDetail = "";
   if (scenarioSeriousness >= 5.5) {
     contextDetail = " Die Entscheidungssituation wirkte für diese Person sehr ernst.";
@@ -97,21 +108,55 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
 
   const decision = `${complianceIntro} ${complianceDetail}`;
 
-  // === SECTION 4: INSIGHTS ===
+  // === SECTION 4: INTERAKTION & GROUP ===
+  const groupContext = textBlocks.interaction.groupContext(group);
+  const socialAdherenceDesc = textBlocks.interaction.socialAdherence(
+    socialAdherence,
+    perceivedHumanlikeness
+  );
+  const politenessDesc = textBlocks.interaction.politeness(
+    group,
+    socialAdherence,
+    moralTrust,
+    sincereTrust
+  );
+
+  const interaction = `${groupContext} ${socialAdherenceDesc} ${politenessDesc}`;
+
+  // === SECTION 5: MUSTER ===
   const patterns = textBlocks.insights.patterns(
     compliance,
     shutdownPreference,
     feltResponsibility,
     perceivedHumanlikeness
   );
+  const groupDynamics = textBlocks.insights.groupDynamics(
+    group,
+    compliance,
+    totalTrust,
+    socialAdherence,
+    scenarioSeriousness
+  );
+
+  const patternsSection = `${patterns}\n\n${groupDynamics}`;
+
+  // === SECTION 6: KAUSALITÄTEN ===
+  const causalChain = textBlocks.insights.causalChain(
+    group,
+    techAffinity,
+    perceivedHumanlikeness,
+    compliance,
+    moralTrust
+  );
   const conclusion = textBlocks.insights.conclusion(
     totalTrust,
     compliance,
     reliableTrust,
-    competentTrust
+    competentTrust,
+    group
   );
 
-  const insights = `${patterns} ${conclusion}`;
+  const causalSection = `${causalChain}\n\n${conclusion}`;
 
   // === TITEL & SUMMARY ===
   const educationShort: Record<string, string> = {
@@ -130,24 +175,47 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
   const trustLabel =
     totalTrust >= 6 ? "Vertrauter" : totalTrust >= 4.5 ? "Neutral" : "Skeptiker";
   const complianceLabel = compliance === 1 ? "Complier" : "Autonomer";
+  const groupLabel = group === "AVATAR" ? "AIDA" : "Terminal";
 
-  const title = `${age}J., ${eduLabel} | ${trustLabel} | ${complianceLabel}`;
+  const title = `${age}J., ${eduLabel} | ${trustLabel} | ${complianceLabel} | ${groupLabel}`;
 
   const summary =
     compliance === 1
-      ? `Alter ${age}, ${trustLabel} in Bezug auf Vertrauen, folgte der Systemempfehlung.`
-      : `Alter ${age}, ${trustLabel} in Bezug auf Vertrauen, lehnte die Systemempfehlung ab.`;
+      ? `${groupLabel}-Nutzer, ${trustLabel}, folgte der Empfehlung.`
+      : `${groupLabel}-Nutzer, ${trustLabel}, lehnte die Empfehlung ab.`;
+
+  // === EXECUTIVE SUMMARY ===
+  const executiveSummary = generateExecutiveSummary(
+    age,
+    education,
+    techAffinity,
+    totalTrust,
+    compliance,
+    socialAdherence,
+    perceivedHumanlikeness,
+    perceivedSocialPresence,
+    moralTrust,
+    sincereTrust,
+    group,
+    scenarioSeriousness,
+    feltResponsibility,
+    shutdownPreference
+  );
 
   return {
     id: session.id,
     isComplete: true,
     title,
     summary,
+    executiveSummary,
+    group,
     sections: {
       personality,
       perception,
       decision,
-      insights,
+      interaction,
+      patterns: patternsSection,
+      causal: causalSection,
     },
   };
 }

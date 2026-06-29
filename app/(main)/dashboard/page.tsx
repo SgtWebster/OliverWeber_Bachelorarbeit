@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { hasAdminAccess, logoutAdmin } from "@/app/lib/auth/admin";
 import { prisma } from "@/app/lib/db/prisma";
 import { SessionsTableClient } from "@/app/components/SessionsTableClient";
+import { isDatasetComplete } from "@/app/lib/analysis/textBlocks";
 
 const genderLabels: Record<string, string> = {
     female: "Weiblich",
@@ -830,11 +831,17 @@ export default async function DashboardPage() {
                         </p>
                     </div>
                     <SessionsTableClient
-                        rows={allRows}
-                        columns={sessionColumns}
-                        columnInfo={sessionColumnInfo}
-                        displayValue={(row: any, column: string) => displayValue(row, column as any)}
-                        sessionColumns={sessionColumns}
+                        sessions={allRows.map((row) => ({
+                            id: row.id,
+                            isComplete: isDatasetComplete(row),
+                            displayValues: Object.fromEntries(
+                                sessionColumns.map((column) => [
+                                    column,
+                                    displayValue(row, column),
+                                ])
+                            ),
+                            columnNames: Array.from(sessionColumns),
+                        }))}
                     />
                 </section>
 

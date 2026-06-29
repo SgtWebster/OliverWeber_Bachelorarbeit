@@ -10,6 +10,17 @@ interface ParticipantAnalysisModalProps {
   participantId: string;
 }
 
+type TabType = "personality" | "perception" | "decision" | "interaction" | "patterns" | "causal";
+
+const TABS: { id: TabType; label: string; icon: string }[] = [
+  { id: "personality", label: "👤 Profil", icon: "👤" },
+  { id: "perception", label: "🔍 Wahrnehmung", icon: "🔍" },
+  { id: "decision", label: "⚡ Entscheidung", icon: "⚡" },
+  { id: "interaction", label: "💬 Interaktion", icon: "💬" },
+  { id: "patterns", label: "🔗 Muster & Dynamiken", icon: "🔗" },
+  { id: "causal", label: "🧠 Kausalitäten", icon: "🧠" },
+];
+
 export function ParticipantAnalysisModal({
   isOpen,
   onClose,
@@ -18,9 +29,7 @@ export function ParticipantAnalysisModal({
   const [analysis, setAnalysis] = useState<ParticipantAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedSection, setExpandedSection] = useState<
-    "personality" | "perception" | "decision" | "insights" | null
-  >("personality");
+  const [activeTab, setActiveTab] = useState<TabType>("personality");
 
   // Lade Analyse wenn Modal öffnet
   useEffect(() => {
@@ -41,6 +50,7 @@ export function ParticipantAnalysisModal({
 
         const data = await response.json();
         setAnalysis(data.analysis);
+        setActiveTab("personality");
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"
@@ -79,6 +89,11 @@ export function ParticipantAnalysisModal({
 
   if (!isOpen) return null;
 
+  const getTabContent = (tab: TabType): string => {
+    if (!analysis) return "";
+    return analysis.sections[tab] || "";
+  };
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -86,7 +101,7 @@ export function ParticipantAnalysisModal({
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>
-              {analysis ? "Teilnehmer-Analyse" : "Laden..."}
+              {analysis ? "Tiefenanalyse" : "Laden..."}
             </h2>
             {analysis && (
               <>
@@ -129,95 +144,34 @@ export function ParticipantAnalysisModal({
           )}
 
           {analysis && analysis.isComplete && (
-            <div className={styles.accordion}>
-              {/* Persönlichkeit */}
-              <div className={styles.accordionItem}>
-                <button
-                  className={styles.accordionButton}
-                  onClick={() =>
-                    setExpandedSection(
-                      expandedSection === "personality" ? null : "personality"
-                    )
-                  }
-                >
-                  <span>👤 Persönlichkeit & Hintergrund</span>
-                  <span className={styles.icon}>
-                    {expandedSection === "personality" ? "▼" : "▶"}
-                  </span>
-                </button>
-                {expandedSection === "personality" && (
-                  <div className={styles.accordionContent}>
-                    <p>{analysis.sections.personality}</p>
-                  </div>
-                )}
+            <>
+              {/* Executive Summary */}
+              <div className={styles.executiveSummary}>
+                <p>{analysis.executiveSummary}</p>
               </div>
 
-              {/* Wahrnehmung */}
-              <div className={styles.accordionItem}>
-                <button
-                  className={styles.accordionButton}
-                  onClick={() =>
-                    setExpandedSection(
-                      expandedSection === "perception" ? null : "perception"
-                    )
-                  }
-                >
-                  <span>🔍 Wahrnehmung des Systems</span>
-                  <span className={styles.icon}>
-                    {expandedSection === "perception" ? "▼" : "▶"}
-                  </span>
-                </button>
-                {expandedSection === "perception" && (
-                  <div className={styles.accordionContent}>
-                    <p>{analysis.sections.perception}</p>
-                  </div>
-                )}
+              {/* Tab Navigation */}
+              <div className={styles.tabNav}>
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    className={`${styles.tabButton} ${
+                      activeTab === tab.id ? styles.tabActive : ""
+                    }`}
+                    onClick={() => setActiveTab(tab.id)}
+                    title={tab.label}
+                  >
+                    <span className={styles.tabIcon}>{tab.icon}</span>
+                    <span className={styles.tabLabel}>{tab.label}</span>
+                  </button>
+                ))}
               </div>
 
-              {/* Entscheidung */}
-              <div className={styles.accordionItem}>
-                <button
-                  className={styles.accordionButton}
-                  onClick={() =>
-                    setExpandedSection(
-                      expandedSection === "decision" ? null : "decision"
-                    )
-                  }
-                >
-                  <span>⚡ Entscheidung & Beweggründe</span>
-                  <span className={styles.icon}>
-                    {expandedSection === "decision" ? "▼" : "▶"}
-                  </span>
-                </button>
-                {expandedSection === "decision" && (
-                  <div className={styles.accordionContent}>
-                    <p>{analysis.sections.decision}</p>
-                  </div>
-                )}
+              {/* Tab Content */}
+              <div className={styles.tabContent}>
+                <p>{getTabContent(activeTab)}</p>
               </div>
-
-              {/* Insights */}
-              <div className={styles.accordionItem}>
-                <button
-                  className={styles.accordionButton}
-                  onClick={() =>
-                    setExpandedSection(
-                      expandedSection === "insights" ? null : "insights"
-                    )
-                  }
-                >
-                  <span>💡 Insights & Muster</span>
-                  <span className={styles.icon}>
-                    {expandedSection === "insights" ? "▼" : "▶"}
-                  </span>
-                </button>
-                {expandedSection === "insights" && (
-                  <div className={styles.accordionContent}>
-                    <p>{analysis.sections.insights}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            </>
           )}
         </div>
 

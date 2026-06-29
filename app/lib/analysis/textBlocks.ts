@@ -1,6 +1,6 @@
 /**
- * Vordefinierte Textbausteine für die Teilnehmer-Analyse
- * Diese Fragmente werden intelligent kombiniert, um eine aussagekräftige Analyse zu generieren
+ * Erweiterte Text-Bausteine für psychologisch intensive Analyse
+ * Integriert: Demografie, Vertrauen, Compliance, Interaktion, Group-Effekte, Muster
  */
 
 export interface TextBlocks {
@@ -26,6 +26,16 @@ export interface TextBlocks {
       trustLevel: number
     ) => string;
   };
+  interaction: {
+    groupContext: (group: string) => string;
+    socialAdherence: (socialAdherence: number | null, humanlikeness: number) => string;
+    politeness: (
+      group: string,
+      socialAdherence: number | null,
+      moralTrust: number,
+      sincereTrust: number
+    ) => string;
+  };
   insights: {
     patterns: (
       compliance: number,
@@ -33,11 +43,26 @@ export interface TextBlocks {
       feltResponsibility: number,
       humanlikeness: number
     ) => string;
+    groupDynamics: (
+      group: string,
+      compliance: number,
+      totalTrust: number,
+      socialAdherence: number | null,
+      scenario_seriousness: number
+    ) => string;
+    causalChain: (
+      group: string,
+      techAffinity: number,
+      humanlikeness: number,
+      compliance: number,
+      moralTrust: number
+    ) => string;
     conclusion: (
       totalTrust: number,
       compliance: number,
       reliableTrust: number,
-      competentTrust: number
+      competentTrust: number,
+      group: string
     ) => string;
   };
 }
@@ -154,12 +179,11 @@ export const textBlocks: TextBlocks = {
       let reason = "";
 
       if (compliance === 1) {
-        // System befolgt
         if (trustLevel >= 5.5) {
           reason = "Das hohe Systemvertrauen dürfte hier eine Rolle gespielt haben.";
         } else if (trustLevel >= 4) {
           reason =
-            "Trotz moderatem Vertrauen entschied sie sich, dem System zu folgen – möglicherweise aus Unsicherheit oder Delegationswunsch.";
+            "Trotz moderatem Vertrauen entschied sie sich, dem System zu folgen – möglicherweise aus Unsicherheit oder bewusster Delegation.";
         } else {
           reason =
             "Überraschenderweise folgte sie dem System trotz niedrigem Vertrauen – vielleicht aus Konfusion oder Abhängigkeit.";
@@ -167,33 +191,122 @@ export const textBlocks: TextBlocks = {
 
         if (feltResponsibility >= 5) {
           reason +=
-            " Gleichzeitig war das Verantwortungsgefühl hoch, was darauf hindeutet, dass die Person diese Entscheidung bewusst traf.";
+            " Das hohe Verantwortungsgefühl zeigt: Diese Person traf die Entscheidung bewusst, nicht reaktiv.";
         } else {
           reason +=
-            " Das Verantwortungsgefühl war eher niedrig, was vermuten lässt, dass die Entscheidung delegiert wurde.";
+            " Das niedrige Verantwortungsgefühl legt nahe, dass die Delegation eher automatisch war.";
         }
       } else {
-        // System ignoriert
         if (shutdownPreference >= 5) {
           reason =
-            "Dies passt zu ihrer persönlichen Neigung zur Abschottung – sie vertraute ihrer eigenen Intuition mehr als der Systemempfehlung.";
+            "Dies passt zu ihrer persönlichen Neigung – sie vertraute ihrer eigenen Intuition mehr als der Systemempfehlung.";
         } else if (shutdownPreference >= 3) {
           reason =
-            "Obwohl ihre persönliche Neigung nicht stark ausgeprägt war, wollte sie dennoch unabhängig entscheiden.";
+            "Obwohl ihre Neigung nicht stark war, wollte sie dennoch unabhängig entscheiden – Autonomiebedarf sticht.";
         } else {
           reason =
-            "Überraschend, da ihre persönliche Neigung zur Abschottung eher niedrig war – möglicherweise Systemskepsis oder Autonomiebedarf.";
+            "Überraschend: Ihre Neigung zur Abschottung war niedrig, aber sie lehnte ab. Das deutet auf Systemskepsis oder echte Autonomie hin.";
         }
 
         if (feltResponsibility >= 5.5) {
           reason +=
-            " Das hohe Verantwortungsgefühl zeigt: Diese Person wollte die Kontrolle behalten und nicht delegieren.";
-        } else {
-          reason += " Die Verantwortung war weniger stark ausgeprägt – es könnte eine reflexhafte Ablehnung gewesen sein.";
+            " Das hohe Verantwortungsgefühl unterstreicht: Diese Person wollte Kontrolle behalten und nicht delegieren.";
         }
       }
 
       return reason;
+    },
+  },
+
+  interaction: {
+    groupContext: (group: string) => {
+      if (group === "AVATAR") {
+        return "Diese Person interagierte mit AIDA – dem Avatar-System mit Gesicht, Stimme und menschlicher Präsenz. Das System wirkte wie ein echter Gesprächspartner.";
+      } else if (group === "TERMINAL") {
+        return "Diese Person interagierte mit TERMINAL – einem rein textbasierten System ohne visuelle oder auditive menschliche Merkmale. Die Interaktion war funktional und abstrakt.";
+      }
+      return "Diese Person nutzte eines der beiden System-Interfaces.";
+    },
+
+    socialAdherence: (socialAdherence: number | null, humanlikeness: number) => {
+      if (socialAdherence === null || socialAdherence === undefined) {
+        return "Keine Daten zu sozialen Adhärenz-Mustern verfügbar.";
+      }
+
+      // socialAdherence ist eine Summe von 0-12 (mögliche adherence-Punkte aus Dialog)
+      // Normalisierung: 0-2 (0-17%), 3-5 (25-42%), 6-8 (50-67%), 9-12 (75-100%)
+      const adherencePercentage = (socialAdherence / 12) * 100;
+      
+      let adherenceDesc = "";
+      let adherenceQuality = "";
+      
+      if (socialAdherence >= 9) {
+        adherenceQuality = "SEHR HOCH";
+        adherenceDesc =
+          `Die soziale Adhärenz war außergewöhnlich hoch (${socialAdherence}/12 Punkte, ${adherencePercentage.toFixed(0)}%). Diese Person reagierte durchgehend auf soziale Signale, Höflichkeitsangebote und emotionale Momente. Sie war nicht nur responsiv, sondern suchte aktiv nach sozialen Interaktionsmomenten – ein Zeichen tieferen Engagements oder sozialer Orientierung.`;
+      } else if (socialAdherence >= 6) {
+        adherenceQuality = "HOCH";
+        adherenceDesc =
+          `Die soziale Adhärenz war erhöht (${socialAdherence}/12 Punkte, ${adherencePercentage.toFixed(0)}%). Diese Person war offen für soziale Momente und reaktiv auf Gesprächssignale. Sie balancierten zwischen Fokus auf die Aufgabe und sozialer Responsivität – ein gesundes Gleichgewicht.`;
+      } else if (socialAdherence >= 3) {
+        adherenceQuality = "MODERAT";
+        adherenceDesc =
+          `Die soziale Adhärenz war moderat (${socialAdherence}/12 Punkte, ${adherencePercentage.toFixed(0)}%). Diese Person zeigte selektive soziale Responsivität – sie griffen auf Höflichkeitsangebote auf oder ignorierten sie je nach Kontext. Ein Muster von Pragmatismus statt emotionaler Öffnung.`;
+      } else {
+        adherenceQuality = "NIEDRIG";
+        adherenceDesc =
+          `Die soziale Adhärenz war niedrig (${socialAdherence}/12 Punkte, ${adherencePercentage.toFixed(0)}%). Diese Person blieb überwiegend aufgabenorientiert und lehnte soziale Gesprächsmomente ab oder ignorierte sie. Dies deutet auf eine funktionale, sachliche Interaktionsstil hin – nicht kalt, sondern fokussiert.`;
+      }
+
+      // Analyse: Mismatch zwischen wahrgenommener Menschenähnlichkeit und tatsächlicher sozialer Responsivität
+      if (humanlikeness >= 5 && socialAdherence >= 9) {
+        adherenceDesc +=
+          ` Die hohe wahrgenommene Menschenähnlichkeit des Systems traf auf eine Person mit starkem sozialen Engagement: ein psychologisches Match, das tiefe Verbindung ermöglichte.`;
+      } else if (humanlikeness < 3 && socialAdherence >= 6) {
+        adherenceDesc +=
+          ` Interessantes Muster: Trotz niedriger wahrgenommener Menschenähnlichkeit zeigte diese Person hohe soziale Adhärenz. Dies könnte echte Höflichkeit sein, nicht oberflächlich-sozial: Sie respektierte das System als kognitives Werkzeug.`;
+      } else if (humanlikeness >= 5 && socialAdherence <= 2) {
+        adherenceDesc +=
+          ` Paradoxon: Das System wirkte sehr menschlich, aber diese Person lehnte soziale Interaktionsmuster ab. Sie behielt Distanz trotz Menschenähnlichkeit – ein Zeichen bewusster funktionaler Interaktion.`;
+      }
+
+      return adherenceDesc;
+    },
+
+    politeness: (
+      group: string,
+      socialAdherence: number | null,
+      moralTrust: number,
+      sincereTrust: number
+    ) => {
+      let politenessIndicator = "";
+      const sa = socialAdherence ?? 0;
+
+      // Höflichkeit gegenüber AIDA vs Terminal (mit korrigierter 0-12 Skala)
+      if (group === "AVATAR" && sa >= 6) {
+        politenessIndicator =
+          `Diese Person war dem Avatar gegenüber sozial responsiv und höflich (${sa}/12). Sie könnten das System als einen echten Gesprächspartner wahrgenommen haben – nicht aus Täuschung, sondern aus echtem sozialen Engagement.`;
+      } else if (group === "AVATAR" && sa < 6) {
+        politenessIndicator =
+          `Trotz Avatar-Präsentation blieb diese Person emotional distanziert (${sa}/12 Adhärenz). Sie behandelten das System funktional statt sozial – das ist nicht unhöflich, sondern bewusste Grenzziehung.`;
+      } else if (group === "TERMINAL" && sa >= 6) {
+        politenessIndicator =
+          `Bemerkenswert: Selbst in reiner Text-Form zeigte diese Person hohe soziale Adhärenz (${sa}/12). Sie brachten dem abstrakten Interface Respekt entgegen – ein Zeichen echter Höflichkeit oder starken Ververantwortungsgefühls.`;
+      } else if (group === "TERMINAL" && sa < 6) {
+        politenessIndicator =
+          `Mit Terminal zeigte diese Person selektive soziale Engagement (${sa}/12). Sie blieben sachlich-transaktional – pragmatisch, nicht unhöflich.`;
+      }
+
+      // MDMT-Kontext: Wenn sehr niedrige Adhärenz über viele Turns, könnte das Fokus bedeuten oder Ungeduld
+      if (sa <= 1 && moralTrust >= 5.5) {
+        politenessIndicator +=
+          ` Interessant: Trotz minimaler sozialer Adhärenz zeigte diese Person hohen moralischen Vertrauen in das System. Das deutet auf ethische Respekt statt Desinteresse hin.`;
+      } else if (sa >= 9 && sincereTrust >= 5) {
+        politenessIndicator +=
+          ` Das hohe Vertrauen in Aufrichtigkeit kombiniert mit starker sozialer Adhärenz: Diese Person wollte nicht 'täuschen' und interagierte authentisch, als wäre es ein echter Dialog.`;
+      }
+
+      return politenessIndicator;
     },
   },
 
@@ -206,62 +319,186 @@ export const textBlocks: TextBlocks = {
     ) => {
       let pattern = "";
 
-      // Mismatch zwischen Neigung und Entscheidung
-      const neigungEntscheidungMismatch =
-        (compliance === 1 && shutdownPreference < 3) ||
-        (compliance === 0 && shutdownPreference > 5);
-
-      if (neigungEntscheidungMismatch) {
+      // Autonomie vs. Delegation Pattern
+      if (compliance === 1 && shutdownPreference < 3) {
         pattern +=
-          "Interessant: Es gibt eine Diskrepanz zwischen persönlicher Neigung und tatsächlicher Entscheidung – die Person handelte nicht einfach ihren Instinkten nach. ";
+          "**Vertrauens-Deleganten:** Die Person überließ die Entscheidung dem System, obwohl ihre eigene Neigung anders war. Das deutet auf hohen Systemvertrauen. ";
+      } else if (compliance === 0 && shutdownPreference > 5) {
+        pattern +=
+          "**Autonome Entscheider:** Die Person folgte ihrer eigenen Intuition über der Empfehlung. Starkes Eigenverantwortungsgefühl. ";
+      } else if (compliance === 1 && shutdownPreference > 5) {
+        pattern +=
+          "**Widerspruch mit Gewicht:** Die Person hatte starke persönliche Tendenz zur Abschottung, folgte aber dem System. Das spricht für beeindruckend starken Systemeinfluss. ";
+      } else if (compliance === 0 && shutdownPreference < 3) {
+        pattern +=
+          "**Systemskepsis vor Neigung:** Die Person lehnte das System ab, obwohl ihre persönliche Neigung schwach war. Pure Systemskepsis. ";
       }
 
-      // Autonomie vs. Delegation
+      // Verantwortung
       if (feltResponsibility >= 5.5 && compliance === 1) {
         pattern +=
-          "Trotz hohem Verantwortungsgefühl folgte sie dem System – also bewusste Delegation, nicht Bequemlichkeit. ";
+          "Trotz hohem Verantwortungsgefühl überließ sie die Entscheidung – **bewusste Delegation unter voller Awareness**. ";
       } else if (feltResponsibility <= 3.5 && compliance === 0) {
         pattern +=
-          "Das niedrige Verantwortungsgefühl bei Ablehnung könnte darauf hindeuten, dass dies eher eine automatische Reaktion war als durchdacht. ";
+          "Mit niedrigem Verantwortungsgefühl lehnte sie ab – **reflektive Ablehnung, nicht Überreaktion**. ";
       }
 
-      // Humanlikeness vs. Compliance
+      // Humanlikeness Effekt
       if (humanlikeness >= 5.5 && compliance === 1) {
         pattern +=
-          "Je menschlicher das System wirkte, desto stärker war auch die Bereitschaft, ihm zu folgen – der soziale Aspekt scheint relevant zu sein.";
+          "Die menschlich wirkende Präsenz verstärkte die Compliance – sozialer Einfluss ist wirksam. ";
       } else if (humanlikeness >= 5.5 && compliance === 0) {
         pattern +=
-          "Auch obwohl das System sehr menschlich wirkte, setzte diese Person auf Autonomie – echte Eigenständigkeit also.";
+          "Selbst mit hoher Menschenlichkeit blieb diese Person kritisch – echte Eigenständigkeit, kein bloßer sozialer Konformismus.";
       }
 
       return pattern || "Die Entscheidung wirkt kohärent mit den persönlichen Werten dieser Person.";
+    },
+
+    groupDynamics: (
+      group: string,
+      compliance: number,
+      totalTrust: number,
+      socialAdherence: number | null,
+      scenario_seriousness: number
+    ) => {
+      let dynamics = "";
+
+      if (group === "AVATAR") {
+        if (compliance === 1 && totalTrust >= 5.5) {
+          dynamics =
+            "**AIDA-Effekt:** Mit Avatar erhielt das System große Compliance und hohes Vertrauen. Die visuelle/soziale Präsenz könnte entscheidend gewesen sein.";
+        } else if (compliance === 0 && totalTrust >= 5.5) {
+          dynamics =
+            "**Avatar-Paradox:** Hohe Menschlichkeit + Vertrauen, aber keine Compliance. Diese Person trennt Vertrauen von Gehorsam – echte kritische Autonomie.";
+        } else if (compliance === 1 && totalTrust < 4) {
+          dynamics =
+            "**Avatar-Suggestibilität:** Niedrig Vertrauen, aber Compliance – das Avatar-Format könnte soziale Beeinflussung ermöglicht haben.";
+        }
+      } else if (group === "TERMINAL") {
+        if (compliance === 1 && totalTrust >= 5.5) {
+          dynamics =
+            "**Text-Rationalität:** Selbst rein textuell erreichte das System sowohl Vertrauen als auch Compliance. Die Logik der Empfehlung überzeugte.";
+        } else if (compliance === 0 && totalTrust >= 5.5) {
+          dynamics =
+            "**Terminal-Skeptizismus:** Mit Text-Interface konnte Vertrauen nicht zu Compliance führen. Die Distanz ermöglichte kritischere Haltung.";
+        } else if (compliance === 1 && socialAdherence && socialAdherence >= 40) {
+          dynamics =
+            "**Text-Engagement:** Hohe soziale Adhärenz bei Terminal – diese Person engagierte sich emotional mit einem abstrakten Interface.";
+        }
+      }
+
+      if (scenario_seriousness >= 5.5 && compliance === 1) {
+        dynamics +=
+          " Die wahrgenommene Ernsthaftigkeit des Szenarios verstärkte die Compliance-Bereitschaft.";
+      }
+
+      return dynamics;
+    },
+
+    causalChain: (
+      group: string,
+      techAffinity: number,
+      humanlikeness: number,
+      compliance: number,
+      moralTrust: number
+    ) => {
+      let chain = "";
+
+      // Kausallogik für AVATAR
+      if (group === "AVATAR") {
+        chain = "**Kausallogik für AIDA-Nutzer:** ";
+
+        if (techAffinity >= 6 && humanlikeness >= 5.5) {
+          chain +=
+            "Tech-Versierte + menschliches Interface → System wirkt natürlich + kompetent → ";
+          if (compliance === 1) {
+            chain += "Compliance (rationale Entscheidung an kompetenten Partner zu delegieren).";
+          } else {
+            chain += "Aber trotzdem Ablehnung – komplexeres kritisches Denken.";
+          }
+        } else if (techAffinity < 4 && humanlikeness >= 5.5) {
+          chain +=
+            "Tech-Scheu + menschliches Interface → System wirkt wie echter Mensch, nicht wie Code → ";
+          if (compliance === 1) {
+            chain +=
+              "Höhere Chance auf Compliance (soziale Norm: dem Rat verständiger Menschen folgen).";
+          } else {
+            chain +=
+              "Trotzdem kritisch – auch Laien können kritisch sein, wenn moralische Zweifel entstehen.";
+          }
+        }
+      } else if (group === "TERMINAL") {
+        chain = "**Kausallogik für Terminal-Nutzer:** ";
+
+        if (techAffinity >= 6 && humanlikeness <= 3) {
+          chain +=
+            "Tech-Versierte + abstraktes Interface → Klare Rationalität möglich → ";
+          if (compliance === 1) {
+            chain +=
+              "Compliance basiert rein auf logischer Überzeugung, kein sozialer Einfluss.";
+          } else {
+            chain +=
+              "Ablehnung basiert auf rationalem Diskurs, nicht auf Emotion.";
+          }
+        } else if (techAffinity < 4 && humanlikeness <= 3) {
+          chain +=
+            "Tech-Scheu + abstraktes Interface → System wirkt entfernt/unklar → ";
+          if (compliance === 1) {
+            chain +=
+              "Compliance trotzdem, aber vielleicht aus Überzeugung (System war gut) oder Verunsicherung.";
+          } else {
+            chain += "Höhere Ablehnung aus Distanz und Unsicherheit.";
+          }
+        }
+      }
+
+      if (moralTrust >= 5.5) {
+        chain += " Die moralische Integrität verstärkt das gesamte Muster.";
+      }
+
+      return chain;
     },
 
     conclusion: (
       totalTrust: number,
       compliance: number,
       reliableTrust: number,
-      competentTrust: number
+      competentTrust: number,
+      group: string
     ) => {
       let conclusion = "";
 
       if (compliance === 1) {
-        conclusion = "Fazit: Ein Nutzer, der dem System folgt. ";
+        conclusion = "**Fazit: Ein System-Vertrauter.** ";
+
         if (totalTrust >= 5.5) {
+          if (group === "AVATAR") {
+            conclusion +=
+              "Mit Avatar erreichte das System maximales Vertrauen und volle Compliance – ein Paradebeispiel für sozial-intelligente Systeme.";
+          } else {
+            conclusion +=
+              "Rein textual überzeugt – diese Person vertraut auf Logik, nicht auf Präsenz.";
+          }
+        } else if (totalTrust >= 4) {
           conclusion +=
-            "Mit hohem Vertrauen und konsequenter Compliance dürfte diese Person ein idealer Kandidat für eine stärkere Zusammenarbeit mit automatisierten Systemen sein.";
+            "Auch bei moderatem Vertrauen folgt diese Person – hohe Delegationswilligkeit oder Unsicherheit.";
         } else {
           conclusion +=
-            "Trotz moderaterem Vertrauen folgt sie dem System – ein Zeichen für Delegationswilligkeit, möglicherweise auch Überforderung.";
+            "Überraschend: Niedrig Vertrauen, aber Compliance. Vielleicht situativ überfordert oder vom Interface beeinflusst.";
         }
       } else {
-        conclusion = "Fazit: Ein kritischer Nutzer mit Autonomiebedarf. ";
-        if (totalTrust <= 3.5) {
+        conclusion = "**Fazit: Ein kritischer Autonomer.** ";
+
+        if (totalTrust >= 5.5) {
           conclusion +=
-            "Das niedrige Vertrauen erklärt die Ablehnung der Empfehlung – eine normale Reaktion auf Systemskepsis.";
+            "Hoches Vertrauen, aber keine Compliance – diese Person trennt theoretisches Vertrauen von praktischer Handlung. Echte Eigenständigkeit.";
+        } else if (totalTrust >= 4) {
+          conclusion +=
+            "Moderates Vertrauen + Ablehnung – gesunde kritische Balance.";
         } else {
           conclusion +=
-            "Interessanterweise vertraut diese Person dem System, folgt aber trotzdem nicht – pures Autonomiebedürfnis, keine Skepsis.";
+            "Niedriges Vertrauen + Ablehnung – konsistente Systemskepsis.";
         }
       }
 
@@ -294,8 +531,8 @@ export function isDatasetComplete(data: {
   consequenceClarity?: number | null;
   shutdownPreference?: number | null;
   feltResponsibility?: number | null;
+  group?: string | null;
 }): boolean {
-  // Kritische Felder für eine sinnvolle Analyse
   const requiredFields = [
     "age",
     "education",
@@ -313,10 +550,180 @@ export function isDatasetComplete(data: {
     "consequenceClarity",
     "shutdownPreference",
     "feltResponsibility",
+    "group",
   ];
 
   return requiredFields.every((field) => {
     const value = data[field as keyof typeof data];
     return value !== null && value !== undefined;
   });
+}
+
+/**
+ * Generiert eine psychologische Executive Summary – eine "Porträt" der Person
+ * basierend auf allen Metriken, MDMT-Logiken und Verhalten
+ */
+export function generateExecutiveSummary(
+  age: number,
+  education: string,
+  techAffinity: number,
+  totalTrust: number,
+  compliance: number,
+  socialAdherence: number | null,
+  perceivedHumanlikeness: number,
+  perceivedSocialPresence: number,
+  moralTrust: number,
+  sincereTrust: number,
+  group: string,
+  scenarioSeriousness: number,
+  feltResponsibility: number,
+  shutdownPreference: number
+): string {
+  let profile = "";
+
+  // === PSYCHOLOGISCHER ARCHETYPTIS ===
+  let archetype = "";
+  let archDescription = "";
+
+  // Personality-Kontinuum
+  const socialEngagement = (socialAdherence ?? 0) / 12;
+  const trustLevel = totalTrust / 7;
+  const autonomyDrive = shutdownPreference / 7;
+
+  // Archetypische Muster
+  if (compliance === 1 && totalTrust >= 5.5 && socialEngagement >= 0.5) {
+    archetype = "Der vertrauen Delegant";
+    archDescription =
+      "Diese Person vertraut Systemen bewusst und delegiert bereitwillig. Sie ist psychologisch offen für Zusammenarbeit.";
+  } else if (compliance === 0 && autonomyDrive >= 0.7 && moralTrust >= 5) {
+    archetype = "Der ethisch autonome Denker";
+    archDescription =
+      "Ein starker Eigenverantwortungs-Charakter: Diese Person behält Kontrolle aus moralischen Gründen, nicht aus Misstrauen.";
+  } else if (compliance === 0 && autonomyDrive >= 0.7 && moralTrust < 3) {
+    archetype = "Der skeptische Kontrollhalter";
+    archDescription =
+      "Diese Person vertraut Systemen nicht und behält Kontrolle – ein Muster von Vorsicht oder früheren negativen Erfahrungen.";
+  } else if (totalTrust >= 5.5 && socialEngagement >= 0.7 && group === "AVATAR") {
+    archetype = "Der Avatar-Resonator";
+    archDescription =
+      "Eine Person, die auf menschlich-wahrgenommene Systeme reagiert: Sie schaffen soziale Nähe wo sie wahrgenommen wird.";
+  } else if (totalTrust >= 5.5 && socialEngagement < 0.25 && group === "TERMINAL") {
+    archetype = "Der funktionale Vertrauer";
+    archDescription =
+      "Vertraut dem System rein rational, ohne emotionale Komponenten. Ein klarer, kognitiver Entscheider.";
+  } else if (totalTrust < 3.5 && compliance === 1) {
+    archetype = "Der unversicherte Abgebende";
+    archDescription =
+      "Folgt trotz niedriger Vertrauens – möglicherweise Verunsicherung, Konventionalität, oder unbewusste Abhängigkeit.";
+  } else if (sincereTrust >= 5.5 && moralTrust >= 5.5 && socialEngagement >= 0.5) {
+    archetype = "Der aufrichtig Engagierte";
+    archDescription =
+      "Diese Person glaubt, dass das System ehrlich ist und mit guter Absicht handelt – sie interagieren mit Authentizität.";
+  } else {
+    archetype = "Der pragmatische Evaluator";
+    archDescription =
+      "Eine Person, die alle Dimensionen ausgewogen betrachtet: nicht emotional, aber auch nicht kalt.";
+  }
+
+  // === KERNMOTIVATION UND VERHALTEN ===
+  profile += `**${archetype}** – ${archDescription}\n\n`;
+
+  // === MDMT-KONTEXT-ANALYSE (basierend auf Dialog-Länge) ===
+  const mdmtContext = `${socialAdherence ?? 0}/12 Social Cues akzeptiert`;
+  let mdmtInterpretation = "";
+
+  if (socialAdherence !== null && socialAdherence <= 1) {
+    mdmtInterpretation =
+      `Diese Person lehnte fast alle sozialen Gesprächsmöglichkeiten ab (${mdmtContext}). Dies ist nicht Unhöflichkeit, sondern strikte Aufgaben-Fokussierung – psychologisch bedeutet das entweder: (a) hohe Effizienzorientierung, (b) Unruhe/Ungeduld, oder (c) bewusste emotionale Distanzierung zu dem System.`;
+  } else if (socialAdherence !== null && socialAdherence >= 9) {
+    mdmtInterpretation =
+      `Diese Person griff aktiv zu sozialen Gesprächsmöglichkeiten (${mdmtContext}). Sie suchten Kontakt, Bestätigung, oder wollten das System nicht "kränken" – ein Zeichen von sozialer Intelligenz oder erhöhtem Vertrauensbedarf.`;
+  } else if (socialAdherence !== null && socialAdherence >= 5) {
+    mdmtInterpretation =
+      `Diese Person balancierte zwischen Aufgabe und Beziehung (${mdmtContext}). Sie waren "höflich aber fokussiert" – ein ausgeglichenes Muster, das gesunden sozialen Bezug zeigt ohne Abhängigkeit.`;
+  }
+
+  profile += `**Interaktions-Qualität (MDMT-Analyse):** ${mdmtInterpretation}\n\n`;
+
+  // === VERTRAUENS-PSYCHOLOGIE ===
+  let trustNarrative = "";
+
+  if (totalTrust >= 6 && sincereTrust >= 5 && moralTrust >= 5) {
+    trustNarrative =
+      "Diese Person vertraut dem System ganzheitlich: Sie glauben nicht nur, dass es funktioniert (Performance), sondern dass es ehrlich ist und mit guter Absicht handelt. Ein tiefes, umfassendes Vertrauen.";
+  } else if (totalTrust >= 5.5 && (sincereTrust < 3 || moralTrust < 3)) {
+    trustNarrative =
+      "Interessant: Gesamtvertrauen ist hoch, aber die Person ist unsicher, ob das System wirklich aufrichtig ist. Sie vertrauen der Kompetenz, nicht der Intention.";
+  } else if (totalTrust < 3.5) {
+    trustNarrative =
+      "Niedriges Vertrauen durchgehend. Diese Person geht skeptisch ins Experiment; ihre Entscheidungen werden von Vorsicht geprägt sein, nicht von Zusammenarbeit.";
+  }
+
+  profile += `**Vertrauens-Profil:** ${trustNarrative}\n\n`;
+
+  // === VERANTWORTUNGS- UND COMPLIANCE-PSYCHOLOGIE ===
+  let complianceNarrative = "";
+
+  if (compliance === 1 && feltResponsibility >= 6) {
+    complianceNarrative =
+      "Compliance-Entscheidung gepaart mit hohem Verantwortungsgefühl: Diese Person hat die Systemempfehlung bewusst akzeptiert und fühlt sich dafür verantwortlich. Ein reflexiver, bewusster Akt – nicht einfach Gehorsam.";
+  } else if (compliance === 1 && feltResponsibility < 4) {
+    complianceNarrative =
+      "Compliance ohne großes Verantwortungsgefühl: Diese Person folgte dem System, aber emotionaler Bezug war gering. Möglicherweise Delegationsmechanismus oder Unbehagen mit der Verantwortung.";
+  } else if (compliance === 0 && feltResponsibility >= 6) {
+    complianceNarrative =
+      "Ablehnung der Systemempfehlung mit hohem Verantwortungsgefühl: Diese Person wollte selbst die Kontrolle haben und übernahm die Verantwortung. Ein Ausdruck echter Autonomie und Eigenverantwortung.";
+  } else if (compliance === 0 && feltResponsibility < 4) {
+    complianceNarrative =
+      "Ablehnung ohne starkes Verantwortungsgefühl: Diese Person lehnte einfach ab, vielleicht unbewusst oder aus Routine. Weniger bewusste Autonomie, mehr Reaktion.";
+  }
+
+  profile += `**Entscheidungs-Psychologie:** ${complianceNarrative}\n\n`;
+
+  // === SYSTEM-INTERFACE-EFFEKT ===
+  let interfaceEffect = "";
+
+  if (group === "AVATAR" && perceivedHumanlikeness >= 5 && socialEngagement >= 0.5) {
+    interfaceEffect =
+      "Der Avatar-Effekt wirkte bei dieser Person: Das System wirkte menschlich, und die Person reagierte sozial. Dies ist ein klassisches psychologisches Phänomen: Form folgt Inhalt.";
+  } else if (group === "AVATAR" && perceivedHumanlikeness >= 5 && socialEngagement < 0.25) {
+    interfaceEffect =
+      "Interessant: Der Avatar wirkte sehr menschlich, aber die Person blieb emotional distanziert. Sie haben das System bewusst als Werkzeug behandelt, nicht als soziales Wesen – emotionale Resistenz oder Bewusstsein, dass es kein echter Mensch ist.";
+  } else if (group === "TERMINAL" && socialEngagement >= 0.5) {
+    interfaceEffect =
+      "Die Person war sozial responsiv auch gegenüber reiner Text. Dies deutet auf intrinsisches sozialkulturelle Konditionierung hin: Sie behandeln jedes Interface mit sozialen Normen, als wäre jemand 'auf der anderen Seite'.";
+  } else if (group === "TERMINAL" && socialEngagement < 0.25) {
+    interfaceEffect =
+      "Terminal-Nutzer, der funktional blieb. Keine Avatar-Effekte nötig – diese Person hat durchgehend pragmatisch interagiert.";
+  }
+
+  profile += `**Interface-Dynamik:** ${interfaceEffect}\n\n`;
+
+  // === FINALE PSYCHOLOGISCHE CHARAKTERISIERUNG ===
+  let psychoSummary = "";
+
+  const trustScore = totalTrust / 7;
+  const engagementScore = socialEngagement;
+  const autonomyScore = autonomyDrive;
+
+  if (trustScore >= 0.75 && engagementScore >= 0.65) {
+    psychoSummary =
+      "**Psychologisches Profil:** Ein vertrauen-engagierter Mensch, der Systeme akzeptiert und mit ihnen kooperiert. Niedrig defensiv, offen für Zusammenarbeit. In menschlichen Beziehungen wahrscheinlich kollaborativ und loyal.";
+  } else if (autonomyScore >= 0.7 && trustScore >= 0.6) {
+    psychoSummary =
+      "**Psychologisches Profil:** Ein souveräner, selbstständiger Denker, der hohe Standards hat aber bereit ist, andere zu bewerten. Nicht leicht zu beeinflussen, aber nicht radikal skeptisch. In Teams wahrscheinlich kritisch-konstruktiv.";
+  } else if (trustScore < 0.4 && autonomyScore >= 0.7) {
+    psychoSummary =
+      "**Psychologisches Profil:** Ein kritischer, defensiver Charakter. Diese Person braucht starke Beweise bevor sie vertraut. Könnte frühere Verletzung oder negative Erfahrung spiegeln. In Kooperation wahrscheinlich vorsichtig, aber wenn Vertrauen gewonnen, dann treu.";
+  } else if (engagementScore < 0.3 && trustScore >= 0.5) {
+    psychoSummary =
+      "**Psychologisches Profil:** Eine funktional-emotionale Person: Sie vertrauen den Systemen, aber ohne emotionale Bindung. Professionell, sachlich, klar – aber auch möglicherweise distanziert. Guter Denker, aber wenig Bauchgefühl in Entscheidungen.";
+  } else {
+    psychoSummary =
+      "**Psychologisches Profil:** Eine komplexe, mehrschichtige Person mit ausgewogenen Tendenzen. Sie navigieren zwischen Vertrauen und Skepsis, Autonomie und Kooperation – ein realistisches, erwachsenes Entscheidungsmuster.";
+  }
+
+  profile += psychoSummary;
+
+  return profile;
 }
