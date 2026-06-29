@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ParticipantAnalysis } from "@/app/lib/analysis/generateAnalysis";
 import styles from "./ParticipantAnalysisModal.module.css";
 
@@ -27,10 +28,16 @@ export function ParticipantAnalysisModal({
   onClose,
   participantId,
 }: ParticipantAnalysisModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [analysis, setAnalysis] = useState<ParticipantAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("personal");
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // Lade Analyse wenn Modal öffnet
   useEffect(() => {
@@ -88,14 +95,14 @@ export function ParticipantAnalysisModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const getTabContent = (tab: TabType): string => {
     if (!analysis) return "";
     return analysis.sections[tab] || "";
   };
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
@@ -199,6 +206,7 @@ export function ParticipantAnalysisModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
