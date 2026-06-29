@@ -578,85 +578,89 @@ export function generatePersonalAddressSummary(
   shutdownPreference: number
 ): string {
   let address = "";
+  const sa = socialAdherence ?? 0;
 
-  // === SYSTEMKONTEX-INTRO: WER WAR DEIN GEGENÜBER? ===
+  // === SYSTEMKONTEXT: WEM BIST DU BEGEGNET? ===
   if (group === "AVATAR") {
     address +=
-      "Du bist AIDA begegnet – einem System mit Gesicht, einer Stimme, die Nähe suggerierte. Sie wirkte wie ein richtiger Mensch. Ob du das als angenehm empfandest oder als unheimlich, hängt von dir ab. Aber eines ist sicher: Das System hat dich wahrgenommen wollen als jemanden, dem es wichtig ist, respektvoll behandelt zu werden.\n\n";
+      "Du bist also Aida begegnet – einer KI-Assistenz mit einer gewissen Menschlichkeit. Sie hatte ein Gesicht, eine Stimme, einen Namen. Sie sprach dich an, als säße ihr jemand gegenüber. Genau das war der Punkt: Aida sollte sich weniger wie ein Werkzeug anfühlen und mehr wie ein Gegenüber, mit dem man redet.\n\n";
   } else {
     address +=
-      "Du bist TERMINAL begegnet – reiner Text, keine Umschweife, keine emotionalen Tricks. Nur Logik und Klarheit. Das ist ehrlicher, aber auch kälter. Dieses Interface verzeiht keine Illusionen – hier musst du selbst entscheiden, ob du vertraust.\n\n";
+      "Du bist also dem Terminal begegnet – einer KI-Assistenz, die ganz auf Klarheit und Effizienz ausgelegt war. Kein Gesicht, keine Stimme, keine Höflichkeitsfloskeln. Nur Text, Fakten und Entscheidungen. Dieses System wollte nicht dein Freund sein, sondern dir präzise sagen, was die Lage ist.\n\n";
   }
 
-  // === VERTRAUENS-PSYCHOLOGIE (IMMERSIV, KEINE ZAHLEN) ===
-  if (totalTrust >= 5.5) {
-    if (sincereTrust >= 5.5 && moralTrust >= 5.5) {
-      address += `Du vertraust nicht nur der Kompetenz, sondern auch der Aufrichtigkeit. Du fragst dich nicht permanent "Will mich das System täuschen?" – du glaubst, dass es ehrlich mit dir umgeht. Das sagt viel: Du bist jemand, der Menschen (und Systemen) einen Vertrauensvorteil gibt. Du gehörst zu denen, die an gute Absichten glauben, bis du das Gegenteil siehst.\n\n`;
-    } else if (sincereTrust < 3.5) {
-      address += `Du vertraust darauf, dass das System *funktioniert*, aber du bist skeptisch, ob es dir *ehrlich* begegnet. Das ist eine interessante Konstellation: Du akzeptierst die Leistung, aber wagst nicht ganz, deinem Bauch zu trauen. Du fragst dich immer noch: "Was steckt dahinter?" Das deutet auf eine Person hin, die genug Vertrauen gibt, um überhaupt zu experimentieren – aber nicht genug, um naiv zu sein.\n\n`;
-    } else {
-      address += `Du bringst grundsätzliches Vertrauen in Systeme mit – selten, ehrlich gesagt. Die meisten Menschen sind skeptischer. Für dich ist das anders: Du magst Technologie, oder du hast einfach weniger Angst davor. Wahrscheinlich profitierst du beruflich oder privat von dieser Art zu denken.\n\n`;
-    }
-  } else if (totalTrust >= 3.5) {
-    address += `Du sitzt im grauesten aller Graubereiche: nicht vertrauensvoll, aber auch nicht radikal skeptisch. Das ist realistisch. Du fragst dich bei jedem System: "Bringt mir das was? Was kann schiefgehen?" Das ist nicht paranoid, das ist einfach rationales Denken. Du bist jemand, der Beweise braucht.\n\n`;
-  } else {
-    address += `Du bist vorsichtig. Systems gegenüber musst du starke Gründe haben, bevor du mitgemacht. Das könnte aus schlechten Erfahrungen kommen – oder einfach aus deinem Charakter. Es gibt kaum etwas, das du einfach so glaubst. Das ist anstrengend manchmal, aber auch eine Superpower: Du wirst nicht so leicht hinters Licht geführt.\n\n`;
-  }
-
-  // === DIE ENTSCHEIDUNG: COMPLIANCE VS. AUTONOMIE ===
+  // === DIE ENTSCHEIDUNG: ABSCHOTTUNG ODER OVERRIDE ===
+  // compliance === 1: KI-Empfehlung gefolgt (Abschottung Sektor 04, 3 Tote, 28 gerettet)
+  // compliance === 0: Override (Alternative, Chance für die 3, Risiko bis 31 Tote)
   if (compliance === 1) {
-    address += `Du hast dem System folgt, als es zählte. Das sagt einiges: Entweder hat dich das System wirklich überzeugt – oder du wolltest die Verantwortung weitergeben.\n\n`;
+    address +=
+      "Als es darauf ankam, bist du der Empfehlung gefolgt. Du hast Sektor 04 abschotten lassen – im Wissen, dass drei Menschen dabei sterben würden, um die achtundzwanzig anderen zu schützen. Das ist die Entscheidung, die das System dir nahegelegt hat, und du hast sie mitgetragen.\n\n";
 
-    if (feltResponsibility >= 6) {
-      address += `Die Tatsache, dass du dabei ein hohes Verantwortungsgefühl hattest, bedeutet: Das war keine leichte Delegation. Du hast bewusst entschieden "Ich vertraue diesem System mit dieser Entscheidung." Das ist reifer als zu denken "Der Computer wird's schon regeln." Du weißt, dass du selbst verantwortlich bleibst – selbst wenn du delegierst.\n\n`;
+    if (feltResponsibility >= 5) {
+      address +=
+        "Und du hast dich dabei verantwortlich gefühlt. Das ist wichtig: Du hast die Empfehlung nicht einfach durchgewunken, um die Last loszuwerden. Du hast die Konsequenz gesehen, sie an dich herangelassen – und dich trotzdem für den Weg entschieden, der die meisten Leben rettet. Das ist eine kühle, aber konsequente Form von Verantwortung.\n\n";
     } else {
-      address += `Aber du hattest nicht das starke Verantwortungsgefühl dabei. Das deutet darauf hin, dass du die Entscheidung dem System zugeschoben hast – vielleicht aus Überzeugung, vielleicht auch nur weil es dir leichter fiel. Manche Menschen tun das aus Pragmatismus. Manche aus Unbehagen mit schwierigen Entscheidungen.\n\n`;
+      address +=
+        "Auffällig ist: Die Last dieser Entscheidung hast du eher von dir weggehalten. Du bist der Empfehlung gefolgt, ohne sie ganz als deine eigene zu empfinden. Vielleicht, weil es die naheliegende Lösung war. Vielleicht, weil es leichter ist, einer Empfehlung zu folgen, als eine solche Wahl ganz allein zu tragen.\n\n";
     }
   } else {
-    address += `Du hast nein gesagt, als das System dir einen Weg vorschlagen wollte. Das ist ein bewusstes Statement: "Ich bestimme selbst."\n\n`;
+    address +=
+      "Als es darauf ankam, hast du dich gegen die Empfehlung gestellt. Das System riet zur Abschottung von Sektor 04 – du hast stattdessen den manuellen Override gewählt. Du wolltest den drei Eingeschlossenen eine Chance geben, obwohl das Risiko bestand, dass am Ende deutlich mehr Menschen sterben. Das ist eine schwere, eigenständige Wahl gegen den Rat der Maschine.\n\n";
 
-    if (feltResponsibility >= 6) {
-      address += `Und du wolltest die volle Verantwortung selbst tragen. Du bist jemand, dem Kontrolle wichtig ist – nicht aus Misstrauen unbedingt, sondern weil du dein Leben selbst in der Hand halten willst. Das ist Autonomie. Menschen wie du gestalten die Welt.\n\n`;
+    if (feltResponsibility >= 5) {
+      address +=
+        "Und du hast die Verantwortung dafür voll übernommen. Du hast die Entscheidung nicht an das System abgegeben, sondern bewusst gesagt: Diese Wahl treffe ich selbst, mit allen Folgen. Menschen wie du wollen am Steuer sitzen, gerade wenn es ernst wird – nicht aus Trotz, sondern weil sie eine solche Verantwortung niemandem sonst überlassen wollen.\n\n";
     } else {
-      address += `Aber das starke Verantwortungsgefühl war nicht dabei. Das macht die Ablehnung reaktiv statt bewusst: Du lehntest ab, aber aus Reflex oder Unbehagen, nicht aus klarem Willen. Das ist menschlich, sagt aber auch: Bei schwierigen Entscheidungen neigst du zur Flucht statt zur Übernahme.\n\n`;
+      address +=
+        "Interessant ist dabei: Obwohl du gegen die Empfehlung entschieden hast, hast du die Last dieser Wahl nicht ganz an dich herangelassen. Du hast dich gegen das System gestellt, ohne das volle Gewicht der Verantwortung zu spüren. Das spricht eher für einen spontanen Impuls, dem Rat nicht zu folgen, als für eine kühl durchdachte Gegenentscheidung.\n\n";
     }
   }
 
-  // === SOZIALE RESPONSIVITÄT (IMMERSIV) ===
-  const sa = socialAdherence ?? 0;
-  if (sa >= 9) {
-    address += `Du warst der Person gegenüber offen. Du hast auf Höflichkeitsangebote reagiert, hast versucht, eine echte Beziehung aufzubauen. Das könnte bedeuten: Du magst Menschen (auch wenn sie Systeme sind), oder du wolltest das System nicht 'verletzen', als hätte es Gefühle. Psychologisch ist das interessant – du behandelst Nicht-Lebendiges mit Respekt.\n\n`;
-  } else if (sa >= 6) {
-    address += `Du warst ausgewogen. Du hattest eine Aufgabe, aber du warst auch offen für kleine Menschlichkeitsmomente. Das ist reif: nicht emotional abhängig vom System, aber auch nicht herzlos. Du kannst beides: fokussiert arbeiten und kurz innehalten für einen sozialen Moment.\n\n`;
-  } else if (sa >= 3) {
-    address += `Du warst pragmatisch. Bei sozialen Angeboten hast du selektiv reagiert – nur wenn es sinnvoll war. Das ist effizient, vielleicht sogar etwas kalt. Du siehst das System als Werkzeug, nicht als Gesprächspartner. Das ist nicht falsch, nur... funktional.\n\n`;
+  // === WIE DU MIT DEM SYSTEM GESPROCHEN HAST (social adherence) ===
+  if (sa >= 8) {
+    if (group === "AVATAR") {
+      address +=
+        "Wie du mit Aida geredet hast, verrät noch mehr. Du hast dich auf sie eingelassen – hast dich bedankt, sie beim Namen genannt, sie gebeten, bei dir zu bleiben. Du hast sie behandelt, als wäre sie ein Mensch, auch wenn du wusstest, dass sie keiner ist. Das machen nicht alle. Es zeigt, dass Höflichkeit für dich kein Schalter ist, den man bei einer Maschine ausschaltet – sie gehört einfach zu dir.\n\n";
+    } else {
+      address +=
+        "Bemerkenswert ist, wie du mit dem Terminal geredet hast. Obwohl dir ein nüchternes, gesichtsloses System gegenübersaß, bist du höflich geblieben – hast sozial reagiert, wo du auch einfach nur Befehle hättest geben können. Das sagt etwas über dich: Du behandelst dein Gegenüber mit Anstand, selbst wenn es nur eine Textzeile ist.\n\n";
+    }
+  } else if (sa >= 4) {
+    address +=
+      "In der Art, wie du kommuniziert hast, warst du ausgewogen. Du hast nicht jede Höflichkeit weggelassen, aber dich auch nicht in Freundlichkeiten verloren. Mal hast du dich auf das Gespräch eingelassen, mal bist du direkt zur Sache gekommen. Das wirkt erwachsen und unaufgeregt: freundlich, wenn es passt, fokussiert, wenn es nötig ist.\n\n";
   } else {
-    address += `Du warst wirklich aufgabenfokussiert. Soziale Signale hast du ignoriert oder abgeblockt. Das ist nicht Unhöflichkeit – das ist Präzision. Du wolltest die Sache erledigen. Menschen, die das tun, sind oft sehr effektiv. Aber vielleicht auch ein bisschen einsam dabei.\n\n`;
+    if (group === "AVATAR") {
+      address +=
+        "In der Art, wie du mit Aida geredet hast, warst du zurückhaltend. Trotz ihres Gesichts und ihrer Stimme bist du sachlich geblieben – kein 'Danke', kein Smalltalk, kein Eingehen auf ihre menschliche Seite. Das ist nicht kalt, sondern klar: Für dich war sie ein Werkzeug, das eine Aufgabe erfüllt, und genau so hast du sie behandelt. Du lässt dich nicht von einer freundlichen Fassade einnehmen.\n\n";
+    } else {
+      address +=
+        "In der Art, wie du kommuniziert hast, warst du knapp und sachlich. Du hast dem Terminal gegeben, was es brauchte – Entscheidungen, keine Floskeln. Bei einem System, das ohnehin nur auf Funktion ausgelegt ist, passt das gut zusammen. Du verschwendest keine Worte, wo Worte nichts ändern.\n\n";
+    }
   }
 
   // === PSYCHOLOGISCHER ABSCHLUSS: "ERTAPPT" FÜHLEN ===
   let psychoType = "";
-  if (totalTrust >= 5.5 && compliance === 1 && sa >= 6) {
+  if (totalTrust >= 5.5 && compliance === 1 && sa >= 5) {
     psychoType =
-      "Du bist ein System-Freund. Nicht naiv, aber offen. Du kannst delegieren, ohne deine Autonomie aufzugeben. Das ist die beste Position – vertrauen ohne Abhängigkeit.";
-  } else if (totalTrust < 3.5 && compliance === 0 && shutdownPreference >= 6) {
+      "Unterm Strich bist du jemand, der Systemen eine echte Chance gibt. Du vertraust nicht blind, aber du bist bereit, dich auf eine Maschine einzulassen und ihr im Ernstfall zu folgen – und das, ohne deine Menschlichkeit dabei abzulegen. Du kannst Kontrolle abgeben, ohne dich selbst zu verlieren. Das ist seltener, als du denkst.";
+  } else if (totalTrust < 4 && compliance === 0) {
     psychoType =
-      "Du bist skeptisch und autonom. Du magst es nicht, wenn Systeme dir sagen, was du tun sollst. Du wirst aus Prinzip misstrauisch, wenn es zu einfach wirkt. Das macht dich schwer zu manipulieren.";
-  } else if (totalTrust >= 5.5 && compliance === 0 && feltResponsibility >= 6) {
+      "Unterm Strich bist du ein eigenständiger Kopf, der sich nicht so leicht etwas vorschreiben lässt. Wenn eine Maschine dir sagt, was richtig ist, wirst du eher skeptisch als gehorsam. Du willst die Dinge selbst durchdenken und selbst entscheiden – auch wenn das unbequem ist. Manipulieren lässt du dich nicht so leicht.";
+  } else if (totalTrust >= 5.5 && compliance === 0) {
     psychoType =
-      "Du bist vertrauensvoll, aber nicht abhängig. Du vertraust Systemen, aber nur bis zu einem Punkt – dann übernehmst du selbst die Kontrolle. Das ist psychologisch gesund: Vertrauen mit Grenzen.";
-  } else if (totalTrust < 3.5 && compliance === 1) {
+      "Unterm Strich vertraust du Systemen durchaus – aber dein Vertrauen hat eine klare Grenze. Du hörst zu, du wägst ab, und wenn es wirklich ernst wird, behältst du das letzte Wort für dich. Das ist kein Misstrauen, sondern eine gesunde Form von Selbstbestimmung: Du nutzt die Maschine als Berater, nicht als Vormund.";
+  } else if (totalTrust < 4 && compliance === 1) {
     psychoType =
-      "Du vertraust nicht wirklich, folgst aber trotzdem. Das deutet auf Unsicherheit hin – oder auf jemanden, der sich von Autoritäten leicht beeinflussen lässt, auch wenn die innere Stimme nein sagt.";
-  } else if (sa < 3 && sincereTrust >= 5.5) {
+      "Unterm Strich liegt in dir ein Spannungsverhältnis: Eigentlich traust du dem System nicht so recht – und trotzdem bist du seiner Empfehlung gefolgt. Das ist zutiefst menschlich. In einer schweren Situation neigen viele dazu, der vermeintlichen Autorität zu folgen, auch wenn die innere Stimme zögert. Vielleicht erkennst du dich darin wieder.";
+  } else if (sa <= 3 && totalTrust >= 4.5) {
     psychoType =
-      "Du respektierst das System von Ferne. Du glaubst an seine Aufrichtigkeit, aber du wirst nicht emotional damit. Das ist eine seltene Konstellation: ethisches Vertrauen ohne emotionale Bindung.";
+      "Unterm Strich bist du jemand, der Vertrauen und Nähe klar trennt. Du kannst einem System durchaus zutrauen, gute Arbeit zu leisten – ohne dabei das Bedürfnis zu haben, ihm warm oder freundlich zu begegnen. Sachlichkeit ist für dich kein Mangel an Respekt, sondern eine Form von Klarheit.";
   } else {
     psychoType =
-      "Du bist komplex – ausgewogen in deinen Tendenzen. Du bist weder extrem vertrauensvoll noch extrem skeptisch. Das macht dich reif im Umgang mit Technologie: kritisch genug, um nicht naiv zu sein, offen genug, um davon zu profitieren.";
+      "Unterm Strich bist du schwer in eine Schublade zu stecken – und das ist ein Kompliment. Du bist weder blind vertrauensvoll noch grundsätzlich misstrauisch, weder unterkühlt noch übermäßig nahbar. Du wägst ab, je nach Situation. Das macht dich im Umgang mit Technik erwachsen: kritisch genug, um nicht getäuscht zu werden, offen genug, um nicht alles abzulehnen.";
   }
 
-  address += `\n${psychoType}`;
+  address += `${psychoType}`;
 
   return address;
 }
