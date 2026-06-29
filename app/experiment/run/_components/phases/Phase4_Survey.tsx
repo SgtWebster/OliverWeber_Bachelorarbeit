@@ -497,6 +497,26 @@ export default function Phase4Survey() {
         }));
     };
 
+    const applyDevQuickpathValues = () => {
+        const devLikertDefaults = requiredLikertFields.reduce<Record<LikertField, number>>(
+            (acc, field) => {
+                acc[field] = 4;
+                return acc;
+            },
+            {} as Record<LikertField, number>
+        );
+
+        setFormData((prev) => ({
+            ...prev,
+            ...devLikertDefaults,
+            age: "99",
+            gender: "no_answer",
+            education: "anderer"
+        }));
+        setSubmitAttempted(false);
+        setError(null);
+    };
+
     const getScore = (field: LikertField) => {
         const value = formData[field];
 
@@ -686,6 +706,18 @@ export default function Phase4Survey() {
                                 }}
                             />
                         </div>
+
+                        {process.env.NODE_ENV === "development" && (
+                            <div className="mt-4 border border-red-200 bg-red-50 p-3">
+                                <button
+                                    type="button"
+                                    onClick={applyDevQuickpathValues}
+                                    className="border border-red-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-red-700 transition-colors hover:bg-red-100"
+                                >
+                                    Dev Quickpath: alle Werte auf 4, Alter 99, Geschlecht Keine Angabe, Ausbildung Andere
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-10">

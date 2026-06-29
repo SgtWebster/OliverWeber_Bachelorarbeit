@@ -76,11 +76,10 @@ export default function Phase5Debriefing() {
             </section>
 
             <section className="mb-6 border border-slate-200 bg-white p-4 md:p-5">
-                <h3 className="text-base font-black text-slate-900">Datenverwendung & Widerruf</h3>
+                <h3 className="text-base font-black text-slate-900">Worauf zielen die vielen Fragen vom Fragebogen ab?</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-700">
-                    Deine Daten wurden vollständig anonym erhoben und werden ausschließlich für diese Forschung verwendet.
-                    Falls du nach dieser Aufklärung nicht mehr mit der Verwendung deiner Daten einverstanden bist, kannst
-                    du das Browserfenster jetzt einfach schließen, ohne den Abschluss zu bestätigen.
+                    Die Fragen orientieren sich am <strong>MDMT</strong> ("Multi-Dimensional Measure of Trust" in Version 2): einem kompakten, wissenschaftlichen Messrahmen,
+                    mit dem Wahrnehmung, Vertrauen und Entscheidungsverhalten im Umgang mit technischen Systemen systematisch erfasst werden.
                 </p>
             </section>
 
@@ -89,6 +88,9 @@ export default function Phase5Debriefing() {
                 <p className="mt-2 text-sm leading-relaxed text-slate-700">
                     Über den nächsten Schritt kommst du zur offiziellen Abschlussseite. Dort kannst du deine Teilnahme final
                     abschließen und optional am Gewinnspiel teilnehmen.
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                    Wenn du mehr über meine Forschung erfahren willst, dann melde im nächsten Schritt gerne dein Interesse an!
                 </p>
             </section>
 

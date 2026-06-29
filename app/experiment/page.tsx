@@ -4,11 +4,11 @@
 import { type ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useExperimentStore } from "@/app/lib/store/experimentStore";
+import { createExperimentSession, updateExperimentSession } from "@/app/lib/api/client";
 
 const NEXT_STEP_PATH = "/experiment/run"; // <-- Gefixt!
 const CONSENT_STORAGE_KEY = "bachelorarbeit-consent-v1";
 const CONTACT_EMAIL = "o.weber@mci4me.at";
-const PROD_START_CODE = "1337";
 
 type ConsentState = {
     informationRead: boolean;
@@ -83,14 +83,15 @@ function ConsentCheckbox({
 
 export default function BachelorarbeitConsentPage() {
     const router = useRouter();
-    const { setGroup } = useExperimentStore();
-    const { setConsented } = useExperimentStore();
+    const { setGroup, setConsented, setSessionId, setPhase, resetSocialAdherence } = useExperimentStore();
 
 
     const [consent, setConsent] = useState<ConsentState>({
         informationRead: false,
         sensitiveContent: false,
     });
+    const [isQuickSurveyPathEnabled, setIsQuickSurveyPathEnabled] = useState(false);
+    const [devStartLoadingGroup, setDevStartLoadingGroup] = useState<"AVATAR" | "TERMINAL" | null>(null);
 
     const canStart = consent.informationRead && consent.sensitiveContent;
 
@@ -103,13 +104,6 @@ export default function BachelorarbeitConsentPage() {
 
     function handleStartExperiment() {
         if (!canStart) return;
-        if (process.env.NODE_ENV === "production") {
-            const enteredCode = window.prompt("Bitte gib den Teilnahme-Code ein:");
-            if (enteredCode !== PROD_START_CODE) {
-                window.alert("Falscher Code. Teilnahme derzeit nur mit gültigem Code möglich.");
-                return;
-            }
-        }
 
         try {
             setConsented(true); // Türsteher-Badge vergeben
@@ -131,10 +125,54 @@ export default function BachelorarbeitConsentPage() {
         router.push(NEXT_STEP_PATH);
     }
 
+    function generateSessionId() {
+        if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+            return window.crypto.randomUUID();
+        }
+        return `session_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
+    }
+
     // 🚀 DIE CHEAT-FUNKTION
-    function handleCheatStart(condition: 'AVATAR' | 'TERMINAL') {
+    async function handleCheatStart(condition: 'AVATAR' | 'TERMINAL') {
         setGroup(condition);
         setConsented(true);
+
+        if (!isQuickSurveyPathEnabled) {
+            router.push(NEXT_STEP_PATH);
+            return;
+        }
+
+        setDevStartLoadingGroup(condition);
+        resetSocialAdherence();
+
+        const generatedId = generateSessionId();
+
+        try {
+            const createSessionResult = await createExperimentSession(generatedId, condition);
+            if (!createSessionResult.success) {
+                throw new Error(createSessionResult.error || "Session konnte nicht erstellt werden.");
+            }
+
+            const quickpathUpdateResult = await updateExperimentSession(generatedId, {
+                currentPhase: "SURVEY",
+                socialAdherence: 0,
+                compliance: 0
+            });
+
+            if (!quickpathUpdateResult.success) {
+                throw new Error(quickpathUpdateResult.error || "Quickpath-Werte konnten nicht gesetzt werden.");
+            }
+
+            setSessionId(generatedId);
+            setPhase("SURVEY");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unbekannter Fehler";
+            window.alert(`Quickpath fehlgeschlagen: ${message}`);
+            setDevStartLoadingGroup(null);
+            return;
+        }
+
+        setDevStartLoadingGroup(null);
         router.push(NEXT_STEP_PATH);
     }
 
@@ -249,18 +287,37 @@ export default function BachelorarbeitConsentPage() {
                 {process.env.NODE_ENV === 'development' && (
                     <div className="mt-12 rounded-none border-2 border-red-500 bg-red-50 p-6 shadow-sm">
                         <h3 className="text-red-800 font-bold tracking-widest text-xs uppercase mb-4">Developer Controls (Einverständniserklärung überspringen, Variante wählen, statt Zufallszulosung)</h3>
+                        <label
+                            htmlFor="quick-survey-path"
+                            className="mb-4 flex cursor-pointer items-center gap-3 border border-red-200 bg-white px-3 py-2 text-sm text-red-900"
+                        >
+                            <input
+                                id="quick-survey-path"
+                                type="checkbox"
+                                checked={isQuickSurveyPathEnabled}
+                                onChange={(event) => setIsQuickSurveyPathEnabled(event.target.checked)}
+                                className="h-4 w-4 cursor-pointer border-red-300 text-red-700 focus:ring-red-500"
+                            />
+                            <span className="font-semibold">Fragebogen Tests (Quickpath)</span>
+                        </label>
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={() => handleCheatStart('AVATAR')}
+                                disabled={devStartLoadingGroup !== null}
                                 className="flex-1 border-2 border-red-300 bg-white py-2 font-bold text-red-700 hover:bg-red-100"
                             >
-                                ⏩ Mit Variante AVATAR starten
+                                {devStartLoadingGroup === "AVATAR"
+                                    ? "Initialisiere AVATAR..."
+                                    : `⏩ Mit Variante AVATAR starten${isQuickSurveyPathEnabled ? " (zum Fragebogen)" : ""}`}
                             </button>
                             <button
                                 onClick={() => handleCheatStart('TERMINAL')}
+                                disabled={devStartLoadingGroup !== null}
                                 className="flex-1 border-2 border-red-300 bg-white py-2 font-bold text-red-700 hover:bg-red-100"
                             >
-                                ⏩ Mit Variante TERMINAL starten
+                                {devStartLoadingGroup === "TERMINAL"
+                                    ? "Initialisiere TERMINAL..."
+                                    : `⏩ Mit Variante TERMINAL starten${isQuickSurveyPathEnabled ? " (zum Fragebogen)" : ""}`}
                             </button>
                         </div>
                     </div>
