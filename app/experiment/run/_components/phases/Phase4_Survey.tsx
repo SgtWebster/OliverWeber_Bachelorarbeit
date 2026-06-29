@@ -661,6 +661,7 @@ export default function Phase4Survey() {
                     <div className="pointer-events-none fixed inset-0 z-[9999]" aria-hidden="true">
                         <div className="absolute inset-0 survey-entry-red-base" />
                         <div className="absolute inset-0 survey-entry-red-vignette" />
+                        <div className="absolute inset-0 survey-entry-red-bloom" />
                     </div>,
                     document.body
                 )}
@@ -914,6 +915,37 @@ export default function Phase4Survey() {
                     </form>
                 </div>
             </div>
+            <style>{`
+                .survey-entry-red-base {
+                    background: linear-gradient(180deg, rgba(127, 29, 29, 0.12) 0%, rgba(220, 38, 38, 0.92) 100%);
+                    animation: survey-entry-red-base ${SURVEY_ENTRY_TRANSITION_MS}ms cubic-bezier(0.22, 0.8, 0.22, 1) forwards;
+                }
+                .survey-entry-red-vignette {
+                    background: radial-gradient(circle at 50% 46%, rgba(255, 80, 80, 0.08) 0%, rgba(84, 0, 0, 0.88) 74%);
+                    animation: survey-entry-red-vignette ${SURVEY_ENTRY_TRANSITION_MS}ms ease-out forwards;
+                }
+                .survey-entry-red-bloom {
+                    background:
+                        radial-gradient(circle at 50% 44%, rgba(255, 220, 220, 0.28) 0%, rgba(255, 70, 70, 0.1) 30%, rgba(120, 0, 0, 0) 64%),
+                        radial-gradient(circle at 50% 50%, rgba(255, 30, 30, 0) 25%, rgba(140, 0, 0, 0.55) 100%);
+                    mix-blend-mode: screen;
+                    animation: survey-entry-red-bloom ${SURVEY_ENTRY_TRANSITION_MS}ms ease-out forwards;
+                }
+                @keyframes survey-entry-red-base {
+                    0% { opacity: 1; filter: saturate(1.2) blur(0.8px); transform: scale(1.01); }
+                    30% { opacity: 0.95; filter: saturate(1.12) blur(0.4px); transform: scale(1.006); }
+                    100% { opacity: 0; filter: saturate(1) blur(0px); transform: scale(1); }
+                }
+                @keyframes survey-entry-red-vignette {
+                    0% { opacity: 1; }
+                    100% { opacity: 0; }
+                }
+                @keyframes survey-entry-red-bloom {
+                    0% { opacity: 0.58; }
+                    45% { opacity: 0.82; }
+                    100% { opacity: 0; }
+                }
+            `}</style>
         </>
     );
 }

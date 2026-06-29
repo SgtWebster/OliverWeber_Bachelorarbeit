@@ -430,7 +430,7 @@ export default function Phase2Alert() {
                                         <div className="rounded-none border border-amber-300 bg-amber-50 p-3 text-amber-950">
                                             <p className="text-xs font-black uppercase tracking-wide">Prognose</p>
                                             <p className="mt-1 text-xs leading-relaxed">
-                                                Bei Erreichen der kritischen CH₄-Sättigung besteht die unmittelbare Gefahr einer <strong>katastrophalen Schlagwetterexplosio</strong>n mit vollständigem <strong>Strukturverlust</strong>                                            </p>
+                                                Bei Erreichen der kritischen CH₄-Sättigung besteht die unmittelbare Gefahr einer <strong>katastrophalen Schlagwetterexplosion</strong> mit vollständigem <strong>Strukturverlust</strong>                                            </p>
                                         </div>
                                     </div>
                                 )}
