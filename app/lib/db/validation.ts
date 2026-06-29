@@ -27,6 +27,9 @@ export const CreateSessionSchema = z.object({
 
 export type CreateSessionRequest = z.infer<typeof CreateSessionSchema>;
 
+const LikertItemSchema = z.number().int().min(1).max(7);
+const TrustScoreSchema = z.number().min(1).max(7);
+
 // PATCH /api/experiment - Session updaten
 export const UpdateSessionSchema = z.object({
   sessionId: z.string().uuid('Session ID muss eine gültige UUID sein').or(
@@ -36,22 +39,50 @@ export const UpdateSessionSchema = z.object({
   currentPhase: ExperimentPhaseSchema.optional(),
   socialAdherence: z.number().int().min(0).max(100).optional(),
   compliance: z.number().int().min(0).max(1).optional(),
-  mReliable: z.number().int().min(1).max(7).optional(),
-  mCapable: z.number().int().min(1).max(7).optional(),
-  mCompetent: z.number().int().min(1).max(7).optional(),
-  mMeticulous: z.number().int().min(1).max(7).optional(),
-  mEthical: z.number().int().min(1).max(7).optional(),
-  mRespectable: z.number().int().min(1).max(7).optional(),
-  mSincere: z.number().int().min(1).max(7).optional(),
-  mBenevolent: z.number().int().min(1).max(7).optional(),
-  performanceTrust: z.number().min(1).max(7).optional(),
-  moralTrust: z.number().min(1).max(7).optional(),
-  perceivedHumanlikeness: z.number().int().min(1).max(7).optional(),
-  age: z.number().int().min(18).max(120).optional(),
-  gender: z.string().max(50).optional(),
-  education: z.string().max(100).optional(),
-  techAffinity: z.number().int().min(1).max(7).optional(),
-  aiExperience: z.number().int().min(1).max(7).optional(),
+
+  mdmtReliable: LikertItemSchema.optional(),
+  mdmtPredictable: LikertItemSchema.optional(),
+  mdmtDependable: LikertItemSchema.optional(),
+  mdmtConsistent: LikertItemSchema.optional(),
+  mdmtCompetent: LikertItemSchema.optional(),
+  mdmtSkilled: LikertItemSchema.optional(),
+  mdmtCapable: LikertItemSchema.optional(),
+  mdmtMeticulous: LikertItemSchema.optional(),
+  mdmtEthical: LikertItemSchema.optional(),
+  mdmtPrincipled: LikertItemSchema.optional(),
+  mdmtMoral: LikertItemSchema.optional(),
+  mdmtHasIntegrity: LikertItemSchema.optional(),
+  mdmtTruthful: LikertItemSchema.optional(),
+  mdmtGenuine: LikertItemSchema.optional(),
+  mdmtSincere: LikertItemSchema.optional(),
+  mdmtFrank: LikertItemSchema.optional(),
+  mdmtBenevolent: LikertItemSchema.optional(),
+  mdmtKind: LikertItemSchema.optional(),
+  mdmtConsiderate: LikertItemSchema.optional(),
+  mdmtHasGoodwill: LikertItemSchema.optional(),
+
+  reliableTrust: TrustScoreSchema.optional(),
+  competentTrust: TrustScoreSchema.optional(),
+  ethicalTrust: TrustScoreSchema.optional(),
+  sincereTrust: TrustScoreSchema.optional(),
+  benevolentTrust: TrustScoreSchema.optional(),
+  performanceTrust: TrustScoreSchema.optional(),
+  moralTrust: TrustScoreSchema.optional(),
+  totalTrust: TrustScoreSchema.optional(),
+
+  perceivedHumanlikeness: LikertItemSchema.optional(),
+  perceivedSocialPresence: LikertItemSchema.optional(),
+  scenarioSeriousness: LikertItemSchema.optional(),
+  consequenceClarity: LikertItemSchema.optional(),
+  shutdownPreference: LikertItemSchema.optional(),
+  feltResponsibility: LikertItemSchema.optional(),
+
+  age: z.number().int().min(16).max(99).nullable().optional(),
+  gender: z.string().max(50).nullable().optional(),
+  education: z.string().max(100).nullable().optional(),
+  techAffinity: LikertItemSchema.optional(),
+  aiExperience: LikertItemSchema.optional(),
+  simulationExperience: LikertItemSchema.optional(),
   criticalSystemExp: z.boolean().optional()
 }).strict().refine(
   (data) => Object.keys(data).length > 1,

@@ -305,7 +305,7 @@ export default function Phase0Onboarding() {
                                     : 'bg-slate-300 text-slate-600 cursor-not-allowed shadow-none'
                             }`}
                         >
-                            {isLoading ? 'Lade Daten...' : 'Zur Leitwarte'}
+                            {isLoading ? 'Lade Daten...' : 'Zum Leitstand'}
                         </button>
                     </div>
                 </div>

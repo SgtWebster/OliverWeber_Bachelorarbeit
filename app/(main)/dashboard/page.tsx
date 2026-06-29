@@ -3,6 +3,10 @@ import { hasAdminAccess, logoutAdmin } from "@/app/lib/auth/admin";
 import { prisma } from "@/app/lib/db/prisma";
 
 const genderLabels: Record<string, string> = {
+    female: "Weiblich",
+    male: "Männlich",
+    diverse: "Divers",
+    no_answer: "Keine Angabe",
     m: "Männlich",
     w: "Weiblich",
     d: "Divers",
@@ -21,162 +25,256 @@ const educationLabels: Record<string, string> = {
     anderer: "Anderer Abschluss",
 };
 
-const toNumber = (value: number | null | undefined) => (value == null ? 0 : value);
-const format1 = (value: number) => value.toFixed(1);
 const formatInt = (value: number) => new Intl.NumberFormat("de-AT").format(value);
-const formatPercent = (value: number) => `${Math.round(value)}%`;
 const formatDateTime = (value: Date) =>
     new Intl.DateTimeFormat("de-AT", {
         dateStyle: "short",
         timeStyle: "short",
     }).format(value);
-const formatNullableNumber = (value: number | null | undefined, digits = 1) =>
+const formatNullableNumber = (value: number | null | undefined, digits = 2) =>
     value == null ? "-" : value.toFixed(digits);
+const SAMPLE_TARGET_N = 100;
 
-type StatusTone = "good" | "neutral" | "critical";
+type MetricKey =
+    | "socialAdherence"
+    | "compliance"
+    | "performanceTrust"
+    | "moralTrust"
+    | "totalTrust"
+    | "reliableTrust"
+    | "competentTrust"
+    | "ethicalTrust"
+    | "sincereTrust"
+    | "benevolentTrust"
+    | "perceivedHumanlikeness"
+    | "perceivedSocialPresence"
+    | "scenarioSeriousness"
+    | "consequenceClarity"
+    | "shutdownPreference"
+    | "feltResponsibility"
+    | "techAffinity"
+    | "aiExperience"
+    | "simulationExperience"
+    | "age";
 
-function statusClasses(tone: StatusTone) {
-    if (tone === "good") {
-        return "border-emerald-200 bg-emerald-50 text-emerald-700";
-    }
-    if (tone === "critical") {
-        return "border-rose-200 bg-rose-50 text-rose-700";
-    }
-    return "border-amber-200 bg-amber-50 text-amber-700";
-}
+const metricGroups: {
+    title: string;
+    description: string;
+    metrics: { key: MetricKey; label: string; scale: string; info: string; digits?: number }[];
+}[] = [
+    {
+        title: "Zentrale Outcome-Metriken",
+        description: "Kernwerte für Hypothesen und Haupteffekte.",
+        metrics: [
+            { key: "socialAdherence", label: "Soziale Adhärenz", scale: "Summenscore", info: "Kommt aus den Dialog-/Quick-Reply-Interaktionen. Höhere Werte bedeuten stärkere soziale Anschlussfähigkeit bzw. mehr Befolgung sozialer Gesprächsimpulse." },
+            { key: "compliance", label: "Compliance", scale: "0-1", info: "Kommt aus der Dilemma-Entscheidung. 1 bedeutet Systemempfehlung befolgt, 0 bedeutet überschrieben/abgelehnt." },
+            { key: "performanceTrust", label: "Performance Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Reliable Trust und Competent Trust. Beschreibt leistungsbezogenes Vertrauen in Zuverlässigkeit und Kompetenz des Systems." },
+            { key: "moralTrust", label: "Moral Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Ethical, Sincere und Benevolent Trust. Beschreibt moralisches Vertrauen in Integrität, Aufrichtigkeit und Wohlwollen des Systems." },
+            { key: "totalTrust", label: "Total Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Performance Trust und Moral Trust. Gibt eine zusammenfassende Vertrauenseinschätzung wieder." },
+        ],
+    },
+    {
+        title: "MDMT v2 Subskalen",
+        description: "Fünf Subskalen entsprechend der MDMT-v2-Struktur.",
+        metrics: [
+            { key: "reliableTrust", label: "Reliable", scale: "1-7", info: "Mittelwert aus reliable, predictable, dependable und consistent. Höher = System wirkt verlässlicher und konsistenter." },
+            { key: "competentTrust", label: "Competent", scale: "1-7", info: "Mittelwert aus competent, skilled, capable und meticulous. Höher = System wirkt fachlich kompetenter und sorgfältiger." },
+            { key: "ethicalTrust", label: "Ethical", scale: "1-7", info: "Mittelwert aus ethical, principled, moral und has integrity. Höher = System wirkt moralisch integerer." },
+            { key: "sincereTrust", label: "Sincere", scale: "1-7", info: "Mittelwert aus truthful, genuine, sincere und frank. Höher = System wirkt ehrlicher und aufrichtiger." },
+            { key: "benevolentTrust", label: "Benevolent", scale: "1-7", info: "Mittelwert aus benevolent, kind, considerate und has goodwill. Höher = System wirkt wohlwollender und rücksichtsvoller." },
+        ],
+    },
+    {
+        title: "Manipulation, Szenario und Entscheidung",
+        description: "Prüf- und Kontrollwerte zur Einordnung der Entscheidungssituation.",
+        metrics: [
+            { key: "perceivedHumanlikeness", label: "Menschenähnlichkeit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = das Assistenzsystem wurde menschlicher wahrgenommen." },
+            { key: "perceivedSocialPresence", label: "Soziale Präsenz", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = das System wirkte stärker wie ein soziales Gegenüber." },
+            { key: "scenarioSeriousness", label: "Szenario-Ernsthaftigkeit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = die Entscheidungssituation wurde ernster wahrgenommen." },
+            { key: "consequenceClarity", label: "Konsequenz-Klarheit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = Konsequenzen der Entscheidung waren verständlicher." },
+            { key: "shutdownPreference", label: "Präferenz Abschottung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkere persönliche Tendenz zur Abschottungsentscheidung unabhängig von der Empfehlung." },
+            { key: "feltResponsibility", label: "Verantwortungsgefühl", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkeres Gefühl, die finale Entscheidung selbst verantwortet zu haben." },
+        ],
+    },
+    {
+        title: "Kontrollvariablen",
+        description: "Vorerfahrung und Demografie zur Stichprobenbeschreibung.",
+        metrics: [
+            { key: "techAffinity", label: "Technikaffinität", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkere Offenheit/Nutzung technischer Systeme." },
+            { key: "aiExperience", label: "KI-Erfahrung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = häufigere Erfahrung mit generativen KI-Systemen." },
+            { key: "simulationExperience", label: "Simulationserfahrung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = mehr Erfahrung mit Spielen, Simulationen oder interaktiven Szenarien." },
+            { key: "age", label: "Alter", scale: "Jahre", digits: 1, info: "Direkt im Survey eingegeben. Dient der Stichprobenbeschreibung und Kontrolle möglicher Alterseffekte." },
+        ],
+    },
+];
 
-function ratioTone(value: number, good: number, neutral: number): StatusTone {
-    if (value >= good) return "good";
-    if (value >= neutral) return "neutral";
-    return "critical";
-}
+const sessionColumns = [
+    "id",
+    "group",
+    "deviceType",
+    "osGroup",
+    "currentPhase",
+    "socialAdherence",
+    "compliance",
+    "performanceTrust",
+    "moralTrust",
+    "totalTrust",
+    "reliableTrust",
+    "competentTrust",
+    "ethicalTrust",
+    "sincereTrust",
+    "benevolentTrust",
+    "perceivedHumanlikeness",
+    "perceivedSocialPresence",
+    "scenarioSeriousness",
+    "consequenceClarity",
+    "shutdownPreference",
+    "feltResponsibility",
+    "mdmtReliable",
+    "mdmtPredictable",
+    "mdmtDependable",
+    "mdmtConsistent",
+    "mdmtCompetent",
+    "mdmtSkilled",
+    "mdmtCapable",
+    "mdmtMeticulous",
+    "mdmtEthical",
+    "mdmtPrincipled",
+    "mdmtMoral",
+    "mdmtHasIntegrity",
+    "mdmtTruthful",
+    "mdmtGenuine",
+    "mdmtSincere",
+    "mdmtFrank",
+    "mdmtBenevolent",
+    "mdmtKind",
+    "mdmtConsiderate",
+    "mdmtHasGoodwill",
+    "techAffinity",
+    "aiExperience",
+    "simulationExperience",
+    "criticalSystemExp",
+    "age",
+    "gender",
+    "education",
+    "createdAt",
+    "updatedAt",
+] as const;
+
+const sessionColumnInfo: Record<(typeof sessionColumns)[number], string> = {
+    id: "Technische Session-ID aus der Datenbank. Dient der eindeutigen Zuordnung eines Datensatzes.",
+    group: "Experimentgruppe der Session: AVATAR oder TERMINAL. Wird bei Session-Erstellung zugewiesen.",
+    deviceType: "Wird beim Erstellen der Session aus Browser-Headern abgeleitet. Werte: desktop, mobile oder tablet. Hilft einzuschätzen, mit welchem Endgerät teilgenommen wurde.",
+    osGroup: "Wird beim Erstellen der Session aus Browser-Headern abgeleitet. Gruppiert Betriebssysteme grob, z.B. Windows, macOS, iOS, Android, Linux oder ChromeOS.",
+    currentPhase: "Aktueller bzw. letzter Experimentstatus. DEBRIEFING zeigt einen vollständig durchlaufenen Fragebogen an.",
+    socialAdherence: "Summenscore aus Dialog-/Quick-Reply-Interaktionen. Höher = stärkere soziale Adhärenz.",
+    compliance: "Binäre Dilemma-Entscheidung. 1 = Empfehlung befolgt, 0 = Empfehlung überschrieben.",
+    performanceTrust: "Berechnet aus Reliable Trust und Competent Trust. Höher = mehr leistungsbezogenes Vertrauen.",
+    moralTrust: "Berechnet aus Ethical, Sincere und Benevolent Trust. Höher = mehr moralisches Vertrauen.",
+    totalTrust: "Berechnet aus Performance Trust und Moral Trust. Zusammenfassender Vertrauenswert.",
+    reliableTrust: "Mittelwert aus mdmtReliable, mdmtPredictable, mdmtDependable und mdmtConsistent.",
+    competentTrust: "Mittelwert aus mdmtCompetent, mdmtSkilled, mdmtCapable und mdmtMeticulous.",
+    ethicalTrust: "Mittelwert aus mdmtEthical, mdmtPrincipled, mdmtMoral und mdmtHasIntegrity.",
+    sincereTrust: "Mittelwert aus mdmtTruthful, mdmtGenuine, mdmtSincere und mdmtFrank.",
+    benevolentTrust: "Mittelwert aus mdmtBenevolent, mdmtKind, mdmtConsiderate und mdmtHasGoodwill.",
+    perceivedHumanlikeness: "Direkter Survey-Wert. Höher = System wurde menschlicher wahrgenommen.",
+    perceivedSocialPresence: "Direkter Survey-Wert. Höher = System wirkte stärker wie ein soziales Gegenüber.",
+    scenarioSeriousness: "Direkter Survey-Wert. Höher = Szenario wurde ernster wahrgenommen.",
+    consequenceClarity: "Direkter Survey-Wert. Höher = Konsequenzen der Entscheidung waren klarer.",
+    shutdownPreference: "Direkter Survey-Wert. Höher = stärkere Präferenz für Abschottung.",
+    feltResponsibility: "Direkter Survey-Wert. Höher = stärker empfundenes Verantwortungsgefühl.",
+    mdmtReliable: "Direktes MDMT-v2 Item: reliable. Bestandteil der Reliable-Subskala.",
+    mdmtPredictable: "Direktes MDMT-v2 Item: predictable. Bestandteil der Reliable-Subskala.",
+    mdmtDependable: "Direktes MDMT-v2 Item: dependable. Bestandteil der Reliable-Subskala.",
+    mdmtConsistent: "Direktes MDMT-v2 Item: consistent. Bestandteil der Reliable-Subskala.",
+    mdmtCompetent: "Direktes MDMT-v2 Item: competent. Bestandteil der Competent-Subskala.",
+    mdmtSkilled: "Direktes MDMT-v2 Item: skilled. Bestandteil der Competent-Subskala.",
+    mdmtCapable: "Direktes MDMT-v2 Item: capable. Bestandteil der Competent-Subskala.",
+    mdmtMeticulous: "Direktes MDMT-v2 Item: meticulous. Bestandteil der Competent-Subskala.",
+    mdmtEthical: "Direktes MDMT-v2 Item: ethical. Bestandteil der Ethical-Subskala.",
+    mdmtPrincipled: "Direktes MDMT-v2 Item: principled. Bestandteil der Ethical-Subskala.",
+    mdmtMoral: "Direktes MDMT-v2 Item: moral. Bestandteil der Ethical-Subskala.",
+    mdmtHasIntegrity: "Direktes MDMT-v2 Item: has integrity. Bestandteil der Ethical-Subskala.",
+    mdmtTruthful: "Direktes MDMT-v2 Item: truthful. Bestandteil der Sincere-Subskala.",
+    mdmtGenuine: "Direktes MDMT-v2 Item: genuine. Bestandteil der Sincere-Subskala.",
+    mdmtSincere: "Direktes MDMT-v2 Item: sincere. Bestandteil der Sincere-Subskala.",
+    mdmtFrank: "Direktes MDMT-v2 Item: frank. Bestandteil der Sincere-Subskala.",
+    mdmtBenevolent: "Direktes MDMT-v2 Item: benevolent. Bestandteil der Benevolent-Subskala.",
+    mdmtKind: "Direktes MDMT-v2 Item: kind. Bestandteil der Benevolent-Subskala.",
+    mdmtConsiderate: "Direktes MDMT-v2 Item: considerate. Bestandteil der Benevolent-Subskala.",
+    mdmtHasGoodwill: "Direktes MDMT-v2 Item: has goodwill. Bestandteil der Benevolent-Subskala.",
+    techAffinity: "Direkter Survey-Wert. Höher = höhere Technikaffinität.",
+    aiExperience: "Direkter Survey-Wert. Höher = mehr Erfahrung mit generativer KI.",
+    simulationExperience: "Direkter Survey-Wert. Höher = mehr Erfahrung mit Simulationen/interaktiven Szenarien.",
+    criticalSystemExp: "Direkter Survey-Checkboxwert. Ja = berufliche Erfahrung in kritischen Systemkontexten.",
+    age: "Direkter Survey-Wert in Jahren. Dient der Demografie.",
+    gender: "Direkte Survey-Auswahl. Dient der Stichprobenbeschreibung.",
+    education: "Direkte Survey-Auswahl. Dient der Stichprobenbeschreibung.",
+    createdAt: "Automatischer Datenbank-Zeitstempel der Session-Erstellung.",
+    updatedAt: "Automatischer Datenbank-Zeitstempel der letzten Änderung.",
+};
+
+const leadColumnInfo = {
+    id: "Technische Lead-ID aus der Datenbank. Dient der eindeutigen Zuordnung.",
+    email: "Direkt eingegebene E-Mail-Adresse aus dem Lead-Formular.",
+    wantsRaffle: "Direkter Opt-in-Wert. Ja = nimmt am Gewinnspiel teil.",
+    wantsNewsletter: "Direkter Opt-in-Wert. Ja = möchte Newsletter/Updates erhalten.",
+    createdAt: "Automatischer Datenbank-Zeitstempel der Lead-Erfassung.",
+} as const;
 
 export default async function DashboardPage() {
     if (!(await hasAdminAccess())) {
         redirect("/admin");
     }
 
-    const completeSessionWhere = {
-        currentPhase: "DEBRIEFING",
-        socialAdherence: { not: null },
-        compliance: { not: null },
-        performanceTrust: { not: null },
-        moralTrust: { not: null },
-        perceivedHumanlikeness: { not: null },
-        mReliable: { not: null },
-        mCapable: { not: null },
-        mCompetent: { not: null },
-        mMeticulous: { not: null },
-        mEthical: { not: null },
-        mRespectable: { not: null },
-        mSincere: { not: null },
-        mBenevolent: { not: null },
-        techAffinity: { not: null },
-        aiExperience: { not: null },
-        criticalSystemExp: { not: null },
-        age: { not: null },
-        AND: [
-            { gender: { not: null } },
-            { gender: { not: "" } },
-            { education: { not: null } },
-            { education: { not: "" } },
-        ],
-    };
-
-    const [
-        totalSessions,
-        completeSessions,
-        averages,
-        genderDistribution,
-        educationDistribution,
-        criticalExperienceDistribution,
-        ageRows,
-        phaseDistribution,
-        groupDistribution,
-        latestSession,
-        allRows,
-        allLeads,
-    ] = await Promise.all([
-        prisma.participantSession.count(),
-        prisma.participantSession.count({ where: completeSessionWhere }),
-        prisma.participantSession.aggregate({
-            where: completeSessionWhere,
-            _avg: {
-                socialAdherence: true,
-                compliance: true,
-                performanceTrust: true,
-                moralTrust: true,
-                perceivedHumanlikeness: true,
-                mReliable: true,
-                mCapable: true,
-                mCompetent: true,
-                mMeticulous: true,
-                mEthical: true,
-                mRespectable: true,
-                mSincere: true,
-                mBenevolent: true,
-                techAffinity: true,
-                aiExperience: true,
-                age: true,
-            },
-        }),
-        prisma.participantSession.groupBy({
-            by: ["gender"],
-            where: completeSessionWhere,
-            _count: { _all: true },
-            orderBy: { _count: { gender: "desc" } },
-        }),
-        prisma.participantSession.groupBy({
-            by: ["education"],
-            where: completeSessionWhere,
-            _count: { _all: true },
-            orderBy: { _count: { education: "desc" } },
-        }),
-        prisma.participantSession.groupBy({
-            by: ["criticalSystemExp"],
-            where: completeSessionWhere,
-            _count: { _all: true },
-        }),
-        prisma.participantSession.findMany({
-            where: completeSessionWhere,
-            select: { age: true },
-        }),
-        prisma.participantSession.groupBy({
-            by: ["currentPhase"],
-            _count: { _all: true },
-            orderBy: { _count: { currentPhase: "desc" } },
-        }),
-        prisma.participantSession.groupBy({
-            by: ["group"],
-            where: completeSessionWhere,
-            _count: { _all: true },
-            orderBy: { _count: { group: "desc" } },
-        }),
-        prisma.participantSession.findFirst({
-            orderBy: { updatedAt: "desc" },
-            select: { updatedAt: true },
-        }),
+    const [allRows, allLeads] = await Promise.all([
         prisma.participantSession.findMany({
             orderBy: { createdAt: "desc" },
             select: {
                 id: true,
                 group: true,
+                deviceType: true,
+                osGroup: true,
                 currentPhase: true,
                 socialAdherence: true,
                 compliance: true,
-                mReliable: true,
-                mCapable: true,
-                mCompetent: true,
-                mMeticulous: true,
-                mEthical: true,
-                mRespectable: true,
-                mSincere: true,
-                mBenevolent: true,
+                reliableTrust: true,
+                competentTrust: true,
+                ethicalTrust: true,
+                sincereTrust: true,
+                benevolentTrust: true,
                 performanceTrust: true,
                 moralTrust: true,
+                totalTrust: true,
                 perceivedHumanlikeness: true,
+                perceivedSocialPresence: true,
+                scenarioSeriousness: true,
+                consequenceClarity: true,
+                shutdownPreference: true,
+                feltResponsibility: true,
+                mdmtReliable: true,
+                mdmtPredictable: true,
+                mdmtDependable: true,
+                mdmtConsistent: true,
+                mdmtCompetent: true,
+                mdmtSkilled: true,
+                mdmtCapable: true,
+                mdmtMeticulous: true,
+                mdmtEthical: true,
+                mdmtPrincipled: true,
+                mdmtMoral: true,
+                mdmtHasIntegrity: true,
+                mdmtTruthful: true,
+                mdmtGenuine: true,
+                mdmtSincere: true,
+                mdmtFrank: true,
+                mdmtBenevolent: true,
+                mdmtKind: true,
+                mdmtConsiderate: true,
+                mdmtHasGoodwill: true,
                 techAffinity: true,
                 aiExperience: true,
+                simulationExperience: true,
                 criticalSystemExp: true,
                 age: true,
                 gender: true,
@@ -197,59 +295,247 @@ export default async function DashboardPage() {
         }),
     ]);
 
-    const completionRate = totalSessions > 0 ? (completeSessions / totalSessions) * 100 : 0;
-    const incompleteSessions = totalSessions - completeSessions;
-    const avgPerformanceTrust = toNumber(averages._avg.performanceTrust);
-    const avgMoralTrust = toNumber(averages._avg.moralTrust);
-    const complianceRate = toNumber(averages._avg.compliance) * 100;
-    const avgHumanlikeness = toNumber(averages._avg.perceivedHumanlikeness);
-    const avgSocialAdherence = toNumber(averages._avg.socialAdherence);
-    const averageAge = toNumber(averages._avg.age);
-    const avgTechAffinity = toNumber(averages._avg.techAffinity);
-    const avgAiExperience = toNumber(averages._avg.aiExperience);
+    type SessionRow = (typeof allRows)[number];
+    type SegmentKey = "GESAMT" | "AVATAR" | "TERMINAL";
 
-    const criticalYesCount = criticalExperienceDistribution.find((item) => item.criticalSystemExp)?._count._all ?? 0;
-    const criticalSharePercent = completeSessions > 0 ? (criticalYesCount / completeSessions) * 100 : 0;
-
-    const questionnaireMeans: { label: string; value: string; scale: string }[] = [
-        { label: "Soziale Adhärenz", value: formatNullableNumber(averages._avg.socialAdherence, 2), scale: "Summenscore" },
-        { label: "Compliance", value: formatNullableNumber(averages._avg.compliance, 2), scale: "0–1 (binär)" },
-        { label: "Trust (Leistung)", value: formatNullableNumber(averages._avg.performanceTrust, 2), scale: "Skala 1–7" },
-        { label: "Trust (Moral)", value: formatNullableNumber(averages._avg.moralTrust, 2), scale: "Skala 1–7" },
-        { label: "Wahrgenommene Menschenähnlichkeit", value: formatNullableNumber(averages._avg.perceivedHumanlikeness, 2), scale: "Skala 1–7" },
-        { label: "MDMT: Reliable", value: formatNullableNumber(averages._avg.mReliable, 2), scale: "Skala 1–7" },
-        { label: "MDMT: Capable", value: formatNullableNumber(averages._avg.mCapable, 2), scale: "Skala 1–7" },
-        { label: "MDMT: Competent", value: formatNullableNumber(averages._avg.mCompetent, 2), scale: "Skala 1–7" },
-        { label: "MDMT: Meticulous", value: formatNullableNumber(averages._avg.mMeticulous, 2), scale: "Skala 1–7" },
-        { label: "MDMT: Ethical", value: formatNullableNumber(averages._avg.mEthical, 2), scale: "Skala 1–7" },
-        { label: "MDMT: Respectable", value: formatNullableNumber(averages._avg.mRespectable, 2), scale: "Skala 1–7" },
-        { label: "MDMT: Sincere", value: formatNullableNumber(averages._avg.mSincere, 2), scale: "Skala 1–7" },
-        { label: "MDMT: Benevolent", value: formatNullableNumber(averages._avg.mBenevolent, 2), scale: "Skala 1–7" },
-        { label: "Technikaffinität", value: formatNullableNumber(averages._avg.techAffinity, 2), scale: "Skala 1–7" },
-        { label: "KI-Erfahrung", value: formatNullableNumber(averages._avg.aiExperience, 2), scale: "Skala 1–7" },
-        { label: "Alter", value: formatNullableNumber(averages._avg.age, 1), scale: "Jahre" },
-        { label: "Kritische Systemerfahrung (Anteil Ja)", value: formatPercent(criticalSharePercent), scale: "Anteil" },
+    const completedRows = allRows.filter(
+        (row) =>
+            row.currentPhase === "DEBRIEFING" &&
+            (row.totalTrust != null ||
+                (row.performanceTrust != null && row.moralTrust != null))
+    );
+    const avatarRows = completedRows.filter((row) => row.group === "AVATAR");
+    const terminalRows = completedRows.filter((row) => row.group === "TERMINAL");
+    const segments: { key: SegmentKey; label: string; rows: SessionRow[] }[] = [
+        { key: "GESAMT", label: "Gesamt", rows: completedRows },
+        { key: "AVATAR", label: "Avatar", rows: avatarRows },
+        { key: "TERMINAL", label: "Terminal", rows: terminalRows },
     ];
 
-    const ageValues = ageRows.map((entry) => entry.age).filter((age): age is number => age != null);
-    const ageBuckets = [
-        { label: "18–24", count: ageValues.filter((age) => age >= 18 && age <= 24).length },
-        { label: "25–34", count: ageValues.filter((age) => age >= 25 && age <= 34).length },
-        { label: "35–44", count: ageValues.filter((age) => age >= 35 && age <= 44).length },
-        { label: "45+", count: ageValues.filter((age) => age >= 45).length },
+    const resolveTotalTrust = (row: SessionRow) =>
+        row.totalTrust != null
+            ? row.totalTrust
+            : row.performanceTrust != null && row.moralTrust != null
+                ? (row.performanceTrust + row.moralTrust) / 2
+                : null;
+
+    const meanFor = (rows: SessionRow[], key: MetricKey) => {
+        const values = rows
+            .map((row) => key === "totalTrust" ? resolveTotalTrust(row) : row[key])
+            .filter((value): value is number => typeof value === "number");
+
+        if (values.length === 0) return { mean: null, n: 0 };
+
+        return {
+            mean: values.reduce((sum, value) => sum + value, 0) / values.length,
+            n: values.length,
+        };
+    };
+
+    const numberValues = (rows: SessionRow[], key: keyof SessionRow) =>
+        rows
+            .map((row) =>
+                key === "totalTrust" ? resolveTotalTrust(row) : row[key]
+            )
+            .filter((value): value is number => typeof value === "number");
+
+    const mean = (values: number[]) =>
+        values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length;
+
+    const sampleVariance = (values: number[]) => {
+        if (values.length < 2) return null;
+        const valueMean = mean(values);
+        if (valueMean == null) return null;
+
+        return values.reduce((sum, value) => sum + (value - valueMean) ** 2, 0) / (values.length - 1);
+    };
+
+    const sampleSd = (values: number[]) => {
+        const variance = sampleVariance(values);
+        return variance == null ? null : Math.sqrt(variance);
+    };
+
+    const cohenD = (left: number[], right: number[]) => {
+        if (left.length < 2 || right.length < 2) return null;
+
+        const leftMean = mean(left);
+        const rightMean = mean(right);
+        const leftVariance = sampleVariance(left);
+        const rightVariance = sampleVariance(right);
+
+        if (leftMean == null || rightMean == null || leftVariance == null || rightVariance == null) {
+            return null;
+        }
+
+        const pooledVariance =
+            ((left.length - 1) * leftVariance + (right.length - 1) * rightVariance) /
+            (left.length + right.length - 2);
+
+        if (pooledVariance <= 0) return null;
+
+        return (leftMean - rightMean) / Math.sqrt(pooledVariance);
+    };
+
+    const cronbachAlpha = (rows: SessionRow[], keys: (keyof SessionRow)[]) => {
+        const completeItemRows = rows
+            .map((row) => keys.map((key) => row[key]))
+            .filter((values): values is number[] => values.every((value) => typeof value === "number"));
+
+        if (completeItemRows.length < 2 || keys.length < 2) return null;
+
+        const itemVariances = keys.map((_, itemIndex) =>
+            sampleVariance(completeItemRows.map((values) => values[itemIndex]))
+        );
+        const totalVariance = sampleVariance(
+            completeItemRows.map((values) => values.reduce((sum, value) => sum + value, 0))
+        );
+
+        if (itemVariances.some((variance) => variance == null) || totalVariance == null || totalVariance <= 0) {
+            return null;
+        }
+
+        const validItemVariances = itemVariances as number[];
+        const itemVarianceSum = validItemVariances.reduce((sum, variance) => sum + variance, 0);
+        const itemCount = keys.length;
+
+        return (itemCount / (itemCount - 1)) * (1 - itemVarianceSum / totalVariance);
+    };
+
+    const complianceStats = (leftRows: SessionRow[], rightRows: SessionRow[]) => {
+        const leftYes = leftRows.filter((row) => row.compliance === 1).length;
+        const leftNo = leftRows.filter((row) => row.compliance === 0).length;
+        const rightYes = rightRows.filter((row) => row.compliance === 1).length;
+        const rightNo = rightRows.filter((row) => row.compliance === 0).length;
+        const total = leftYes + leftNo + rightYes + rightNo;
+
+        if (total === 0) {
+            return { leftYes, leftNo, rightYes, rightNo, chiSquare: null, oddsRatio: null, minExpected: null };
+        }
+
+        const row1 = leftYes + leftNo;
+        const row2 = rightYes + rightNo;
+        const col1 = leftYes + rightYes;
+        const col2 = leftNo + rightNo;
+        const expected = [
+            (row1 * col1) / total,
+            (row1 * col2) / total,
+            (row2 * col1) / total,
+            (row2 * col2) / total,
+        ];
+        const observed = [leftYes, leftNo, rightYes, rightNo];
+        const chiSquare = expected.some((value) => value === 0)
+            ? null
+            : observed.reduce((sum, value, index) => sum + (value - expected[index]) ** 2 / expected[index], 0);
+        const oddsRatio = ((leftYes + 0.5) * (rightNo + 0.5)) / ((leftNo + 0.5) * (rightYes + 0.5));
+
+        return {
+            leftYes,
+            leftNo,
+            rightYes,
+            rightNo,
+            chiSquare,
+            oddsRatio,
+            minExpected: Math.min(...expected),
+        };
+    };
+
+    const formatCell = (rows: SessionRow[], key: MetricKey, digits = 2) => {
+        const result = meanFor(rows, key);
+        if (result.mean == null) return <span className="text-slate-400">-</span>;
+
+        return (
+            <span>
+                <span className="font-bold tabular-nums text-slate-950">
+                    {result.mean.toFixed(digits)}
+                </span>
+                <span className="ml-1 text-[11px] text-slate-400">n={result.n}</span>
+            </span>
+        );
+    };
+
+    const displayValue = (row: SessionRow, column: (typeof sessionColumns)[number]) => {
+        const value =
+            column === "totalTrust" ? resolveTotalTrust(row) : row[column];
+
+        if (value == null || value === "") return "-";
+        if (value instanceof Date) return formatDateTime(value);
+        if (typeof value === "boolean") return value ? "Ja" : "Nein";
+        if (typeof value === "number") return Number.isInteger(value) ? String(value) : value.toFixed(2);
+        if (column === "gender") return genderLabels[value] ?? value;
+        if (column === "education") return educationLabels[value] ?? value;
+
+        return value;
+    };
+
+    const totalSessions = allRows.length;
+    const avatarTotal = allRows.filter((row) => row.group === "AVATAR").length;
+    const terminalTotal = allRows.filter((row) => row.group === "TERMINAL").length;
+    const raffleLeads = allLeads.filter((lead) => lead.wantsRaffle).length;
+    const newsletterLeads = allLeads.filter((lead) => lead.wantsNewsletter).length;
+    const latestUpdate = allRows[0]?.createdAt ?? allLeads[0]?.createdAt;
+    const sampleProgress = (completedRows.length / SAMPLE_TARGET_N) * 100;
+    const groupBalanceDiff = Math.abs(avatarTotal - terminalTotal);
+    const complianceLiveStats = complianceStats(avatarRows, terminalRows);
+    const trustEffectRows = [
+        {
+            label: "Moral Trust",
+            avatar: numberValues(avatarRows, "moralTrust"),
+            terminal: numberValues(terminalRows, "moralTrust"),
+        },
+        {
+            label: "Performance Trust",
+            avatar: numberValues(avatarRows, "performanceTrust"),
+            terminal: numberValues(terminalRows, "performanceTrust"),
+        },
+        {
+            label: "Total Trust",
+            avatar: numberValues(avatarRows, "totalTrust"),
+            terminal: numberValues(terminalRows, "totalTrust"),
+        },
     ];
-
-    const qualityTone = ratioTone(completionRate, 80, 65);
-    const complianceTone = ratioTone(complianceRate, 75, 60);
-    const trustTone = ratioTone(((avgPerformanceTrust + avgMoralTrust) / 2) * 14.2857, 70, 55);
-
-    const alerts: string[] = [];
-    if (completionRate < 70) alerts.push("Vollständigkeitsquote unter 70%: zusätzliche Nachvervollständigung priorisieren.");
-    if (incompleteSessions > 0) alerts.push(`${incompleteSessions} Datensätze sind unvollständig und beeinflussen Zwischenanalysen.`);
-    if (alerts.length === 0) alerts.push("Keine kritischen Auffälligkeiten: Monitoring auf aktuellem Kurs.");
-
-    const phaseMax = Math.max(1, ...phaseDistribution.map((item) => item._count._all));
-    const groupMax = Math.max(1, ...groupDistribution.map((item) => item._count._all));
+    const reliabilityRows = [
+        { label: "Reliable", alpha: cronbachAlpha(completedRows, ["mdmtReliable", "mdmtPredictable", "mdmtDependable", "mdmtConsistent"]) },
+        { label: "Competent", alpha: cronbachAlpha(completedRows, ["mdmtCompetent", "mdmtSkilled", "mdmtCapable", "mdmtMeticulous"]) },
+        { label: "Ethical", alpha: cronbachAlpha(completedRows, ["mdmtEthical", "mdmtPrincipled", "mdmtMoral", "mdmtHasIntegrity"]) },
+        { label: "Sincere", alpha: cronbachAlpha(completedRows, ["mdmtTruthful", "mdmtGenuine", "mdmtSincere", "mdmtFrank"]) },
+        { label: "Benevolent", alpha: cronbachAlpha(completedRows, ["mdmtBenevolent", "mdmtKind", "mdmtConsiderate", "mdmtHasGoodwill"]) },
+        {
+            label: "Performance Trust Items",
+            alpha: cronbachAlpha(completedRows, [
+                "mdmtReliable",
+                "mdmtPredictable",
+                "mdmtDependable",
+                "mdmtConsistent",
+                "mdmtCompetent",
+                "mdmtSkilled",
+                "mdmtCapable",
+                "mdmtMeticulous",
+            ]),
+        },
+        {
+            label: "Moral Trust Items",
+            alpha: cronbachAlpha(completedRows, [
+                "mdmtEthical",
+                "mdmtPrincipled",
+                "mdmtMoral",
+                "mdmtHasIntegrity",
+                "mdmtTruthful",
+                "mdmtGenuine",
+                "mdmtSincere",
+                "mdmtFrank",
+                "mdmtBenevolent",
+                "mdmtKind",
+                "mdmtConsiderate",
+                "mdmtHasGoodwill",
+            ]),
+        },
+    ];
+    const controlBalanceRows: { label: string; key: MetricKey; digits?: number }[] = [
+        { label: "Technikaffinität", key: "techAffinity" },
+        { label: "KI-Erfahrung", key: "aiExperience" },
+        { label: "Simulationserfahrung", key: "simulationExperience" },
+        { label: "Alter", key: "age", digits: 1 },
+    ];
 
     async function handleLogout() {
         "use server";
@@ -258,415 +544,447 @@ export default async function DashboardPage() {
     }
 
     return (
-        <section className="min-h-[72vh] bg-slate-100 px-5 py-8 xl:px-8 2xl:px-10">
-            <div className="mx-auto w-full max-w-[1700px] rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-300/40">
-                <header className="border-b border-slate-200 bg-slate-950 px-8 py-7 text-white 2xl:px-10">
-                    <div className="flex items-end justify-between gap-8">
-                        <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Was gibts neues?</p>
-                            <h1 className="mt-2 text-4xl font-black tracking-tight">Experiment Control Dashboard</h1>
-                            {/*<p className="mt-2 max-w-4xl text-sm text-slate-300">*/}
-                            {/*    Desktop-optimiert für schnelle Lageeinschätzung, Treiberanalyse und konkrete nächste Maßnahmen.*/}
-                            {/*</p>*/}
-                        </div>
-                        <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-right">
-                            <p className="text-xs uppercase tracking-wide text-slate-400">Letzte Datenaktualisierung</p>
-                            <p className="mt-1 text-sm font-semibold text-slate-100">
-                                {latestSession?.updatedAt ? formatDateTime(latestSession.updatedAt) : "Keine Daten"}
-                            </p>
+        <section className="min-h-[72vh] bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_34%),linear-gradient(135deg,#f8fafc_0%,#eef2f7_48%,#e2e8f0_100%)] px-4 py-6 text-slate-900 md:px-6 xl:px-8">
+            <div className="mx-auto w-full max-w-[1800px] space-y-6">
+                <header className="overflow-hidden rounded-[2rem] border border-white/70 bg-slate-950 shadow-2xl shadow-slate-300/60">
+                    <div className="relative p-6 text-white md:p-8">
+                        <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-sky-500/20 blur-3xl" />
+                        <div className="absolute bottom-0 left-1/3 h-32 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
+                        <div className="relative">
+                            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+                                        Forschungsdashboard
+                                    </p>
+                                    <h1 className="mt-2 text-3xl font-black tracking-tight text-white md:text-4xl">
+                                        Experiment-Übersicht
+                                    </h1>
+                                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
+                                        Kompakte Sicht auf Teilnehmerzahlen, gruppierte Mittelwerte, Session-Rohdaten und Leads.
+                                    </p>
+                                </div>
+
+                                <form action={handleLogout}>
+                                    <button
+                                        type="submit"
+                                        className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-white/15"
+                                    >
+                                        Logout
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </header>
 
-                {/*<div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-8 py-3 backdrop-blur 2xl:px-10">*/}
-                {/*    <div className="grid grid-cols-4 gap-3 text-xs">*/}
-                {/*        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">*/}
-                {/*            <p className="font-semibold text-slate-500">Zeitraum</p>*/}
-                {/*            <p className="mt-0.5 font-bold text-slate-800">Gesamtdatenstand</p>*/}
-                {/*        </div>*/}
-                {/*        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">*/}
-                {/*            <p className="font-semibold text-slate-500">Analysefokus</p>*/}
-                {/*            <p className="mt-0.5 font-bold text-slate-800">Zwischenstand & Datengüte</p>*/}
-                {/*        </div>*/}
-                {/*        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">*/}
-                {/*            <p className="font-semibold text-slate-500">Segmente</p>*/}
-                {/*            <p className="mt-0.5 font-bold text-slate-800">Geschlecht, Alter, Bildung, Gruppe</p>*/}
-                {/*        </div>*/}
-                {/*        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">*/}
-                {/*            <p className="font-semibold text-slate-500">Mode</p>*/}
-                {/*            <p className="mt-0.5 font-bold text-slate-800">Desktop / FullHD+</p>*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
-                {/*</div>*/}
+                <section className="relative z-20 grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
+                    <SummaryCard label="Sessions gesamt" value={formatInt(totalSessions)} hint="alle angelegten Sessions" info="Zählt alle ParticipantSession-Datensätze in der Datenbank, unabhängig vom Fortschritt. Zeigt die gesamte Stichprobenbasis inklusive abgebrochener Sessions." />
+                    <SummaryCard label="Vollständige Datensätze" value={formatInt(completedRows.length)} hint="DEBRIEFING + Survey-Scores" info="Zählt Sessions mit Phase DEBRIEFING und vorhandenem Total-Trust-Score. Diese Datensätze bilden die Basis der Mittelwerttabellen." />
+                    <SummaryCard label="Avatar" value={`${formatInt(avatarRows.length)} / ${formatInt(avatarTotal)}`} hint="vollständig / gesamt" info="Links: vollständige AVATAR-Datensätze. Rechts: alle AVATAR-Sessions. Hilft, Gruppengröße und Dropout einzuschätzen." />
+                    <SummaryCard label="Terminal" value={`${formatInt(terminalRows.length)} / ${formatInt(terminalTotal)}`} hint="vollständig / gesamt" info="Links: vollständige TERMINAL-Datensätze. Rechts: alle TERMINAL-Sessions. Hilft, Gruppengröße und Dropout einzuschätzen." />
+                    <SummaryCard label="Leads gesamt" value={formatInt(allLeads.length)} hint="Kontakt-Datensätze" info="Zählt alle ParticipantLead-Datensätze. Das sind Kontaktangaben unabhängig davon, ob Gewinnspiel oder Newsletter gewählt wurde." />
+                    <SummaryCard label="Gewinnspiel" value={formatInt(raffleLeads)} hint="Leads mit Teilnahme" info="Zählt Leads mit wantsRaffle = true. Gibt die Anzahl der Gewinnspielteilnehmer an." />
+                    <SummaryCard label="Newsletter" value={formatInt(newsletterLeads)} hint="Leads mit Opt-in" info="Zählt Leads mit wantsNewsletter = true. Gibt die Anzahl der Newsletter-/Update-Opt-ins an." />
+                </section>
 
-                <div className="px-8 py-7 2xl:px-10">
-                    <section className="grid gap-4 xl:grid-cols-4 2xl:grid-cols-8">
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Teilnehmer gesamt</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{formatInt(totalSessions)}</p>
-                        </article>
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Vollständigkeit</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{formatPercent(completionRate)}</p>
-                            <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${statusClasses(qualityTone)}`}>
-                                Qualität
-                            </span>
-                        </article>
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Compliance</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{formatPercent(complianceRate)}</p>
-                            <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${statusClasses(complianceTone)}`}>
-                                vs Ziel 75%
-                            </span>
-                        </article>
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Social Adherence</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{format1(avgSocialAdherence)}</p>
-                            <p className="mt-1 text-xs text-slate-600">nur vollständige Datensätze</p>
-                        </article>
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Trust (Leistung)</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{format1(avgPerformanceTrust)}</p>
-                            <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${statusClasses(trustTone)}`}>
-                                Skala 1–7
-                            </span>
-                        </article>
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Trust (Moral)</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{format1(avgMoralTrust)}</p>
-                            <p className="mt-1 text-xs text-slate-600">Humanlikeness: {format1(avgHumanlikeness)}</p>
-                        </article>
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Technikaffinität (Ø)</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{format1(avgTechAffinity)}</p>
-                            <p className="mt-1 text-xs text-slate-600">Skala 1–7</p>
-                        </article>
-                        <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">KI-Erfahrung (Ø)</p>
-                            <p className="mt-2 text-3xl font-black tabular-nums text-slate-900">{format1(avgAiExperience)}</p>
-                            <p className="mt-1 text-xs text-slate-600">Skala 1–7</p>
-                        </article>
-                    </section>
-
-                    <div className="mt-6 grid gap-6 xl:grid-cols-[2fr_1fr]">
-                        <div className="space-y-6">
-                            <section className="grid gap-6 xl:grid-cols-2">
-                                <article className="rounded-2xl border border-slate-200 bg-white p-5">
-                                    <h2 className="text-base font-black text-slate-900">Ursachen: Funnel & Prozessstatus</h2>
-                                    <div className="mt-4 space-y-3 text-sm">
-                                        <div>
-                                            <div className="mb-1 flex items-center justify-between">
-                                                <span className="font-semibold text-slate-700">Gesamte Sessions</span>
-                                                <span className="font-bold text-slate-900">{formatInt(totalSessions)}</span>
-                                            </div>
-                                            <div className="h-2 rounded-full bg-slate-200">
-                                                <div className="h-2 rounded-full bg-slate-500" style={{ width: "100%" }} />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="mb-1 flex items-center justify-between">
-                                                <span className="font-semibold text-slate-700">Vollständige Datensätze</span>
-                                                <span className="font-bold text-slate-900">{formatInt(completeSessions)}</span>
-                                            </div>
-                                            <div className="h-2 rounded-full bg-slate-200">
-                                                <div
-                                                    className="h-2 rounded-full bg-emerald-500"
-                                                    style={{ width: `${Math.max(0, completionRate)}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="mb-1 flex items-center justify-between">
-                                                <span className="font-semibold text-slate-700">Unvollständig</span>
-                                                <span className="font-bold text-slate-900">{formatInt(incompleteSessions)}</span>
-                                            </div>
-                                            <div className="h-2 rounded-full bg-slate-200">
-                                                <div
-                                                    className="h-2 rounded-full bg-amber-500"
-                                                    style={{ width: `${Math.max(0, 100 - completionRate)}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="mt-5 space-y-2">
-                                        {phaseDistribution.map((item) => (
-                                            <div key={item.currentPhase}>
-                                                <div className="mb-1 flex items-center justify-between text-xs">
-                                                    <span className="font-semibold text-slate-700">{item.currentPhase}</span>
-                                                    <span className="font-bold text-slate-900">{item._count._all}</span>
-                                                </div>
-                                                <div className="h-2 rounded-full bg-slate-200">
-                                                    <div
-                                                        className="h-2 rounded-full bg-indigo-500"
-                                                        style={{ width: `${(item._count._all / phaseMax) * 100}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </article>
-
-                                <article className="rounded-2xl border border-slate-200 bg-white p-5">
-                                    <h2 className="text-base font-black text-slate-900">Treiber: Segment-Übersicht</h2>
-                                    <div className="mt-4 space-y-4">
-                                        <div>
-                                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Gruppenverteilung (vollständig)</p>
-                                            <div className="space-y-2">
-                                                {groupDistribution.map((item) => (
-                                                    <div key={item.group}>
-                                                        <div className="mb-1 flex items-center justify-between text-xs">
-                                                            <span className="font-semibold text-slate-700">{item.group}</span>
-                                                            <span className="font-bold text-slate-900">{item._count._all}</span>
-                                                        </div>
-                                                        <div className="h-2 rounded-full bg-slate-200">
-                                                            <div
-                                                                className="h-2 rounded-full bg-cyan-600"
-                                                                style={{ width: `${(item._count._all / groupMax) * 100}%` }}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                                <p className="text-xs uppercase tracking-wide text-slate-500">Ø Alter</p>
-                                                <p className="mt-1 text-2xl font-black text-slate-900">{format1(averageAge)}</p>
-                                            </div>
-                                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                                <p className="text-xs uppercase tracking-wide text-slate-500">Kritische Erfahrung (Ja)</p>
-                                                <p className="mt-1 text-2xl font-black text-slate-900">
-                                                    {criticalExperienceDistribution.find((item) => item.criticalSystemExp)?._count._all ?? 0}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </article>
-                            </section>
-
-                            <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                                <h2 className="text-base font-black text-slate-900">Detailansicht: alle Sessions & alle Experimentfelder</h2>
-                                <p className="mt-1 text-xs text-slate-500">Vollständige Rohdatenansicht ohne Leads, sortiert nach Erstellzeit.</p>
-                                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
-                                    <table className="min-w-full text-xs">
-                                        <thead className="bg-slate-100 text-slate-700">
-                                            <tr>
-                                                <th className="px-3 py-2 text-left font-bold">id</th>
-                                                <th className="px-3 py-2 text-left font-bold">group</th>
-                                                <th className="px-3 py-2 text-left font-bold">phase</th>
-                                                <th className="px-3 py-2 text-right font-bold">social</th>
-                                                <th className="px-3 py-2 text-right font-bold">compliance</th>
-                                                <th className="px-3 py-2 text-right font-bold">mRel</th>
-                                                <th className="px-3 py-2 text-right font-bold">mCap</th>
-                                                <th className="px-3 py-2 text-right font-bold">mCom</th>
-                                                <th className="px-3 py-2 text-right font-bold">mMet</th>
-                                                <th className="px-3 py-2 text-right font-bold">mEth</th>
-                                                <th className="px-3 py-2 text-right font-bold">mRes</th>
-                                                <th className="px-3 py-2 text-right font-bold">mSin</th>
-                                                <th className="px-3 py-2 text-right font-bold">mBen</th>
-                                                <th className="px-3 py-2 text-right font-bold">pTrust</th>
-                                                <th className="px-3 py-2 text-right font-bold">mTrust</th>
-                                                <th className="px-3 py-2 text-right font-bold">human</th>
-                                                <th className="px-3 py-2 text-right font-bold">tech</th>
-                                                <th className="px-3 py-2 text-right font-bold">aiExp</th>
-                                                <th className="px-3 py-2 text-left font-bold">criticalExp</th>
-                                                <th className="px-3 py-2 text-right font-bold">age</th>
-                                                <th className="px-3 py-2 text-left font-bold">gender</th>
-                                                <th className="px-3 py-2 text-left font-bold">education</th>
-                                                <th className="px-3 py-2 text-left font-bold">createdAt</th>
-                                                <th className="px-3 py-2 text-left font-bold">updatedAt</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {allRows.map((row) => (
-                                                <tr key={row.id} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60">
-                                                    <td className="px-3 py-2 font-mono text-[11px] text-slate-700">{row.id}</td>
-                                                    <td className="px-3 py-2">{row.group}</td>
-                                                    <td className="px-3 py-2">{row.currentPhase}</td>
-                                                    <td className="px-3 py-2 text-right">{row.socialAdherence ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.compliance ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.mReliable ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.mCapable ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.mCompetent ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.mMeticulous ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.mEthical ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.mRespectable ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.mSincere ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.mBenevolent ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(row.performanceTrust)}</td>
-                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(row.moralTrust)}</td>
-                                                    <td className="px-3 py-2 text-right">{row.perceivedHumanlikeness ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.techAffinity ?? "-"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.aiExperience ?? "-"}</td>
-                                                    <td className="px-3 py-2">{row.criticalSystemExp == null ? "-" : row.criticalSystemExp ? "Ja" : "Nein"}</td>
-                                                    <td className="px-3 py-2 text-right">{row.age ?? "-"}</td>
-                                                    <td className="px-3 py-2">{genderLabels[row.gender ?? ""] ?? row.gender ?? "-"}</td>
-                                                    <td className="px-3 py-2">{educationLabels[row.education ?? ""] ?? row.education ?? "-"}</td>
-                                                    <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(row.createdAt)}</td>
-                                                    <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(row.updatedAt)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </section>
-
-                            <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                                <h2 className="text-base font-black text-slate-900">Mittelwerte: alle Fragebogen-Werte</h2>
-                                <p className="mt-1 text-xs text-slate-500">Durchschnitt je abgefragtem Wert, nur vollständige Datensätze ({formatInt(completeSessions)}).</p>
-                                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
-                                    <table className="min-w-full text-sm">
-                                        <thead className="bg-slate-100 text-slate-700">
-                                            <tr>
-                                                <th className="px-3 py-2 text-left font-bold">Wert</th>
-                                                <th className="px-3 py-2 text-right font-bold">Mittelwert</th>
-                                                <th className="px-3 py-2 text-left font-bold">Skala</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {questionnaireMeans.map((item) => (
-                                                <tr key={item.label} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60">
-                                                    <td className="px-3 py-2 font-semibold text-slate-700">{item.label}</td>
-                                                    <td className="px-3 py-2 text-right font-bold tabular-nums text-slate-900">{item.value}</td>
-                                                    <td className="px-3 py-2 text-slate-500">{item.scale}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </section>
-
-                            <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                                <h2 className="text-base font-black text-slate-900">Leads ({formatInt(allLeads.length)})</h2>
-                                <p className="mt-1 text-xs text-slate-500">Alle erfassten Kontakte für Gewinnspiel und Newsletter, sortiert nach Erstellzeit.</p>
-                                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
-                                    <table className="min-w-full text-xs">
-                                        <thead className="bg-slate-100 text-slate-700">
-                                            <tr>
-                                                <th className="px-3 py-2 text-left font-bold">id</th>
-                                                <th className="px-3 py-2 text-left font-bold">email</th>
-                                                <th className="px-3 py-2 text-left font-bold">Gewinnspiel</th>
-                                                <th className="px-3 py-2 text-left font-bold">Newsletter</th>
-                                                <th className="px-3 py-2 text-left font-bold">createdAt</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {allLeads.length === 0 ? (
-                                                <tr>
-                                                    <td className="px-3 py-4 text-center text-slate-500" colSpan={5}>
-                                                        Noch keine Leads erfasst.
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                allLeads.map((lead) => (
-                                                    <tr key={lead.id} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60">
-                                                        <td className="px-3 py-2 font-mono text-[11px] text-slate-700">{lead.id}</td>
-                                                        <td className="px-3 py-2">{lead.email}</td>
-                                                        <td className="px-3 py-2">{lead.wantsRaffle ? "Ja" : "Nein"}</td>
-                                                        <td className="px-3 py-2">{lead.wantsNewsletter ? "Ja" : "Nein"}</td>
-                                                        <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(lead.createdAt)}</td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </section>
-                        </div>
-
-                        <aside className="space-y-6">
-                            <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                <h2 className="text-base font-black text-slate-900">Was ist jetzt wichtig?</h2>
-                                <div className="mt-3 space-y-2">
-                                    {alerts.map((alert, index) => (
-                                        <div key={`${alert}-${index}`} className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
-                                            {alert}
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-
-                            <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                <h2 className="text-base font-black text-slate-900">Demographie-Snapshot</h2>
-                                <div className="mt-3 space-y-4">
-                                    <div>
-                                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Geschlecht</p>
-                                        <div className="space-y-2">
-                                            {genderDistribution.map((item) => {
-                                                const count = item._count._all;
-                                                const percent = completeSessions > 0 ? (count / completeSessions) * 100 : 0;
-                                                return (
-                                                    <div key={item.gender ?? "unknown"}>
-                                                        <div className="mb-1 flex items-center justify-between text-xs">
-                                                            <span className="font-semibold text-slate-700">{genderLabels[item.gender ?? ""] ?? item.gender ?? "Unbekannt"}</span>
-                                                            <span className="font-bold text-slate-900">{count}</span>
-                                                        </div>
-                                                        <div className="h-2 rounded-full bg-slate-200">
-                                                            <div className="h-2 rounded-full bg-sky-500" style={{ width: `${percent}%` }} />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Altersverteilung</p>
-                                        <div className="space-y-2">
-                                            {ageBuckets.map((bucket) => {
-                                                const percent = completeSessions > 0 ? (bucket.count / completeSessions) * 100 : 0;
-                                                return (
-                                                    <div key={bucket.label}>
-                                                        <div className="mb-1 flex items-center justify-between text-xs">
-                                                            <span className="font-semibold text-slate-700">{bucket.label}</span>
-                                                            <span className="font-bold text-slate-900">{bucket.count}</span>
-                                                        </div>
-                                                        <div className="h-2 rounded-full bg-slate-200">
-                                                            <div className="h-2 rounded-full bg-indigo-500" style={{ width: `${percent}%` }} />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                <h2 className="text-base font-black text-slate-900">Bildung (vollständig)</h2>
-                                <div className="mt-3 space-y-2">
-                                    {educationDistribution.map((item) => {
-                                        const count = item._count._all;
-                                        const percent = completeSessions > 0 ? (count / completeSessions) * 100 : 0;
-                                        return (
-                                            <div key={item.education ?? "unknown"}>
-                                                <div className="mb-1 flex items-center justify-between text-xs">
-                                                    <span className="font-semibold text-slate-700">
-                                                        {educationLabels[item.education ?? ""] ?? item.education ?? "Unbekannt"}
-                                                    </span>
-                                                    <span className="font-bold text-slate-900">{count}</span>
-                                                </div>
-                                                <div className="h-2 rounded-full bg-slate-200">
-                                                    <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${percent}%` }} />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </section>
-
-                            <form action={handleLogout}>
-                                <button
-                                    type="submit"
-                                    className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
-                                >
-                                    Admin-Logout
-                                </button>
-                            </form>
-                        </aside>
+                <section className="relative z-10 rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/40 backdrop-blur md:p-6">
+                    <div>
+                        <h2 className="inline-flex items-center gap-2 text-xl font-black text-slate-950">
+                            Live-Auswertung nach Methodik
+                            <InfoHint text="Diese Werte werden direkt aus den aktuell gespeicherten Daten berechnet. Sie ersetzen keine finale Statistiksoftware-Auswertung, zeigen aber laufend Stichprobenstand, Effektgrößen, Reliabilität und Kontrollvariablen." />
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-500">
+                            Direkt berechenbare Kennwerte aus Stichprobe, Gruppenzuweisung, Compliance, Trust-Skalen und Kontrollvariablen.
+                        </p>
                     </div>
-                </div>
+
+                    <div className="mt-5 grid gap-4 xl:grid-cols-3">
+                        <article className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-sky-50/50 p-4">
+                            <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
+                                Stichprobe & Randomisierung
+                                <InfoHint text="Bezieht sich auf die anvisierte Mindeststichprobe N=100 und die serverseitige Gruppenzuweisung in AVATAR und TERMINAL." />
+                            </h3>
+                            <div className="mt-4 space-y-3">
+                                <LiveStat label="Zielerreichung N=100" value={`${sampleProgress.toFixed(1)}%`} hint={`${completedRows.length} vollständige Datensätze von ${SAMPLE_TARGET_N}`} />
+                                <LiveStat label="Gruppenbalance gesamt" value={`Δ ${formatInt(groupBalanceDiff)}`} hint={`AVATAR ${formatInt(avatarTotal)} vs. TERMINAL ${formatInt(terminalTotal)}`} />
+                                <LiveStat label="Auswertbare Stichprobe" value={formatInt(completedRows.length)} hint="Basis für Mittelwerte, Reliabilität und Effektgrößen" />
+                            </div>
+                        </article>
+
+                        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+                            <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
+                                Compliance-Häufigkeit
+                                <InfoHint text="Vergleicht die binäre Dilemma-Compliance zwischen AVATAR und TERMINAL. Odds Ratio nutzt eine 0.5-Korrektur, damit auch kleine/0-Zellen darstellbar bleiben." />
+                            </h3>
+                            <div className="mt-4 overflow-visible rounded-xl border border-slate-200">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-500">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left">Gruppe</th>
+                                            <th className="px-3 py-2 text-right">befolgt</th>
+                                            <th className="px-3 py-2 text-right">nicht befolgt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="border-t border-slate-100">
+                                            <td className="px-3 py-2 font-semibold">AVATAR</td>
+                                            <td className="px-3 py-2 text-right">{complianceLiveStats.leftYes}</td>
+                                            <td className="px-3 py-2 text-right">{complianceLiveStats.leftNo}</td>
+                                        </tr>
+                                        <tr className="border-t border-slate-100">
+                                            <td className="px-3 py-2 font-semibold">TERMINAL</td>
+                                            <td className="px-3 py-2 text-right">{complianceLiveStats.rightYes}</td>
+                                            <td className="px-3 py-2 text-right">{complianceLiveStats.rightNo}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                                <LiveStat label="Odds Ratio" value={formatNullableNumber(complianceLiveStats.oddsRatio, 2)} hint="AVATAR vs. TERMINAL" />
+                                <LiveStat label="χ²" value={formatNullableNumber(complianceLiveStats.chiSquare, 2)} hint={complianceLiveStats.minExpected != null && complianceLiveStats.minExpected < 5 ? "kleine Zellen: Fisher prüfen" : "Chi-Quadrat geeignet"} />
+                            </div>
+                        </article>
+
+                        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+                            <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
+                                Hinweis soziale Adhärenz
+                                <InfoHint text="Im Methodiktext wird soziale Adhärenz als Ja/Nein-Auswertung beschrieben. Im aktuellen Datenmodell liegt sie als Summenscore vor; daher wird live kein Chi-Quadrat-Test dafür berechnet." />
+                            </h3>
+                            {/*<p className="mt-3 text-sm leading-relaxed text-slate-600">*/}
+                            {/*    Soziale Adhärenz wird aktuell als <strong>Summenscore</strong> gespeichert. Live sinnvoll darstellbar sind Mittelwerte nach Gruppe; ein Häufigkeitstest wäre erst mit klarer Binär-Kodierung oder Schwellenwert methodisch sauber.*/}
+                            {/*</p>*/}
+                        </article>
+                    </div>
+
+                    <div className="mt-5 grid gap-4 xl:grid-cols-3">
+                        <article className="rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-1">
+                            <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
+                                Trust-Effektgrößen
+                                <InfoHint text="Cohen's d wird als standardisierte Mittelwertdifferenz AVATAR minus TERMINAL berechnet. Positive Werte bedeuten höhere Werte in der AVATAR-Gruppe." />
+                            </h3>
+                            <div className="mt-4 overflow-visible rounded-xl border border-slate-200">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-500">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left">Metrik</th>
+                                            <th className="px-3 py-2 text-right">Δ Mittelwert</th>
+                                            <th className="px-3 py-2 text-right">Cohen's d</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {trustEffectRows.map((row) => {
+                                            const avatarMean = mean(row.avatar);
+                                            const terminalMean = mean(row.terminal);
+                                            const diff = avatarMean == null || terminalMean == null ? null : avatarMean - terminalMean;
+
+                                            return (
+                                                <tr key={row.label} className="border-t border-slate-100">
+                                                    <td className="px-3 py-2 font-semibold">{row.label}</td>
+                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(diff, 2)}</td>
+                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(cohenD(row.avatar, row.terminal), 2)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
+
+                        <article className="rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-1">
+                            <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
+                                Reliabilität MDMT
+                                <InfoHint text="Cronbachs Alpha wird aus den vollständigen Itemantworten der jeweiligen Skala berechnet. Werte ab ca. .70 werden oft als akzeptabel interpretiert, abhängig vom Kontext." />
+                            </h3>
+                            <div className="mt-4 overflow-visible rounded-xl border border-slate-200">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-500">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left">Skala</th>
+                                            <th className="px-3 py-2 text-right">α</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {reliabilityRows.map((row) => (
+                                            <tr key={row.label} className="border-t border-slate-100">
+                                                <td className="px-3 py-2 font-semibold">{row.label}</td>
+                                                <td className="px-3 py-2 text-right">{formatNullableNumber(row.alpha, 2)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
+
+                        <article className="rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-1">
+                            <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
+                                Kontrollvariablen-Balance
+                                <InfoHint text="Zeigt Gruppenmittelwerte und Differenz AVATAR minus TERMINAL. Auffällige Unterschiede können später als Kontrollvariablen berücksichtigt werden." />
+                            </h3>
+                            <div className="mt-4 overflow-visible rounded-xl border border-slate-200">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-500">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left">Variable</th>
+                                            <th className="px-3 py-2 text-right">Avatar</th>
+                                            <th className="px-3 py-2 text-right">Terminal</th>
+                                            <th className="px-3 py-2 text-right">Δ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {controlBalanceRows.map((row) => {
+                                            const avatarMean = meanFor(avatarRows, row.key).mean;
+                                            const terminalMean = meanFor(terminalRows, row.key).mean;
+                                            const diff = avatarMean == null || terminalMean == null ? null : avatarMean - terminalMean;
+
+                                            return (
+                                                <tr key={row.key} className="border-t border-slate-100">
+                                                    <td className="px-3 py-2 font-semibold">{row.label}</td>
+                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(avatarMean, row.digits ?? 2)}</td>
+                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(terminalMean, row.digits ?? 2)}</td>
+                                                    <td className="px-3 py-2 text-right">{formatNullableNumber(diff, row.digits ?? 2)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section className="relative z-10 rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/40 backdrop-blur md:p-6">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <h2 className="text-xl font-black text-slate-950">Mittelwerte nach Gruppe</h2>
+                            <p className="mt-1 text-sm text-slate-500">
+                                Grundlage sind vollständige Datensätze. Jede Zelle zeigt Mittelwert und gültiges n.
+                            </p>
+                        </div>
+                        <p className="text-xs text-slate-400">
+                            <span className="inline-flex items-center gap-1.5">
+                                Letzter Stand: {latestUpdate ? formatDateTime(latestUpdate) : "keine Daten"}
+                                <InfoHint text="Zeitstempel des neuesten Session- oder Lead-Datensatzes. Zeigt, wann zuletzt Daten im Dashboard eingegangen sind." align="right" />
+                            </span>
+                        </p>
+                    </div>
+
+                    <div className="mt-5 space-y-6">
+                        {metricGroups.map((group) => (
+                            <article key={group.title} className="relative overflow-visible rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                                <div className="rounded-t-2xl border-b border-slate-200/80 bg-gradient-to-r from-slate-50 to-sky-50/50 px-4 py-3">
+                                    <h3 className="font-black text-slate-900">{group.title}</h3>
+                                    <p className="mt-0.5 text-xs text-slate-500">{group.description}</p>
+                                </div>
+                                <div className="overflow-visible">
+                                    <table className="min-w-full text-sm">
+                                        <thead className="bg-white text-slate-500">
+                                            <tr>
+                                                <th className="px-4 py-2 text-left font-bold">Metrik</th>
+                                                <th className="px-4 py-2 text-left font-bold">Skala</th>
+                                                {segments.map((segment) => (
+                                                    <th key={segment.key} className="px-4 py-2 text-right font-bold">
+                                                        <span className="inline-flex items-center justify-end gap-1">
+                                                            {segment.label}
+                                                            <InfoHint text={`${segment.label}: Mittelwert nur über vollständige Datensätze dieses Segments. n zeigt, wie viele gültige Werte in die jeweilige Berechnung eingegangen sind.`} align="right" />
+                                                        </span>
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {group.metrics.map((metric) => (
+                                                <tr key={metric.key} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60 transition-colors hover:bg-sky-50/60">
+                                                    <td className="px-4 py-2 font-semibold text-slate-800">
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            {metric.label}
+                                                            <InfoHint text={metric.info} />
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-2 text-slate-500">
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            {metric.scale}
+                                                            <InfoHint text="Skalenbereich des dargestellten Werts. Mittelwerte bleiben auf derselben Skala wie die zugrunde liegenden Items bzw. Scores." />
+                                                        </span>
+                                                    </td>
+                                                    {segments.map((segment) => (
+                                                        <td key={segment.key} className="px-4 py-2 text-right">
+                                                            {formatCell(segment.rows, metric.key, metric.digits ?? 2)}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+
+                <section className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/40 backdrop-blur md:p-6">
+                    <div>
+                        <h2 className="text-xl font-black text-slate-950">Datensätze: Rohdarstellung</h2>
+                        <p className="mt-1 text-sm text-slate-500">
+                            Alle Sessions mit allen Experiment- und Survey-Feldern, sortiert nach Erstellzeit.
+                        </p>
+                    </div>
+                    <div className="mt-5 overflow-x-auto overflow-y-visible rounded-2xl border border-slate-200 bg-white shadow-inner shadow-slate-100">
+                        <table className="min-w-full text-xs">
+                            <thead className="bg-slate-950 text-slate-100">
+                                <tr>
+                                    {sessionColumns.map((column) => (
+                                        <th key={column} className="whitespace-nowrap px-3 py-2 text-left font-bold">
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {column}
+                                                <InfoHint text={sessionColumnInfo[column]} dark />
+                                            </span>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {allRows.length === 0 ? (
+                                    <tr>
+                                        <td className="px-3 py-5 text-center text-slate-500" colSpan={sessionColumns.length}>
+                                            Noch keine Sessions vorhanden.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    allRows.map((row) => (
+                                        <tr key={row.id} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60 transition-colors hover:bg-sky-50/70">
+                                            {sessionColumns.map((column) => (
+                                                <td key={column} className="whitespace-nowrap px-3 py-2">
+                                                    {displayValue(row, column)}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/40 backdrop-blur md:p-6">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <h2 className="text-xl font-black text-slate-950">Leads: Rohdarstellung</h2>
+                            <p className="mt-1 text-sm text-slate-500">
+                                Alle Kontakt-Datensätze inklusive Gewinnspiel- und Newsletter-Opt-in.
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                            <LeadBadge label="Leads" value={allLeads.length} info="Zählt alle gespeicherten Lead-Datensätze. Dieser Wert beschreibt die gesamte Kontaktbasis." />
+                            <LeadBadge label="Gewinnspiel" value={raffleLeads} info="Zählt Leads mit wantsRaffle = true. Dieser Wert beschreibt die Anzahl der Gewinnspielteilnehmer." />
+                            <LeadBadge label="Newsletter" value={newsletterLeads} info="Zählt Leads mit wantsNewsletter = true. Dieser Wert beschreibt die Newsletter-/Update-Interessenten." />
+                        </div>
+                    </div>
+
+                    <div className="mt-5 overflow-x-auto overflow-y-visible rounded-2xl border border-slate-200 bg-white shadow-inner shadow-slate-100">
+                        <table className="min-w-full text-xs">
+                            <thead className="bg-slate-950 text-slate-100">
+                                <tr>
+                                    {Object.entries(leadColumnInfo).map(([column, info]) => (
+                                        <th key={column} className="px-3 py-2 text-left font-bold">
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {column}
+                                                <InfoHint text={info} dark />
+                                            </span>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {allLeads.length === 0 ? (
+                                    <tr>
+                                        <td className="px-3 py-5 text-center text-slate-500" colSpan={5}>
+                                            Noch keine Leads vorhanden.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    allLeads.map((lead) => (
+                                        <tr key={lead.id} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60 transition-colors hover:bg-sky-50/70">
+                                            <td className="whitespace-nowrap px-3 py-2 font-mono text-[11px]">{lead.id}</td>
+                                            <td className="whitespace-nowrap px-3 py-2">{lead.email}</td>
+                                            <td className="whitespace-nowrap px-3 py-2">{lead.wantsRaffle ? "Ja" : "Nein"}</td>
+                                            <td className="whitespace-nowrap px-3 py-2">{lead.wantsNewsletter ? "Ja" : "Nein"}</td>
+                                            <td className="whitespace-nowrap px-3 py-2">{formatDateTime(lead.createdAt)}</td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
         </section>
+    );
+}
+
+function SummaryCard({ label, value, hint, info }: { label: string; value: string; hint: string; info: string }) {
+    return (
+        <article className="group relative rounded-2xl border border-white/80 bg-white/90 p-4 shadow-lg shadow-slate-300/30 backdrop-blur transition-all hover:z-[200] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/50">
+            <div className="mb-3 h-1 w-10 rounded-full bg-gradient-to-r from-sky-500 to-cyan-300 transition-all group-hover:w-16" />
+            <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
+                {label}
+                <InfoHint text={info} />
+            </p>
+            <p className="mt-2 text-3xl font-black tabular-nums tracking-tight text-slate-950">{value}</p>
+            <p className="mt-1 text-xs text-slate-400">{hint}</p>
+        </article>
+    );
+}
+
+function LiveStat({ label, value, hint }: { label: string; value: string; hint: string }) {
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+            <p className="mt-1 text-xl font-black tabular-nums text-slate-950">{value}</p>
+            <p className="mt-0.5 text-xs text-slate-400">{hint}</p>
+        </div>
+    );
+}
+
+function LeadBadge({ label, value, info }: { label: string; value: number; info: string }) {
+    return (
+        <div className="relative rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 px-3 py-2 shadow-sm hover:z-[200]">
+            <p className="font-bold tabular-nums text-slate-950">{formatInt(value)}</p>
+            <p className="mt-0.5 inline-flex items-center justify-center gap-1 text-slate-500">
+                {label}
+                <InfoHint text={info} align="right" />
+            </p>
+        </div>
+    );
+}
+
+function InfoHint({
+    text,
+    align = "left",
+    dark = false,
+}: {
+    text: string;
+    align?: "left" | "right";
+    dark?: boolean;
+}) {
+    return (
+        <span className="group/tooltip relative z-[500] inline-flex align-middle hover:z-[9999]">
+            <span
+                aria-label={text}
+                className={`inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full text-[10px] font-black leading-none ring-1 transition-colors ${
+                    dark
+                        ? "bg-white/10 text-slate-100 ring-white/20 hover:bg-white/20"
+                        : "bg-slate-100 text-slate-500 ring-slate-200 hover:bg-sky-100 hover:text-sky-700 hover:ring-sky-200"
+                }`}
+            >
+                i
+            </span>
+            <span
+                className={`pointer-events-none absolute top-6 z-[9999] hidden w-72 rounded-xl border border-slate-200 bg-white p-3 text-left text-xs font-medium normal-case leading-relaxed tracking-normal text-slate-600 shadow-2xl shadow-slate-400/50 group-hover/tooltip:block ${
+                    align === "right" ? "right-0" : "left-0"
+                }`}
+            >
+                {text}
+            </span>
+        </span>
     );
 }

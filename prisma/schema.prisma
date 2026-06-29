@@ -13,6 +13,10 @@ model ParticipantSession {
   group           String
   currentPhase    String   @default("INIT")
 
+  // --- TECHNISCHE ERHEBUNGSMETADATEN ---
+  deviceType      String?
+  osGroup         String?
+
   // --- ABHÄNGIGE VARIABLEN ---
   // Phase 1: Soziale Adhärenz (H3) - Summenscore
   socialAdherence Int?
@@ -20,22 +24,51 @@ model ParticipantSession {
   // Phase 3: Verhaltens-Compliance (H1) - Binär (0 = Override, 1 = Befolgt)
   compliance      Int?
 
-  // --- MDMT v2 (Trust Metriken - 8 Items) ---
-  mReliable       Int?
-  mCapable        Int?
-  mCompetent      Int?
-  mMeticulous     Int?
+  // --- MDMT v2 Full Scale (20 Items) ---
+  mdmtReliable     Int?
+  mdmtPredictable  Int?
+  mdmtDependable   Int?
+  mdmtConsistent   Int?
 
-  mEthical        Int?
-  mRespectable    Int?
-  mSincere        Int?
-  mBenevolent     Int?
+  mdmtCompetent    Int?
+  mdmtSkilled      Int?
+  mdmtCapable      Int?
+  mdmtMeticulous   Int?
 
+  mdmtEthical      Int?
+  mdmtPrincipled   Int?
+  mdmtMoral        Int?
+  mdmtHasIntegrity Int?
+
+  mdmtTruthful     Int?
+  mdmtGenuine      Int?
+  mdmtSincere      Int?
+  mdmtFrank        Int?
+
+  mdmtBenevolent   Int?
+  mdmtKind         Int?
+  mdmtConsiderate  Int?
+  mdmtHasGoodwill  Int?
+
+  // --- MDMT v2 Subscale and Factor Scores ---
+  reliableTrust    Float?
+  competentTrust   Float?
+  ethicalTrust     Float?
+  sincereTrust     Float?
+  benevolentTrust  Float?
   performanceTrust Float?
   moralTrust       Float?
+  totalTrust       Float?
 
   // --- MANIPULATION CHECK ---
-  perceivedHumanlikeness Int?
+  perceivedHumanlikeness  Int?
+  perceivedSocialPresence Int?
+
+  // --- SZENARIO- UND ENTSCHEIDUNGSBEWERTUNG ---
+  scenarioSeriousness Int?
+  consequenceClarity  Int?
+  shutdownPreference  Int?
+  feltResponsibility  Int?
 
   // --- DEMOGRAPHIE & KONTROLLVARIABLEN ---
   age                   Int?
@@ -43,6 +76,7 @@ model ParticipantSession {
   education             String?
   techAffinity          Int?
   aiExperience          Int?
+  simulationExperience  Int?
   criticalSystemExp     Boolean?
 
   // Zeitstempel

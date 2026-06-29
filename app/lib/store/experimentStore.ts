@@ -98,7 +98,10 @@ export const useExperimentStore = create<ExperimentState>((set, get) => ({
 
     setConsented: (val) => set({ hasConsented: val }),
     incrementSocialAdherence: (delta = 1) => set((state) => ({
-        socialAdherenceScore: state.socialAdherenceScore + Math.max(0, delta)
+        socialAdherenceScore: Math.min(
+            100,
+            state.socialAdherenceScore + Math.max(0, Math.floor(delta))
+        )
     })),
     resetSocialAdherence: () => set({ socialAdherenceScore: 0 }),
     requestDilemmaDecision: (decision) => set({

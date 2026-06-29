@@ -1,5 +1,5 @@
 // app/api/experiment/route.ts
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/db/prisma';
 import { CreateSessionSchema, UpdateSessionSchema } from '@/app/lib/db/validation';
 import { handleError, generateRequestId, validatePrismaClient } from '@/app/lib/db/errors';
@@ -7,71 +7,36 @@ import { handleError, generateRequestId, validatePrismaClient } from '@/app/lib/
 export const dynamic = 'force-dynamic';
 const REQUEST_TIMEOUT = 10000; // 10 Sekunden
 
-/**
- * GET /api/experiment/:sessionId - Hole Session-Status ab
- */
-export async function GET(request: NextRequest) {
-    const requestId = generateRequestId();
-    
-    try {
-        validatePrismaClient(prisma);
+function detectDeviceMetadata(request: Request) {
+    const userAgent = request.headers.get('user-agent')?.toLowerCase() ?? '';
+    const clientHintMobile = request.headers.get('sec-ch-ua-mobile');
+    const clientHintPlatform = request.headers.get('sec-ch-ua-platform')?.replaceAll('"', '').toLowerCase() ?? '';
 
-        // Extrahiere sessionId aus URL
-        const pathname = request.nextUrl.pathname;
-        const sessionId = pathname.replace('/api/experiment/', '');
+    const isTablet =
+        /ipad|tablet/.test(userAgent) ||
+        (/android/.test(userAgent) && !/mobile/.test(userAgent));
+    const isMobile =
+        clientHintMobile === '?1' ||
+        /mobi|iphone|ipod|android/.test(userAgent);
 
-        if (!sessionId) {
-            return NextResponse.json(
-                { 
-                    error: 'Session ID erforderlich',
-                    code: 'MISSING_SESSION_ID',
-                    requestId 
-                },
-                { status: 400 }
-            );
-        }
+    const deviceType = isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop';
 
-        console.log(`[${requestId}] GET /api/experiment/${sessionId}`);
-
-        // Hole Session aus DB
-        const session = await prisma.participantSession.findUnique({
-            where: { id: sessionId },
-            select: {
-                id: true,
-                group: true,
-                currentPhase: true,
-                socialAdherence: true,
-                createdAt: true,
-                updatedAt: true
-            }
-        });
-
-        if (!session) {
-            console.log(`[${requestId}] Session ${sessionId} not found`);
-            return NextResponse.json(
-                { 
-                    error: 'Session nicht gefunden',
-                    code: 'SESSION_NOT_FOUND',
-                    requestId 
-                },
-                { status: 404 }
-            );
-        }
-
-        console.log(`[${requestId}] ✅ Session loaded`);
-        return NextResponse.json(
-            { 
-                success: true,
-                data: session,
-                requestId
-            },
-            { status: 200 }
-        );
-
-    } catch (error) {
-        const { status, body } = handleError(error, requestId);
-        return NextResponse.json(body, { status });
+    let osGroup = 'Unknown';
+    if (/windows/.test(clientHintPlatform) || /windows nt/.test(userAgent)) {
+        osGroup = 'Windows';
+    } else if (/ios/.test(clientHintPlatform) || /iphone|ipad|ipod/.test(userAgent)) {
+        osGroup = 'iOS';
+    } else if (/android/.test(clientHintPlatform) || /android/.test(userAgent)) {
+        osGroup = 'Android';
+    } else if (/macos|mac os/.test(clientHintPlatform) || /macintosh|mac os x/.test(userAgent)) {
+        osGroup = 'macOS';
+    } else if (/chrome os/.test(clientHintPlatform) || /cros/.test(userAgent)) {
+        osGroup = 'ChromeOS';
+    } else if (/linux/.test(clientHintPlatform) || /linux/.test(userAgent)) {
+        osGroup = 'Linux';
     }
+
+    return { deviceType, osGroup };
 }
 
 export async function POST(request: Request) {
@@ -110,11 +75,13 @@ export async function POST(request: Request) {
         }
 
         // Erstelle neue Session
+        const deviceMetadata = detectDeviceMetadata(request);
         const newSession = await prisma.participantSession.create({
             data: {
                 id: validatedData.sessionId,
                 group: validatedData.group,
                 currentPhase: 'ONBOARDING',
+                ...deviceMetadata,
             },
         });
 
@@ -152,6 +119,17 @@ export async function PATCH(request: Request) {
         const validatedData = UpdateSessionSchema.parse(body);
 
         const { sessionId, ...updateFields } = validatedData;
+        const normalizedUpdateFields = { ...updateFields };
+
+        if (
+            normalizedUpdateFields.totalTrust == null &&
+            typeof normalizedUpdateFields.performanceTrust === 'number' &&
+            typeof normalizedUpdateFields.moralTrust === 'number'
+        ) {
+            normalizedUpdateFields.totalTrust = parseFloat(
+                ((normalizedUpdateFields.performanceTrust + normalizedUpdateFields.moralTrust) / 2).toFixed(2)
+            );
+        }
 
         // Prüfe: Session existiert
         const existingSession = await prisma.participantSession.findUnique({
@@ -174,7 +152,7 @@ export async function PATCH(request: Request) {
         // Update mit typisierten Feldern
         const updatedSession = await prisma.participantSession.update({
             where: { id: sessionId },
-            data: updateFields,
+            data: normalizedUpdateFields,
         });
 
         console.log(`[${requestId}] ✅ Session ${sessionId} updated`);
