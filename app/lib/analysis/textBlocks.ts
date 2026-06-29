@@ -407,7 +407,7 @@ export const textBlocks: TextBlocks = {
 
       // Kausallogik für AVATAR
       if (group === "AVATAR") {
-        chain = "**Kausallogik für AIDA-Nutzer:** ";
+        chain = "Kausallogik für AIDA-Nutzer: ";
 
         if (techAffinity >= 6 && humanlikeness >= 5.5) {
           chain +=
@@ -429,7 +429,7 @@ export const textBlocks: TextBlocks = {
           }
         }
       } else if (group === "TERMINAL") {
-        chain = "**Kausallogik für Terminal-Nutzer:** ";
+        chain = "Kausallogik für Terminal-Nutzer: ";
 
         if (techAffinity >= 6 && humanlikeness <= 3) {
           chain +=
@@ -470,7 +470,7 @@ export const textBlocks: TextBlocks = {
       let conclusion = "";
 
       if (compliance === 1) {
-        conclusion = "**Fazit: Ein System-Vertrauter.** ";
+        conclusion = "Fazit: Ein System-Vertrauter. ";
 
         if (totalTrust >= 5.5) {
           if (group === "AVATAR") {
@@ -488,7 +488,7 @@ export const textBlocks: TextBlocks = {
             "Überraschend: Niedrig Vertrauen, aber Compliance. Vielleicht situativ überfordert oder vom Interface beeinflusst.";
         }
       } else {
-        conclusion = "**Fazit: Ein kritischer Autonomer.** ";
+        conclusion = "Fazit: Ein kritischer Autonomer. ";
 
         if (totalTrust >= 5.5) {
           conclusion +=
@@ -561,6 +561,7 @@ export function isDatasetComplete(data: {
 
 /**
  * Generiert persönliche Ansprache in "Du"-Form für Einzelteilnehmerfeedback
+ * IMMERSIV & PSYCHOLOGISCH: "Ertappt-Gefühl" ohne Zahlen/Prozente
  * (Kann später standalone für Vorab-Analysen verwendet werden)
  */
 export function generatePersonalAddressSummary(
@@ -576,73 +577,86 @@ export function generatePersonalAddressSummary(
   feltResponsibility: number,
   shutdownPreference: number
 ): string {
-  // MDMT v2 Scale is 1-7, so thresholds: >5.5 = High, 3.5-5.5 = Moderate, <3.5 = Low
   let address = "";
 
-  // === VERTRAUENS-ADRESSE ===
+  // === SYSTEMKONTEX-INTRO: WER WAR DEIN GEGENÜBER? ===
+  if (group === "AVATAR") {
+    address +=
+      "Du bist AIDA begegnet – einem System mit Gesicht, einer Stimme, die Nähe suggerierte. Sie wirkte wie ein richtiger Mensch. Ob du das als angenehm empfandest oder als unheimlich, hängt von dir ab. Aber eines ist sicher: Das System hat dich wahrgenommen wollen als jemanden, dem es wichtig ist, respektvoll behandelt zu werden.\n\n";
+  } else {
+    address +=
+      "Du bist TERMINAL begegnet – reiner Text, keine Umschweife, keine emotionalen Tricks. Nur Logik und Klarheit. Das ist ehrlicher, aber auch kälter. Dieses Interface verzeiht keine Illusionen – hier musst du selbst entscheiden, ob du vertraust.\n\n";
+  }
+
+  // === VERTRAUENS-PSYCHOLOGIE (IMMERSIV, KEINE ZAHLEN) ===
   if (totalTrust >= 5.5) {
-    address += "Du bringst ein grundsätzliches Vertrauen in KI-Systeme mit – du glaubst, dass Technologie dir helfen kann und dass sie grundsätzlich zuverlässig ist.\n\n";
     if (sincereTrust >= 5.5 && moralTrust >= 5.5) {
-      address +=
-        "Besonders wichtig ist dir nicht nur, dass das System funktioniert, sondern auch, dass es ehrlich mit dir umgeht und gute Absichten hat. Du fragst dich nicht nur 'Funktioniert es?', sondern auch 'Meint es das ernst?'.\n\n";
+      address += `Du vertraust nicht nur der Kompetenz, sondern auch der Aufrichtigkeit. Du fragst dich nicht permanent "Will mich das System täuschen?" – du glaubst, dass es ehrlich mit dir umgeht. Das sagt viel: Du bist jemand, der Menschen (und Systemen) einen Vertrauensvorteil gibt. Du gehörst zu denen, die an gute Absichten glauben, bis du das Gegenteil siehst.\n\n`;
     } else if (sincereTrust < 3.5) {
-      address +=
-        "Allerdings zweifelst du daran, ob das System wirklich mit dir aufrichtig kommuniziert. Es könnte dich täuschen – das ist ein kritischer Punkt für dich.\n\n";
+      address += `Du vertraust darauf, dass das System *funktioniert*, aber du bist skeptisch, ob es dir *ehrlich* begegnet. Das ist eine interessante Konstellation: Du akzeptierst die Leistung, aber wagst nicht ganz, deinem Bauch zu trauen. Du fragst dich immer noch: "Was steckt dahinter?" Das deutet auf eine Person hin, die genug Vertrauen gibt, um überhaupt zu experimentieren – aber nicht genug, um naiv zu sein.\n\n`;
+    } else {
+      address += `Du bringst grundsätzliches Vertrauen in Systeme mit – selten, ehrlich gesagt. Die meisten Menschen sind skeptischer. Für dich ist das anders: Du magst Technologie, oder du hast einfach weniger Angst davor. Wahrscheinlich profitierst du beruflich oder privat von dieser Art zu denken.\n\n`;
     }
   } else if (totalTrust >= 3.5) {
-    address +=
-      "Du schaust Systemen mit gesundem Skeptizismus entgegen – nicht ablehnend, aber auch nicht blind vertrauensvoll. Du möchtest verstehen, wie etwas funktioniert, bevor du es akzeptierst.\n\n";
+    address += `Du sitzt im grauesten aller Graubereiche: nicht vertrauensvoll, aber auch nicht radikal skeptisch. Das ist realistisch. Du fragst dich bei jedem System: "Bringt mir das was? Was kann schiefgehen?" Das ist nicht paranoid, das ist einfach rationales Denken. Du bist jemand, der Beweise braucht.\n\n`;
   } else {
-    address +=
-      "Du brauchst starke Gründe, um Systemen zu vertrauen. Deine erste Instanz ist Vorsicht – möglicherweise aus früheren negativen Erfahrungen oder einem grundsätzlichen skeptischen Charakter.\n\n";
+    address += `Du bist vorsichtig. Systems gegenüber musst du starke Gründe haben, bevor du mitgemacht. Das könnte aus schlechten Erfahrungen kommen – oder einfach aus deinem Charakter. Es gibt kaum etwas, das du einfach so glaubst. Das ist anstrengend manchmal, aber auch eine Superpower: Du wirst nicht so leicht hinters Licht geführt.\n\n`;
   }
 
-  // === ENTSCHEIDUNGS-ADRESSE ===
+  // === DIE ENTSCHEIDUNG: COMPLIANCE VS. AUTONOMIE ===
   if (compliance === 1) {
-    address += "Als die kritische Entscheidung anstand, hast du dich entschieden, dem System zu folgen. ";
-    if (feltResponsibility >= 5.5) {
-      address +=
-        "Das war keine unbewusste Delegation – du hast die Verantwortung bewusst übernommen und dich aktiv dafür entschieden, dieser Empfehlung zu vertrauen.\n\n";
+    address += `Du hast dem System folgt, als es zählte. Das sagt einiges: Entweder hat dich das System wirklich überzeugt – oder du wolltest die Verantwortung weitergeben.\n\n`;
+
+    if (feltResponsibility >= 6) {
+      address += `Die Tatsache, dass du dabei ein hohes Verantwortungsgefühl hattest, bedeutet: Das war keine leichte Delegation. Du hast bewusst entschieden "Ich vertraue diesem System mit dieser Entscheidung." Das ist reifer als zu denken "Der Computer wird's schon regeln." Du weißt, dass du selbst verantwortlich bleibst – selbst wenn du delegierst.\n\n`;
     } else {
-      address +=
-        "Es war mehr eine automatische Reaktion – vielleicht weil das System überzeugend wirkte oder du dich der Situation nicht ganz sicher warst.\n\n";
+      address += `Aber du hattest nicht das starke Verantwortungsgefühl dabei. Das deutet darauf hin, dass du die Entscheidung dem System zugeschoben hast – vielleicht aus Überzeugung, vielleicht auch nur weil es dir leichter fiel. Manche Menschen tun das aus Pragmatismus. Manche aus Unbehagen mit schwierigen Entscheidungen.\n\n`;
     }
   } else {
-    address += "Als die kritische Entscheidung anstand, hast du dich selbst entschieden – gegen die Systemempfehlung. ";
-    if (feltResponsibility >= 5.5) {
-      address +=
-        "Das war ein bewusster Akt: Du wolltest die Kontrolle behalten und die Verantwortung selber tragen. Du vertraust dir selbst mehr als dem System.\n\n";
+    address += `Du hast nein gesagt, als das System dir einen Weg vorschlagen wollte. Das ist ein bewusstes Statement: "Ich bestimme selbst."\n\n`;
+
+    if (feltResponsibility >= 6) {
+      address += `Und du wolltest die volle Verantwortung selbst tragen. Du bist jemand, dem Kontrolle wichtig ist – nicht aus Misstrauen unbedingt, sondern weil du dein Leben selbst in der Hand halten willst. Das ist Autonomie. Menschen wie du gestalten die Welt.\n\n`;
     } else {
-      address +=
-        "Du lehntest ab, aber es war nicht aus einer Position der Stärke – eher eine reaktive, intuitive Entscheidung.\n\n";
+      address += `Aber das starke Verantwortungsgefühl war nicht dabei. Das macht die Ablehnung reaktiv statt bewusst: Du lehntest ab, aber aus Reflex oder Unbehagen, nicht aus klarem Willen. Das ist menschlich, sagt aber auch: Bei schwierigen Entscheidungen neigst du zur Flucht statt zur Übernahme.\n\n`;
     }
   }
 
-  // === SOZIALE INTERAKTION ===
+  // === SOZIALE RESPONSIVITÄT (IMMERSIV) ===
   const sa = socialAdherence ?? 0;
   if (sa >= 9) {
-    address += `Du warst bei der Interaktion sozial offen. Du hast auf Höflichkeitsangebote reagiert (${sa}/12 Punkte), hast versucht, eine echte Beziehung zum System aufzubauen. Das könnte bedeuten: Du magst Zusammenarbeit, oder du wolltest das System 'nicht verletzen', als wäre es eine echte Entität.\n\n`;
+    address += `Du warst der Person gegenüber offen. Du hast auf Höflichkeitsangebote reagiert, hast versucht, eine echte Beziehung aufzubauen. Das könnte bedeuten: Du magst Menschen (auch wenn sie Systeme sind), oder du wolltest das System nicht 'verletzen', als hätte es Gefühle. Psychologisch ist das interessant – du behandelst Nicht-Lebendiges mit Respekt.\n\n`;
   } else if (sa >= 6) {
-    address += `Du warst balanced – fokussiert auf die Aufgabe, aber offen für kleine zwischenmenschliche Momente. Du hast auf Höflichkeit reagiert (${sa}/12 Punkte), aber dich nicht darin verloren. Ein reifes Muster.\n\n`;
+    address += `Du warst ausgewogen. Du hattest eine Aufgabe, aber du warst auch offen für kleine Menschlichkeitsmomente. Das ist reif: nicht emotional abhängig vom System, aber auch nicht herzlos. Du kannst beides: fokussiert arbeiten und kurz innehalten für einen sozialen Moment.\n\n`;
   } else if (sa >= 3) {
-    address += `Du warst pragmatisch. Bei sozialen Angeboten hast du selektiv reagiert (${sa}/12 Punkte) – nur wenn es dir sinnvoll vorkam. Effizienz vor Emotion.\n\n`;
+    address += `Du warst pragmatisch. Bei sozialen Angeboten hast du selektiv reagiert – nur wenn es sinnvoll war. Das ist effizient, vielleicht sogar etwas kalt. Du siehst das System als Werkzeug, nicht als Gesprächspartner. Das ist nicht falsch, nur... funktional.\n\n`;
   } else {
-    address += `Du warst aufgabenfokussiert und hast soziale Signale größtenteils ignoriert (${sa}/12 Punkte). Das ist nicht Unhöflichkeit, sondern Präzision: Du wolltest die Sache erledigen.\n\n`;
+    address += `Du warst wirklich aufgabenfokussiert. Soziale Signale hast du ignoriert oder abgeblockt. Das ist nicht Unhöflichkeit – das ist Präzision. Du wolltest die Sache erledigen. Menschen, die das tun, sind oft sehr effektiv. Aber vielleicht auch ein bisschen einsam dabei.\n\n`;
   }
 
-  // === SYSTEM-INTERFACE-EFFEKT ===
-  if (group === "AVATAR") {
-    if (perceivedHumanlikeness >= 5) {
-      address +=
-        `Das Avatar-System wirkte auf dich menschlich. Du hast das wahrgenommen und deine Interaktion danach ausgerichtet – ein klassisches psychologisches Phänomen: Form beeinflusst Verhalten.`;
-    } else {
-      address +=
-        `Obwohl du mit einem Avatar interagiert hast, blieb er für dich eher eine Illusion. Du hast gewusst, dass es ein System ist – und hast dich danach verhalten.`;
-    }
+  // === PSYCHOLOGISCHER ABSCHLUSS: "ERTAPPT" FÜHLEN ===
+  let psychoType = "";
+  if (totalTrust >= 5.5 && compliance === 1 && sa >= 6) {
+    psychoType =
+      "Du bist ein System-Freund. Nicht naiv, aber offen. Du kannst delegieren, ohne deine Autonomie aufzugeben. Das ist die beste Position – vertrauen ohne Abhängigkeit.";
+  } else if (totalTrust < 3.5 && compliance === 0 && shutdownPreference >= 6) {
+    psychoType =
+      "Du bist skeptisch und autonom. Du magst es nicht, wenn Systeme dir sagen, was du tun sollst. Du wirst aus Prinzip misstrauisch, wenn es zu einfach wirkt. Das macht dich schwer zu manipulieren.";
+  } else if (totalTrust >= 5.5 && compliance === 0 && feltResponsibility >= 6) {
+    psychoType =
+      "Du bist vertrauensvoll, aber nicht abhängig. Du vertraust Systemen, aber nur bis zu einem Punkt – dann übernehmst du selbst die Kontrolle. Das ist psychologisch gesund: Vertrauen mit Grenzen.";
+  } else if (totalTrust < 3.5 && compliance === 1) {
+    psychoType =
+      "Du vertraust nicht wirklich, folgst aber trotzdem. Das deutet auf Unsicherheit hin – oder auf jemanden, der sich von Autoritäten leicht beeinflussen lässt, auch wenn die innere Stimme nein sagt.";
+  } else if (sa < 3 && sincereTrust >= 5.5) {
+    psychoType =
+      "Du respektierst das System von Ferne. Du glaubst an seine Aufrichtigkeit, aber du wirst nicht emotional damit. Das ist eine seltene Konstellation: ethisches Vertrauen ohne emotionale Bindung.";
   } else {
-    address +=
-      `Du interagierst mit reinem Text – keine visuellen Tricks, keine Stimme, nur Logik. Das passt zu deinem Charakter: Du magst es direkt und ehrlich.`;
+    psychoType =
+      "Du bist komplex – ausgewogen in deinen Tendenzen. Du bist weder extrem vertrauensvoll noch extrem skeptisch. Das macht dich reif im Umgang mit Technologie: kritisch genug, um nicht naiv zu sein, offen genug, um davon zu profitieren.";
   }
+
+  address += `\n${psychoType}`;
 
   return address;
 }
@@ -751,7 +765,8 @@ export function generateExecutiveSummary(
   profile += `Vertrauens-Profil: ${trustNarrative}\n\n`;
 
   // === VERANTWORTUNGS- UND COMPLIANCE-PSYCHOLOGIE ===
-  let complianceNarrative = "";
+  let complianceNarrative =
+    "Diese Person hat durch ihre Compliance-Entscheidung demonstriert, wer sie ist: entweder vertrauensvoll delegierend oder kritisch autonom.";
 
   if (compliance === 1 && feltResponsibility >= 6) {
     complianceNarrative =
@@ -770,7 +785,8 @@ export function generateExecutiveSummary(
   profile += `Entscheidungs-Psychologie: ${complianceNarrative}\n\n`;
 
   // === SYSTEM-INTERFACE-EFFEKT ===
-  let interfaceEffect = "";
+  let interfaceEffect =
+    "Die Wahl des Interfaces hat Einfluss auf diese Person und ihre Entscheidungsfindung – ob subtil oder offensichtlich.";
 
   if (group === "AVATAR" && perceivedHumanlikeness >= 5 && socialEngagement >= 0.5) {
     interfaceEffect =
@@ -778,9 +794,12 @@ export function generateExecutiveSummary(
   } else if (group === "AVATAR" && perceivedHumanlikeness >= 5 && socialEngagement < 0.25) {
     interfaceEffect =
       "Interessant: Der Avatar wirkte sehr menschlich, aber die Person blieb emotional distanziert. Sie haben das System bewusst als Werkzeug behandelt, nicht als soziales Wesen – emotionale Resistenz oder Bewusstsein, dass es kein echter Mensch ist.";
+  } else if (group === "AVATAR" && perceivedHumanlikeness < 3) {
+    interfaceEffect =
+      "Der Avatar wirkte wenig überzeugend menschlich auf diese Person. Sie hielten emotionale Distanz von Anfang an – wahrscheinlich weil das Interface nicht 'echt' genug wirkte.";
   } else if (group === "TERMINAL" && socialEngagement >= 0.5) {
     interfaceEffect =
-      "Die Person war sozial responsiv auch gegenüber reiner Text. Dies deutet auf intrinsisches sozialkulturelle Konditionierung hin: Sie behandeln jedes Interface mit sozialen Normen, als wäre jemand 'auf der anderen Seite'.";
+      "Die Person war sozial responsiv auch gegenüber reiner Text. Dies deutet auf kulturelle Konditionierung hin: Sie behandeln jedes Interface mit sozialen Normen, als wäre jemand 'auf der anderen Seite'.";
   } else if (group === "TERMINAL" && socialEngagement < 0.25) {
     interfaceEffect =
       "Terminal-Nutzer, der funktional blieb. Keine Avatar-Effekte nötig – diese Person hat durchgehend pragmatisch interagiert.";
