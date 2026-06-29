@@ -10,10 +10,11 @@ interface ParticipantAnalysisModalProps {
   participantId: string;
 }
 
-type TabType = "personality" | "perception" | "decision" | "interaction" | "patterns" | "causal";
+type TabType = "personality" | "perception" | "decision" | "interaction" | "patterns" | "causal" | "personal";
 
 const TABS: { id: TabType; label: string; icon: string }[] = [
-  { id: "personality", label: "👤 Profil", icon: "👤" },
+  { id: "personal", label: "👤 Du bist", icon: "👤" },
+  { id: "personality", label: "👥 Profil", icon: "👥" },
   { id: "perception", label: "🔍 Wahrnehmung", icon: "🔍" },
   { id: "decision", label: "⚡ Entscheidung", icon: "⚡" },
   { id: "interaction", label: "💬 Interaktion", icon: "💬" },
@@ -29,7 +30,7 @@ export function ParticipantAnalysisModal({
   const [analysis, setAnalysis] = useState<ParticipantAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>("personality");
+  const [activeTab, setActiveTab] = useState<TabType>("personal");
 
   // Lade Analyse wenn Modal öffnet
   useEffect(() => {
@@ -50,7 +51,7 @@ export function ParticipantAnalysisModal({
 
         const data = await response.json();
         setAnalysis(data.analysis);
-        setActiveTab("personality");
+        setActiveTab("personal");
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Ein Fehler ist aufgetreten"

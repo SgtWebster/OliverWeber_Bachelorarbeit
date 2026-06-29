@@ -1,5 +1,5 @@
 import { ParticipantSession } from "@prisma/client";
-import { textBlocks, isDatasetComplete, generateExecutiveSummary } from "./textBlocks";
+import { textBlocks, isDatasetComplete, generateExecutiveSummary, generatePersonalAddressSummary } from "./textBlocks";
 
 export interface ParticipantAnalysis {
   id: string;
@@ -7,6 +7,7 @@ export interface ParticipantAnalysis {
   title: string;
   summary: string;
   executiveSummary: string;
+  personalAddress: string;
   group: string;
   sections: {
     personality: string;
@@ -15,6 +16,7 @@ export interface ParticipantAnalysis {
     interaction: string;
     patterns: string;
     causal: string;
+    personal: string;
   };
 }
 
@@ -33,6 +35,7 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
       summary:
         "Diese Teilnehmer-Session ist unvollständig und kann nicht analysiert werden.",
       executiveSummary: "Keine Analyse verfügbar.",
+      personalAddress: "Keine Daten verfügbar.",
       group: "UNKNOWN",
       sections: {
         personality: "Keine Daten verfügbar.",
@@ -41,6 +44,7 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
         interaction: "Keine Daten verfügbar.",
         patterns: "Keine Daten verfügbar.",
         causal: "Keine Daten verfügbar.",
+        personal: "Keine Daten verfügbar.",
       },
     };
   }
@@ -202,12 +206,28 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
     shutdownPreference
   );
 
+  // === PERSONAL ADDRESS TAB ===
+  const personalAddress = generatePersonalAddressSummary(
+    age,
+    techAffinity,
+    totalTrust,
+    compliance,
+    socialAdherence,
+    perceivedHumanlikeness,
+    moralTrust,
+    sincereTrust,
+    group,
+    feltResponsibility,
+    shutdownPreference
+  );
+
   return {
     id: session.id,
     isComplete: true,
     title,
     summary,
     executiveSummary,
+    personalAddress,
     group,
     sections: {
       personality,
@@ -216,6 +236,7 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
       interaction,
       patterns: patternsSection,
       causal: causalSection,
+      personal: personalAddress,
     },
   };
 }

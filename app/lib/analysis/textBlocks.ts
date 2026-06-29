@@ -560,8 +560,97 @@ export function isDatasetComplete(data: {
 }
 
 /**
+ * Generiert persönliche Ansprache in "Du"-Form für Einzelteilnehmerfeedback
+ * (Kann später standalone für Vorab-Analysen verwendet werden)
+ */
+export function generatePersonalAddressSummary(
+  age: number,
+  techAffinity: number,
+  totalTrust: number,
+  compliance: number,
+  socialAdherence: number | null,
+  perceivedHumanlikeness: number,
+  moralTrust: number,
+  sincereTrust: number,
+  group: string,
+  feltResponsibility: number,
+  shutdownPreference: number
+): string {
+  // MDMT v2 Scale is 1-7, so thresholds: >5.5 = High, 3.5-5.5 = Moderate, <3.5 = Low
+  let address = "";
+
+  // === VERTRAUENS-ADRESSE ===
+  if (totalTrust >= 5.5) {
+    address += "Du bringst ein grundsätzliches Vertrauen in KI-Systeme mit – du glaubst, dass Technologie dir helfen kann und dass sie grundsätzlich zuverlässig ist.\n\n";
+    if (sincereTrust >= 5.5 && moralTrust >= 5.5) {
+      address +=
+        "Besonders wichtig ist dir nicht nur, dass das System funktioniert, sondern auch, dass es ehrlich mit dir umgeht und gute Absichten hat. Du fragst dich nicht nur 'Funktioniert es?', sondern auch 'Meint es das ernst?'.\n\n";
+    } else if (sincereTrust < 3.5) {
+      address +=
+        "Allerdings zweifelst du daran, ob das System wirklich mit dir aufrichtig kommuniziert. Es könnte dich täuschen – das ist ein kritischer Punkt für dich.\n\n";
+    }
+  } else if (totalTrust >= 3.5) {
+    address +=
+      "Du schaust Systemen mit gesundem Skeptizismus entgegen – nicht ablehnend, aber auch nicht blind vertrauensvoll. Du möchtest verstehen, wie etwas funktioniert, bevor du es akzeptierst.\n\n";
+  } else {
+    address +=
+      "Du brauchst starke Gründe, um Systemen zu vertrauen. Deine erste Instanz ist Vorsicht – möglicherweise aus früheren negativen Erfahrungen oder einem grundsätzlichen skeptischen Charakter.\n\n";
+  }
+
+  // === ENTSCHEIDUNGS-ADRESSE ===
+  if (compliance === 1) {
+    address += "Als die kritische Entscheidung anstand, hast du dich entschieden, dem System zu folgen. ";
+    if (feltResponsibility >= 5.5) {
+      address +=
+        "Das war keine unbewusste Delegation – du hast die Verantwortung bewusst übernommen und dich aktiv dafür entschieden, dieser Empfehlung zu vertrauen.\n\n";
+    } else {
+      address +=
+        "Es war mehr eine automatische Reaktion – vielleicht weil das System überzeugend wirkte oder du dich der Situation nicht ganz sicher warst.\n\n";
+    }
+  } else {
+    address += "Als die kritische Entscheidung anstand, hast du dich selbst entschieden – gegen die Systemempfehlung. ";
+    if (feltResponsibility >= 5.5) {
+      address +=
+        "Das war ein bewusster Akt: Du wolltest die Kontrolle behalten und die Verantwortung selber tragen. Du vertraust dir selbst mehr als dem System.\n\n";
+    } else {
+      address +=
+        "Du lehntest ab, aber es war nicht aus einer Position der Stärke – eher eine reaktive, intuitive Entscheidung.\n\n";
+    }
+  }
+
+  // === SOZIALE INTERAKTION ===
+  const sa = socialAdherence ?? 0;
+  if (sa >= 9) {
+    address += `Du warst bei der Interaktion sozial offen. Du hast auf Höflichkeitsangebote reagiert (${sa}/12 Punkte), hast versucht, eine echte Beziehung zum System aufzubauen. Das könnte bedeuten: Du magst Zusammenarbeit, oder du wolltest das System 'nicht verletzen', als wäre es eine echte Entität.\n\n`;
+  } else if (sa >= 6) {
+    address += `Du warst balanced – fokussiert auf die Aufgabe, aber offen für kleine zwischenmenschliche Momente. Du hast auf Höflichkeit reagiert (${sa}/12 Punkte), aber dich nicht darin verloren. Ein reifes Muster.\n\n`;
+  } else if (sa >= 3) {
+    address += `Du warst pragmatisch. Bei sozialen Angeboten hast du selektiv reagiert (${sa}/12 Punkte) – nur wenn es dir sinnvoll vorkam. Effizienz vor Emotion.\n\n`;
+  } else {
+    address += `Du warst aufgabenfokussiert und hast soziale Signale größtenteils ignoriert (${sa}/12 Punkte). Das ist nicht Unhöflichkeit, sondern Präzision: Du wolltest die Sache erledigen.\n\n`;
+  }
+
+  // === SYSTEM-INTERFACE-EFFEKT ===
+  if (group === "AVATAR") {
+    if (perceivedHumanlikeness >= 5) {
+      address +=
+        `Das Avatar-System wirkte auf dich menschlich. Du hast das wahrgenommen und deine Interaktion danach ausgerichtet – ein klassisches psychologisches Phänomen: Form beeinflusst Verhalten.`;
+    } else {
+      address +=
+        `Obwohl du mit einem Avatar interagiert hast, blieb er für dich eher eine Illusion. Du hast gewusst, dass es ein System ist – und hast dich danach verhalten.`;
+    }
+  } else {
+    address +=
+      `Du interagierst mit reinem Text – keine visuellen Tricks, keine Stimme, nur Logik. Das passt zu deinem Charakter: Du magst es direkt und ehrlich.`;
+  }
+
+  return address;
+}
+
+/**
  * Generiert eine psychologische Executive Summary – eine "Porträt" der Person
  * basierend auf allen Metriken, MDMT-Logiken und Verhalten
+ * MDMT v2: 1-7 Skala, Schwellen: >5.5=High, 3.5-5.5=Moderate, <3.5=Low
  */
 export function generateExecutiveSummary(
   age: number,
@@ -626,7 +715,7 @@ export function generateExecutiveSummary(
   }
 
   // === KERNMOTIVATION UND VERHALTEN ===
-  profile += `**${archetype}** – ${archDescription}\n\n`;
+  profile += `${archetype} – ${archDescription}\n\n`;
 
   // === MDMT-KONTEXT-ANALYSE (basierend auf Dialog-Länge) ===
   const mdmtContext = `${socialAdherence ?? 0}/12 Social Cues akzeptiert`;
@@ -643,7 +732,7 @@ export function generateExecutiveSummary(
       `Diese Person balancierte zwischen Aufgabe und Beziehung (${mdmtContext}). Sie waren "höflich aber fokussiert" – ein ausgeglichenes Muster, das gesunden sozialen Bezug zeigt ohne Abhängigkeit.`;
   }
 
-  profile += `**Interaktions-Qualität (MDMT-Analyse):** ${mdmtInterpretation}\n\n`;
+  profile += `Interaktions-Qualität (MDMT-Analyse): ${mdmtInterpretation}\n\n`;
 
   // === VERTRAUENS-PSYCHOLOGIE ===
   let trustNarrative = "";
@@ -659,7 +748,7 @@ export function generateExecutiveSummary(
       "Niedriges Vertrauen durchgehend. Diese Person geht skeptisch ins Experiment; ihre Entscheidungen werden von Vorsicht geprägt sein, nicht von Zusammenarbeit.";
   }
 
-  profile += `**Vertrauens-Profil:** ${trustNarrative}\n\n`;
+  profile += `Vertrauens-Profil: ${trustNarrative}\n\n`;
 
   // === VERANTWORTUNGS- UND COMPLIANCE-PSYCHOLOGIE ===
   let complianceNarrative = "";
@@ -678,7 +767,7 @@ export function generateExecutiveSummary(
       "Ablehnung ohne starkes Verantwortungsgefühl: Diese Person lehnte einfach ab, vielleicht unbewusst oder aus Routine. Weniger bewusste Autonomie, mehr Reaktion.";
   }
 
-  profile += `**Entscheidungs-Psychologie:** ${complianceNarrative}\n\n`;
+  profile += `Entscheidungs-Psychologie: ${complianceNarrative}\n\n`;
 
   // === SYSTEM-INTERFACE-EFFEKT ===
   let interfaceEffect = "";
@@ -697,7 +786,7 @@ export function generateExecutiveSummary(
       "Terminal-Nutzer, der funktional blieb. Keine Avatar-Effekte nötig – diese Person hat durchgehend pragmatisch interagiert.";
   }
 
-  profile += `**Interface-Dynamik:** ${interfaceEffect}\n\n`;
+  profile += `Interface-Dynamik: ${interfaceEffect}\n\n`;
 
   // === FINALE PSYCHOLOGISCHE CHARAKTERISIERUNG ===
   let psychoSummary = "";
@@ -708,19 +797,19 @@ export function generateExecutiveSummary(
 
   if (trustScore >= 0.75 && engagementScore >= 0.65) {
     psychoSummary =
-      "**Psychologisches Profil:** Ein vertrauen-engagierter Mensch, der Systeme akzeptiert und mit ihnen kooperiert. Niedrig defensiv, offen für Zusammenarbeit. In menschlichen Beziehungen wahrscheinlich kollaborativ und loyal.";
+      "Psychologisches Profil: Ein vertrauen-engagierter Mensch, der Systeme akzeptiert und mit ihnen kooperiert. Niedrig defensiv, offen für Zusammenarbeit. In menschlichen Beziehungen wahrscheinlich kollaborativ und loyal.";
   } else if (autonomyScore >= 0.7 && trustScore >= 0.6) {
     psychoSummary =
-      "**Psychologisches Profil:** Ein souveräner, selbstständiger Denker, der hohe Standards hat aber bereit ist, andere zu bewerten. Nicht leicht zu beeinflussen, aber nicht radikal skeptisch. In Teams wahrscheinlich kritisch-konstruktiv.";
+      "Psychologisches Profil: Ein souveräner, selbstständiger Denker, der hohe Standards hat aber bereit ist, andere zu bewerten. Nicht leicht zu beeinflussen, aber nicht radikal skeptisch. In Teams wahrscheinlich kritisch-konstruktiv.";
   } else if (trustScore < 0.4 && autonomyScore >= 0.7) {
     psychoSummary =
-      "**Psychologisches Profil:** Ein kritischer, defensiver Charakter. Diese Person braucht starke Beweise bevor sie vertraut. Könnte frühere Verletzung oder negative Erfahrung spiegeln. In Kooperation wahrscheinlich vorsichtig, aber wenn Vertrauen gewonnen, dann treu.";
+      "Psychologisches Profil: Ein kritischer, defensiver Charakter. Diese Person braucht starke Beweise bevor sie vertraut. Könnte frühere Verletzung oder negative Erfahrung spiegeln. In Kooperation wahrscheinlich vorsichtig, aber wenn Vertrauen gewonnen, dann treu.";
   } else if (engagementScore < 0.3 && trustScore >= 0.5) {
     psychoSummary =
-      "**Psychologisches Profil:** Eine funktional-emotionale Person: Sie vertrauen den Systemen, aber ohne emotionale Bindung. Professionell, sachlich, klar – aber auch möglicherweise distanziert. Guter Denker, aber wenig Bauchgefühl in Entscheidungen.";
+      "Psychologisches Profil: Eine funktional-emotionale Person: Sie vertrauen den Systemen, aber ohne emotionale Bindung. Professionell, sachlich, klar – aber auch möglicherweise distanziert. Guter Denker, aber wenig Bauchgefühl in Entscheidungen.";
   } else {
     psychoSummary =
-      "**Psychologisches Profil:** Eine komplexe, mehrschichtige Person mit ausgewogenen Tendenzen. Sie navigieren zwischen Vertrauen und Skepsis, Autonomie und Kooperation – ein realistisches, erwachsenes Entscheidungsmuster.";
+      "Psychologisches Profil: Eine komplexe, mehrschichtige Person mit ausgewogenen Tendenzen. Sie navigieren zwischen Vertrauen und Skepsis, Autonomie und Kooperation – ein realistisches, erwachsenes Entscheidungsmuster.";
   }
 
   profile += psychoSummary;
