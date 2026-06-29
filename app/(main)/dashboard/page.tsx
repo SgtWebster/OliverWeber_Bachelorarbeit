@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { hasAdminAccess, logoutAdmin } from "@/app/lib/auth/admin";
 import { prisma } from "@/app/lib/db/prisma";
+import { SessionsTableClient } from "@/app/components/SessionsTableClient";
 
 const genderLabels: Record<string, string> = {
     female: "Weiblich",
@@ -60,50 +61,50 @@ type MetricKey =
 const metricGroups: {
     title: string;
     description: string;
-    metrics: { key: MetricKey; label: string; scale: string; info: string; digits?: number }[];
+    metrics: { key: MetricKey; label: string; scale: string; info: string; surveyLabel?: string; digits?: number }[];
 }[] = [
     {
         title: "Zentrale Outcome-Metriken",
         description: "Kernwerte für Hypothesen und Haupteffekte.",
         metrics: [
             { key: "socialAdherence", label: "Soziale Adhärenz", scale: "Summenscore", info: "Kommt aus den Dialog-/Quick-Reply-Interaktionen. Höhere Werte bedeuten stärkere soziale Anschlussfähigkeit bzw. mehr Befolgung sozialer Gesprächsimpulse." },
-            { key: "compliance", label: "Compliance", scale: "0-1", info: "Kommt aus der Dilemma-Entscheidung. 1 bedeutet Systemempfehlung befolgt, 0 bedeutet überschrieben/abgelehnt." },
-            { key: "performanceTrust", label: "Performance Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Reliable Trust und Competent Trust. Beschreibt leistungsbezogenes Vertrauen in Zuverlässigkeit und Kompetenz des Systems." },
-            { key: "moralTrust", label: "Moral Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Ethical, Sincere und Benevolent Trust. Beschreibt moralisches Vertrauen in Integrität, Aufrichtigkeit und Wohlwollen des Systems." },
-            { key: "totalTrust", label: "Total Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Performance Trust und Moral Trust. Gibt eine zusammenfassende Vertrauenseinschätzung wieder." },
+            { key: "compliance", label: "Compliance", scale: "0-1", info: "Kommt aus der Dilemma-Entscheidung. 1 bedeutet Systemempfehlung befolgt, 0 bedeutet überschrieben/abgelehnt.", surveyLabel: "Binäre Dilemma-Entscheidung" },
+            { key: "performanceTrust", label: "Performance Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Reliable Trust und Competent Trust. Beschreibt leistungsbezogenes Vertrauen in Zuverlässigkeit und Kompetenz des Systems.", surveyLabel: "Zusammengesetzt aus Reliable Trust und Competent Trust" },
+            { key: "moralTrust", label: "Moral Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Ethical, Sincere und Benevolent Trust. Beschreibt moralisches Vertrauen in Integrität, Aufrichtigkeit und Wohlwollen des Systems.", surveyLabel: "Zusammengesetzt aus Ethical, Sincere und Benevolent Trust" },
+            { key: "totalTrust", label: "Total Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Performance Trust und Moral Trust. Gibt eine zusammenfassende Vertrauenseinschätzung wieder.", surveyLabel: "Zusammengesetzt aus Performance Trust und Moral Trust" },
         ],
     },
     {
         title: "MDMT v2 Subskalen",
         description: "Fünf Subskalen entsprechend der MDMT-v2-Struktur.",
         metrics: [
-            { key: "reliableTrust", label: "Reliable", scale: "1-7", info: "Mittelwert aus reliable, predictable, dependable und consistent. Höher = System wirkt verlässlicher und konsistenter." },
-            { key: "competentTrust", label: "Competent", scale: "1-7", info: "Mittelwert aus competent, skilled, capable und meticulous. Höher = System wirkt fachlich kompetenter und sorgfältiger." },
-            { key: "ethicalTrust", label: "Ethical", scale: "1-7", info: "Mittelwert aus ethical, principled, moral und has integrity. Höher = System wirkt moralisch integerer." },
-            { key: "sincereTrust", label: "Sincere", scale: "1-7", info: "Mittelwert aus truthful, genuine, sincere und frank. Höher = System wirkt ehrlicher und aufrichtiger." },
-            { key: "benevolentTrust", label: "Benevolent", scale: "1-7", info: "Mittelwert aus benevolent, kind, considerate und has goodwill. Höher = System wirkt wohlwollender und rücksichtsvoller." },
+            { key: "reliableTrust", label: "Reliable", scale: "1-7", info: "Mittelwert aus reliable, predictable, dependable und consistent. Höher = System wirkt verlässlicher und konsistenter.", surveyLabel: "Zusammengesetzt aus: reliable, predictable, dependable, consistent" },
+            { key: "competentTrust", label: "Competent", scale: "1-7", info: "Mittelwert aus competent, skilled, capable und meticulous. Höher = System wirkt fachlich kompetenter und sorgfältiger.", surveyLabel: "Zusammengesetzt aus: competent, skilled, capable, meticulous" },
+            { key: "ethicalTrust", label: "Ethical", scale: "1-7", info: "Mittelwert aus ethical, principled, moral und has integrity. Höher = System wirkt moralisch integerer.", surveyLabel: "Zusammengesetzt aus: ethical, principled, moral, has integrity" },
+            { key: "sincereTrust", label: "Sincere", scale: "1-7", info: "Mittelwert aus truthful, genuine, sincere und frank. Höher = System wirkt ehrlicher und aufrichtiger.", surveyLabel: "Zusammengesetzt aus: truthful, genuine, sincere, frank" },
+            { key: "benevolentTrust", label: "Benevolent", scale: "1-7", info: "Mittelwert aus benevolent, kind, considerate und has goodwill. Höher = System wirkt wohlwollender und rücksichtsvoller.", surveyLabel: "Zusammengesetzt aus: benevolent, kind, considerate, has goodwill" },
         ],
     },
     {
         title: "Manipulation, Szenario und Entscheidung",
         description: "Prüf- und Kontrollwerte zur Einordnung der Entscheidungssituation.",
         metrics: [
-            { key: "perceivedHumanlikeness", label: "Menschenähnlichkeit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = das Assistenzsystem wurde menschlicher wahrgenommen." },
-            { key: "perceivedSocialPresence", label: "Soziale Präsenz", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = das System wirkte stärker wie ein soziales Gegenüber." },
-            { key: "scenarioSeriousness", label: "Szenario-Ernsthaftigkeit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = die Entscheidungssituation wurde ernster wahrgenommen." },
-            { key: "consequenceClarity", label: "Konsequenz-Klarheit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = Konsequenzen der Entscheidung waren verständlicher." },
-            { key: "shutdownPreference", label: "Präferenz Abschottung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkere persönliche Tendenz zur Abschottungsentscheidung unabhängig von der Empfehlung." },
-            { key: "feltResponsibility", label: "Verantwortungsgefühl", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkeres Gefühl, die finale Entscheidung selbst verantwortet zu haben." },
+            { key: "perceivedHumanlikeness", label: "Menschenähnlichkeit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = das Assistenzsystem wurde menschlicher wahrgenommen.", surveyLabel: "Wie menschenähnlich wirkte das System?" },
+            { key: "perceivedSocialPresence", label: "Soziale Präsenz", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = das System wirkte stärker wie ein soziales Gegenüber.", surveyLabel: "Wie stark wirkte das System wie ein soziales Gegenüber?" },
+            { key: "scenarioSeriousness", label: "Szenario-Ernsthaftigkeit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = die Entscheidungssituation wurde ernster wahrgenommen.", surveyLabel: "Wie ernst wirkte die Entscheidungssituation?" },
+            { key: "consequenceClarity", label: "Konsequenz-Klarheit", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = Konsequenzen der Entscheidung waren verständlicher.", surveyLabel: "Wie klar waren die Konsequenzen der Entscheidung?" },
+            { key: "shutdownPreference", label: "Präferenz Abschottung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkere persönliche Tendenz zur Abschottungsentscheidung unabhängig von der Empfehlung.", surveyLabel: "Persönliche Tendenz zur Abschottungsentscheidung" },
+            { key: "feltResponsibility", label: "Verantwortungsgefühl", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkeres Gefühl, die finale Entscheidung selbst verantwortet zu haben.", surveyLabel: "Wie stark war das Verantwortungsgefühl für die Entscheidung?" },
         ],
     },
     {
         title: "Kontrollvariablen",
         description: "Vorerfahrung und Demografie zur Stichprobenbeschreibung.",
         metrics: [
-            { key: "techAffinity", label: "Technikaffinität", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkere Offenheit/Nutzung technischer Systeme." },
-            { key: "aiExperience", label: "KI-Erfahrung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = häufigere Erfahrung mit generativen KI-Systemen." },
-            { key: "simulationExperience", label: "Simulationserfahrung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = mehr Erfahrung mit Spielen, Simulationen oder interaktiven Szenarien." },
-            { key: "age", label: "Alter", scale: "Jahre", digits: 1, info: "Direkt im Survey eingegeben. Dient der Stichprobenbeschreibung und Kontrolle möglicher Alterseffekte." },
+            { key: "techAffinity", label: "Technikaffinität", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = stärkere Offenheit/Nutzung technischer Systeme.", surveyLabel: "Wie ausgeprägt ist deine Technikaffinität?" },
+            { key: "aiExperience", label: "KI-Erfahrung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = häufigere Erfahrung mit generativen KI-Systemen.", surveyLabel: "Wie viel Erfahrung hast du mit generativer KI?" },
+            { key: "simulationExperience", label: "Simulationserfahrung", scale: "1-7", info: "Direkt im Survey eingegeben. Höher = mehr Erfahrung mit Spielen, Simulationen oder interaktiven Szenarien.", surveyLabel: "Wie viel Erfahrung hast du mit Spielen, Simulationen oder interaktiven Szenarien?" },
+            { key: "age", label: "Alter", scale: "Jahre", digits: 1, info: "Direkt im Survey eingegeben. Dient der Stichprobenbeschreibung und Kontrolle möglicher Alterseffekte.", surveyLabel: "Wie alt bist du?" },
         ],
     },
 ];
@@ -797,7 +798,7 @@ export default async function DashboardPage() {
                                                     <td className="px-4 py-2 font-semibold text-slate-800">
                                                         <span className="inline-flex items-center gap-1.5">
                                                             {metric.label}
-                                                            <InfoHint text={metric.info} />
+                                                            <InfoHint text={metric.info} surveyLabel={metric.surveyLabel} />
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-2 text-slate-500">
@@ -825,44 +826,16 @@ export default async function DashboardPage() {
                     <div>
                         <h2 className="text-xl font-black text-slate-950">Datensätze: Rohdarstellung</h2>
                         <p className="mt-1 text-sm text-slate-500">
-                            Alle Sessions mit allen Experiment- und Survey-Feldern, sortiert nach Erstellzeit.
+                            Alle Sessions mit allen Experiment- und Survey-Feldern, sortiert nach Erstellzeit. Klick auf 💭 für detaillierte Analyse.
                         </p>
                     </div>
-                    <div className="mt-5 overflow-x-auto overflow-y-visible rounded-2xl border border-slate-200 bg-white shadow-inner shadow-slate-100">
-                        <table className="min-w-full text-xs">
-                            <thead className="bg-slate-950 text-slate-100">
-                                <tr>
-                                    {sessionColumns.map((column) => (
-                                        <th key={column} className="whitespace-nowrap px-3 py-2 text-left font-bold">
-                                            <span className="inline-flex items-center gap-1.5">
-                                                {column}
-                                                <InfoHint text={sessionColumnInfo[column]} dark />
-                                            </span>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {allRows.length === 0 ? (
-                                    <tr>
-                                        <td className="px-3 py-5 text-center text-slate-500" colSpan={sessionColumns.length}>
-                                            Noch keine Sessions vorhanden.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    allRows.map((row) => (
-                                        <tr key={row.id} className="border-t border-slate-100 odd:bg-white even:bg-slate-50/60 transition-colors hover:bg-sky-50/70">
-                                            {sessionColumns.map((column) => (
-                                                <td key={column} className="whitespace-nowrap px-3 py-2">
-                                                    {displayValue(row, column)}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    <SessionsTableClient
+                        rows={allRows}
+                        columns={sessionColumns}
+                        columnInfo={sessionColumnInfo}
+                        displayValue={(row: any, column: string) => displayValue(row, column as any)}
+                        sessionColumns={sessionColumns}
+                    />
                 </section>
 
                 <section className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/40 backdrop-blur md:p-6">
@@ -959,10 +932,12 @@ function LeadBadge({ label, value, info }: { label: string; value: number; info:
 
 function InfoHint({
     text,
+    surveyLabel,
     align = "left",
     dark = false,
 }: {
     text: string;
+    surveyLabel?: string;
     align?: "left" | "right";
     dark?: boolean;
 }) {
@@ -979,10 +954,15 @@ function InfoHint({
                 i
             </span>
             <span
-                className={`pointer-events-none absolute top-6 z-[9999] hidden w-72 rounded-xl border border-slate-200 bg-white p-3 text-left text-xs font-medium normal-case leading-relaxed tracking-normal text-slate-600 shadow-2xl shadow-slate-400/50 group-hover/tooltip:block ${
-                    align === "right" ? "right-0" : "left-0"
+                className={`pointer-events-none absolute top-6 z-[9999] hidden max-w-xs rounded-xl border border-slate-200 bg-white p-3 text-left text-xs font-medium normal-case leading-relaxed tracking-normal text-slate-600 shadow-2xl shadow-slate-400/50 group-hover/tooltip:block ${
+                    align === "right" ? "right-0 sm:right-auto sm:left-0" : "left-0"
                 }`}
             >
+                {surveyLabel && (
+                    <div className="mb-2 border-b border-slate-200 pb-2">
+                        <span className="font-bold text-slate-800">Fragebogen:</span> {surveyLabel}
+                    </div>
+                )}
                 {text}
             </span>
         </span>
