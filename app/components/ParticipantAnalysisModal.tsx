@@ -11,10 +11,11 @@ interface ParticipantAnalysisModalProps {
   participantId: string;
 }
 
-type TabType = "personality" | "perception" | "decision" | "interaction" | "patterns" | "causal" | "personal";
+type TabType = "summary" | "personality" | "perception" | "decision" | "interaction" | "patterns" | "causal" | "personal";
 
 const TABS: { id: TabType; label: string; icon: string }[] = [
   { id: "personal", label: "👤 Du bist", icon: "👤" },
+  { id: "summary", label: "📋 Überblick", icon: "📋" },
   { id: "personality", label: "👥 Profil", icon: "👥" },
   { id: "perception", label: "🔍 Wahrnehmung", icon: "🔍" },
   { id: "decision", label: "⚡ Entscheidung", icon: "⚡" },
@@ -99,7 +100,8 @@ export function ParticipantAnalysisModal({
 
   const getTabContent = (tab: TabType): string => {
     if (!analysis) return "";
-    return analysis.sections[tab] || "";
+    if (tab === "summary") return analysis.executiveSummary;
+    return analysis.sections[tab as keyof typeof analysis.sections] || "";
   };
 
   return createPortal(
@@ -153,11 +155,6 @@ export function ParticipantAnalysisModal({
 
           {analysis && analysis.isComplete && (
             <>
-              {/* Executive Summary */}
-              <div className={styles.executiveSummary}>
-                <p>{analysis.executiveSummary}</p>
-              </div>
-
               {/* Tab Navigation */}
               <div className={styles.tabNav}>
                 {TABS.map((tab) => (
@@ -177,7 +174,13 @@ export function ParticipantAnalysisModal({
 
               {/* Tab Content */}
               <div className={styles.tabContent}>
-                <p>{getTabContent(activeTab)}</p>
+                {activeTab === "summary" ? (
+                  <div className={styles.summaryBox}>
+                    <p>{getTabContent("summary")}</p>
+                  </div>
+                ) : (
+                  <p>{getTabContent(activeTab)}</p>
+                )}
 
                 {/* Abschlussbotschaft der KI (nur im "Du bist"-Tab) */}
                 {activeTab === "personal" && analysis.closingMessage && (

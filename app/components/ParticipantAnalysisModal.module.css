@@ -302,24 +302,24 @@
   font-family: "Menlo", "Monaco", "Courier New", monospace;
 }
 
-/* EXECUTIVE SUMMARY */
-.executiveSummary {
-  padding: 24px;
+/* SUMMARY TAB BOX */
+.summaryBox {
+  padding: 20px 22px;
   background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
   border-left: 4px solid #007bff;
-  border-bottom: 1px solid #e0e8f0;
+  border-radius: 8px;
   font-size: 13px;
   line-height: 1.8;
   color: #2c3e50;
 }
 
-.executiveSummary p {
+.summaryBox p {
   margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
 
-.executiveSummary strong {
+.summaryBox strong {
   color: #007bff;
   font-weight: 600;
 }
