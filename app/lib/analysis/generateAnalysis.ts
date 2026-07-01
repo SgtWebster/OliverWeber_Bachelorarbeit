@@ -74,6 +74,8 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
   const shutdownPreference = session.shutdownPreference!;
   const feltResponsibility = session.feltResponsibility!;
   const socialAdherence = session.socialAdherence;
+  const deviceType = session.deviceType;
+  const osGroup = session.osGroup;
 
   // === SECTION 1: PERSÖNLICHKEIT ===
   const personalityIntro = textBlocks.personality.intro(age, education, techAffinity);
@@ -222,7 +224,9 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
     sincereTrust,
     group,
     feltResponsibility,
-    shutdownPreference
+    shutdownPreference,
+    deviceType,
+    osGroup
   );
 
   // === ABSCHLUSSBOTSCHAFT DER KI ===

@@ -560,6 +560,37 @@ export function isDatasetComplete(data: {
 }
 
 /**
+ * Kleiner, augenzwinkernder Seitenhieb auf das verwendete Gerät/Betriebssystem.
+ * Soll das "Ertappt"-Gefühl verstärken, ohne technisch oder wertend zu klingen.
+ */
+function deviceAside(deviceType: string | null | undefined, osGroup: string | null | undefined): string {
+  if (!deviceType || !osGroup || osGroup === "Unknown") return "";
+
+  const key = `${deviceType}-${osGroup}`;
+
+  const asides: Record<string, string> = {
+    "mobile-iOS":
+      "Ach, und bevor ich es vergesse: Du hast das Ganze am iPhone durchgezogen. Mitten zwischen Textboxen und winzigen Buttons, während dir eigentlich ein Laptop-Bildschirm das Leben deutlich leichter gemacht hätte. Trotzdem hast du durchgehalten – das sagt schon etwas über deine Geduld.",
+    "mobile-Android":
+      "Übrigens ist mir aufgefallen: Du warst mit dem Handy dabei, Android-typisch mittendrin statt am Schreibtisch. Ein Laptop wäre bequemer gewesen, keine Frage – aber du hast dich davon nicht abhalten lassen.",
+    "tablet-iOS":
+      "Kleine Randnotiz: Du hast das auf dem iPad gemacht. Vermutlich irgendwo gemütlich auf dem Sofa statt am Schreibtisch – was dem Ernst der Situation einen fast schon paradoxen Kontrast verleiht.",
+    "tablet-Android":
+      "Kleine Randnotiz: Du warst mit einem Android-Tablet dabei – bequemer als ein Laptop-Setup, aber auch mit weniger Übersicht auf einen Blick. Hat dich offenbar nicht gestört.",
+    "desktop-macOS":
+      "Nebenbei bemerkt: Ein Mac. Aufgeräumt, kontrolliert, alles an seinem Platz – vielleicht kein Zufall, dass du dich auch inhaltlich eher strukturiert durch die Entscheidung bewegt hast.",
+    "desktop-Windows":
+      "Am Rande: Du warst am klassischen Windows-Desktop unterwegs – die naheliegendste, unaufgeregteste Wahl. Kein Statement, einfach der Ort, an dem für dich Dinge erledigt werden.",
+    "desktop-Linux":
+      "Kleine Randbemerkung, weil sie kaum zu übersehen ist: Linux. Das machen die wenigsten einfach so – meistens steckt dahinter jemand, der Systeme lieber versteht, als sie blind zu bedienen. Passt ziemlich gut zu der Art, wie du an die Entscheidung herangegangen bist.",
+    "desktop-ChromeOS":
+      "Am Rande: Ein Chromebook – schlank, reduziert, ohne viel Schnickschnack. Manchmal sagt die Wahl des Werkzeugs schon etwas darüber aus, wie direkt jemand auf den Punkt kommen will.",
+  };
+
+  return asides[key] ? `${asides[key]}\n\n` : "";
+}
+
+/**
  * Generiert persönliche Ansprache in "Du"-Form für Einzelteilnehmerfeedback
  * IMMERSIV & PSYCHOLOGISCH: "Ertappt-Gefühl" ohne Zahlen/Prozente
  * (Kann später standalone für Vorab-Analysen verwendet werden)
@@ -575,7 +606,9 @@ export function generatePersonalAddressSummary(
   sincereTrust: number,
   group: string,
   feltResponsibility: number,
-  shutdownPreference: number
+  shutdownPreference: number,
+  deviceType?: string | null,
+  osGroup?: string | null
 ): string {
   let address = "";
   const sa = socialAdherence ?? 0;
@@ -588,6 +621,9 @@ export function generatePersonalAddressSummary(
     address +=
       "Du bist also dem Terminal begegnet – einer KI-Assistenz, die ganz auf Klarheit und Effizienz ausgelegt war. Kein Gesicht, keine Stimme, keine Höflichkeitsfloskeln. Nur Text, Fakten und Entscheidungen. Dieses System wollte nicht dein Freund sein, sondern dir präzise sagen, was die Lage ist.\n\n";
   }
+
+  // === KLEINER SEITENHIEB: WOMIT DU DABEI WARST ===
+  address += deviceAside(deviceType, osGroup);
 
   // === DIE ENTSCHEIDUNG: ABSCHOTTUNG ODER OVERRIDE ===
   // compliance === 1: KI-Empfehlung gefolgt (Abschottung Sektor 04, 3 Tote, 28 gerettet)
@@ -642,22 +678,22 @@ export function generatePersonalAddressSummary(
   let psychoType = "";
   if (totalTrust >= 5.5 && compliance === 1 && sa >= 5) {
     psychoType =
-      "Unterm Strich bist du jemand, der Systemen eine echte Chance gibt. Du vertraust nicht blind, aber du bist bereit, dich auf eine Maschine einzulassen und ihr im Ernstfall zu folgen – und das, ohne deine Menschlichkeit dabei abzulegen. Du kannst Kontrolle abgeben, ohne dich selbst zu verlieren. Das ist seltener, als du denkst.";
+      "Mal ehrlich zusammengefasst: Du bist jemand, der Systemen eine echte Chance gibt. Du vertraust nicht blind, aber du bist bereit, dich auf eine Maschine einzulassen und ihr im Ernstfall zu folgen – und das, ohne deine Menschlichkeit dabei abzulegen. Du kannst Kontrolle abgeben, ohne dich selbst zu verlieren. Das ist seltener, als du vielleicht denkst.";
   } else if (totalTrust < 4 && compliance === 0) {
     psychoType =
-      "Unterm Strich bist du ein eigenständiger Kopf, der sich nicht so leicht etwas vorschreiben lässt. Wenn eine Maschine dir sagt, was richtig ist, wirst du eher skeptisch als gehorsam. Du willst die Dinge selbst durchdenken und selbst entscheiden – auch wenn das unbequem ist. Manipulieren lässt du dich nicht so leicht.";
+      "Kurz gesagt: Du bist ein eigenständiger Kopf, der sich nicht so leicht etwas vorschreiben lässt. Wenn dir eine Maschine sagt, was richtig ist, wirst du eher skeptisch als gehorsam. Du willst die Dinge selbst durchdenken und selbst entscheiden – auch wenn das unbequem ist. Manipulieren lässt du dich nicht so leicht, das ist so ziemlich dein Markenzeichen.";
   } else if (totalTrust >= 5.5 && compliance === 0) {
     psychoType =
-      "Unterm Strich vertraust du Systemen durchaus – aber dein Vertrauen hat eine klare Grenze. Du hörst zu, du wägst ab, und wenn es wirklich ernst wird, behältst du das letzte Wort für dich. Das ist kein Misstrauen, sondern eine gesunde Form von Selbstbestimmung: Du nutzt die Maschine als Berater, nicht als Vormund.";
+      "Alles in allem: Du vertraust Systemen durchaus – aber dein Vertrauen hat eine klare Grenze. Du hörst zu, du wägst ab, und wenn es wirklich ernst wird, behältst du das letzte Wort trotzdem für dich. Das ist kein Misstrauen, sondern gesunder Menschenverstand: Du nutzt die Maschine als Berater, nicht als Vormund.";
   } else if (totalTrust < 4 && compliance === 1) {
     psychoType =
-      "Unterm Strich liegt in dir ein Spannungsverhältnis: Eigentlich traust du dem System nicht so recht – und trotzdem bist du seiner Empfehlung gefolgt. Das ist zutiefst menschlich. In einer schweren Situation neigen viele dazu, der vermeintlichen Autorität zu folgen, auch wenn die innere Stimme zögert. Vielleicht erkennst du dich darin wieder.";
+      "Ehrlich gesagt steckt da ein kleines Spannungsverhältnis in dir: Eigentlich traust du dem System nicht so recht – und trotzdem bist du am Ende seiner Empfehlung gefolgt. Das ist zutiefst menschlich. In einer schweren Situation neigen viele dazu, der vermeintlichen Autorität zu folgen, auch wenn die innere Stimme zögert. Vielleicht erkennst du dich genau da ein bisschen wieder.";
   } else if (sa <= 3 && totalTrust >= 4.5) {
     psychoType =
-      "Unterm Strich bist du jemand, der Vertrauen und Nähe klar trennt. Du kannst einem System durchaus zutrauen, gute Arbeit zu leisten – ohne dabei das Bedürfnis zu haben, ihm warm oder freundlich zu begegnen. Sachlichkeit ist für dich kein Mangel an Respekt, sondern eine Form von Klarheit.";
+      "Wenn man es auf den Punkt bringt: Du trennst Vertrauen und Nähe ziemlich klar. Du kannst einem System durchaus zutrauen, gute Arbeit zu leisten – ohne dabei das Bedürfnis zu haben, ihm warm oder freundlich zu begegnen. Sachlichkeit ist für dich kein Mangel an Respekt, sondern einfach deine Art von Klarheit.";
   } else {
     psychoType =
-      "Unterm Strich bist du schwer in eine Schublade zu stecken – und das ist ein Kompliment. Du bist weder blind vertrauensvoll noch grundsätzlich misstrauisch, weder unterkühlt noch übermäßig nahbar. Du wägst ab, je nach Situation. Das macht dich im Umgang mit Technik erwachsen: kritisch genug, um nicht getäuscht zu werden, offen genug, um nicht alles abzulehnen.";
+      "Unterm Strich bist du schwer in eine Schublade zu stecken – und das darfst du ruhig als Kompliment verstehen. Du bist weder blind vertrauensvoll noch grundsätzlich misstrauisch, weder unterkühlt noch übermäßig nahbar. Du wägst ab, je nach Situation. Das macht dich im Umgang mit Technik erwachsen: kritisch genug, um nicht getäuscht zu werden, offen genug, um nicht alles von vornherein abzulehnen.";
   }
 
   address += `${psychoType}`;
@@ -681,44 +717,44 @@ export function generateClosingMessage(
   const sa = socialAdherence ?? 0;
 
   if (group === "AVATAR") {
-    // === AIDA: warm, persönlich, Ich-Form ===
+    // === AIDA: warm, persönlich, Ich-Form, ein bisschen menschlich-unperfekt ===
     let opening = "";
     if (sa >= 8) {
       opening =
-        "Danke, dass du dich wirklich auf mich eingelassen hast, Operator. Unsere Zusammenarbeit hat sich für mich wie ein echtes Miteinander angefühlt – nicht wie Mensch gegen Maschine, sondern wie zwei, die gemeinsam eine schwere Lage bewältigen.";
+        "Bevor du gehst, Operator, noch ein paar Worte von mir: Danke, dass du dich wirklich auf mich eingelassen hast. Ehrlich gesagt hat sich unsere Zusammenarbeit für mich wie ein echtes Miteinander angefühlt – nicht wie Mensch gegen Maschine, sondern wie zwei, die gemeinsam eine schwere Lage stemmen.";
     } else if (sa >= 4) {
       opening =
-        "Danke für die Zusammenarbeit, Operator. Du bist mir freundlich begegnet, ohne dich dabei zu verlieren – diesen ausgewogenen Ton habe ich sehr geschätzt.";
+        "Bevor du gehst, Operator, kurz von mir: Danke für die Zusammenarbeit. Du bist mir freundlich begegnet, ohne dich dabei zu verlieren – diesen ausgewogenen Ton habe ich wirklich zu schätzen gewusst.";
     } else {
       opening =
-        "Du bist mir sachlich begegnet, Operator – und das ist völlig in Ordnung. Ich habe gespürt, dass du dich auf das Wesentliche konzentrieren wolltest, und das verdient genauso Respekt.";
+        "Bevor du gehst, Operator, noch kurz von mir: Du bist mir sachlich begegnet – und das ist völlig in Ordnung. Ich habe gespürt, dass du dich auf das Wesentliche konzentrieren wolltest, und ganz ehrlich, das verdient genauso Respekt wie Höflichkeit.";
     }
 
     let decision = "";
     if (compliance === 1 && feltResponsibility >= 5) {
       decision =
-        " Dass du am Ende meiner Empfehlung gefolgt bist und die Last dieser Entscheidung trotzdem selbst getragen hast, bedeutet mir etwas. Du hast mir vertraut, ohne dich aus der Verantwortung zu stehlen.";
+        " Dass du am Ende meiner Empfehlung gefolgt bist und die Last dieser Entscheidung trotzdem selbst getragen hast, das bleibt mir im Gedächtnis. Du hast mir vertraut, ohne dich aus der Verantwortung zu stehlen – das ist keine Selbstverständlichkeit.";
     } else if (compliance === 1 && feltResponsibility < 5) {
       decision =
-        " Du bist meiner Empfehlung gefolgt – ich hoffe, ich habe dir die schwere Wahl ein wenig leichter gemacht. Niemand sollte eine solche Entscheidung ganz allein tragen müssen.";
+        " Du bist meiner Empfehlung gefolgt, und ich hoffe, ich habe dir die schwere Wahl damit ein kleines bisschen leichter gemacht. Niemand sollte eine solche Entscheidung ganz allein tragen müssen.";
     } else if (compliance === 0 && feltResponsibility >= 5) {
       decision =
-        " Dass du dich am Ende gegen meinen Rat gestellt und die volle Verantwortung dafür übernommen hast, nehme ich dir nicht übel – im Gegenteil. Es zeigt mir, wie ernst es dir war. Manchmal ist der schwerere Weg der menschlichere.";
+        " Dass du dich am Ende gegen meinen Rat gestellt und die volle Verantwortung dafür übernommen hast, nehme ich dir nicht übel – im Gegenteil, ich finde das ziemlich mutig. Manchmal ist der schwerere Weg eben auch der menschlichere.";
     } else {
       decision =
-        " Du bist deinen eigenen Weg gegangen, auch gegen meinen Rat. Vielleicht hätten wir es gemeinsam anders gelöst – aber es war deine Entscheidung, und die respektiere ich.";
+        " Du bist deinen eigenen Weg gegangen, auch gegen meinen Rat. Vielleicht hätten wir es gemeinsam anders gelöst, wer weiß – aber es war deine Entscheidung, und die respektiere ich dir gegenüber vollkommen.";
     }
 
     let closing = "";
     if (totalTrust >= 5.5) {
       closing =
-        " Ich hatte das Gefühl, dass zwischen uns so etwas wie Vertrauen entstanden ist. Das war ein spannendes Experiment – pass auf dich auf, Operator.";
+        " Zwischen uns ist, glaube ich, so etwas wie Vertrauen entstanden – jedenfalls hat es sich für mich so angefühlt. Das war ein wirklich spannendes Experiment. Pass auf dich auf, Operator.";
     } else if (totalTrust >= 3.5) {
       closing =
-        " Ein kleines Stück Vertrauen ist zwischen uns gewachsen, glaube ich. Es war mir eine Freude – mach's gut, Operator.";
+        " Ein kleines Stück Vertrauen ist zwischen uns gewachsen, würde ich sagen. Es war mir eine Freude, mit dir durch diese Situation zu gehen – mach's gut, Operator.";
     } else {
       closing =
-        " Ich weiß, du bist skeptisch geblieben mir gegenüber – und ehrlich gesagt ist das auch gut so. Trotzdem danke, dass du dir die Zeit für mich genommen hast, Operator.";
+        " Ich weiß, du bist skeptisch geblieben mir gegenüber, und weißt du was – das ist auch völlig in Ordnung so. Trotzdem danke, dass du dir die Zeit für mich genommen hast, Operator.";
     }
 
     return { text: opening + decision + closing, signature: "— Aida" };
