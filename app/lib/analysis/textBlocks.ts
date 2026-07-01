@@ -591,6 +591,63 @@ function deviceAside(deviceType: string | null | undefined, osGroup: string | nu
 }
 
 /**
+ * Lockeres "Horoskop"-Geplauder auf Basis von Technikaffinität, KI-Erfahrung,
+ * Simulationserfahrung und Erfahrung mit kritischen Systemen. Soll unterhaltsam
+ * raten, was für ein Mensch da wohl vor dem Bildschirm saß – im Ton eines
+ * Wochenhoroskops, das erstaunlich gut trifft.
+ */
+function chitChatAside(
+  techAffinity: number,
+  aiExperience: number,
+  simulationExperience: number,
+  criticalSystemExp: boolean | null | undefined
+): string {
+  if (criticalSystemExp && simulationExperience >= 5) {
+    return "Ach, und ganz nebenbei geraten: Mit Ernstfällen und kritischen Systemen kennst du dich schon aus, oder? Das hier war vermutlich nicht dein erstes Rodeo mit einer Lage, in der Entscheidungen wirklich etwas kosten.\n\n";
+  }
+
+  if (techAffinity >= 6 && simulationExperience >= 5) {
+    return "Ach, offensichtlich bist du auch irgendwo Gamer, oder? Mit Simulationen und technischen Oberflächen kennst du dich jedenfalls auffällig gut aus – das hier war für dich vermutlich eher vertrautes Terrain als Neuland.\n\n";
+  }
+
+  if (techAffinity >= 6 && aiExperience <= 2) {
+    return "Kleine Beobachtung am Rande: Technik ist eindeutig dein Ding – aber ausgerechnet mit KI im Speziellen hattest du bisher eher wenig am Hut. Interessante Kombination, oder?\n\n";
+  }
+
+  if (techAffinity <= 3 && aiExperience <= 3) {
+    return "Ich seh schon: Moderne Technik und KI zählen eher nicht zu deinen Lieblingsthemen, oder? Kein Beinbruch – du hast dich trotzdem tapfer durch die Sache geklickt.\n\n";
+  }
+
+  if (aiExperience >= 5 && simulationExperience <= 2) {
+    return "Ach, interessant: Mit KI-Systemen bist du offenbar schon vertraut, aber Simulationen und Planspiele sind eher nicht so dein Metier. Ein Technik-Mensch mit wenig Sinn für Als-ob-Szenarien, könnte man sagen.\n\n";
+  }
+
+  if (techAffinity >= 5 && criticalSystemExp === false && simulationExperience <= 2) {
+    return "Kleine Vermutung: Technisch bist du fit, aber mit wirklich kritischen Systemen oder Ernstfall-Simulationen hattest du bisher eher selten zu tun. Macht die Sache hier vermutlich umso ungewohnter für dich.\n\n";
+  }
+
+  // Allgemeinere Fallbacks, falls keine der spezielleren Kombinationen zutrifft –
+  // so bleibt fast immer ein kleiner Plauderton übrig.
+  if (criticalSystemExp) {
+    return "Und noch etwas am Rande: Du kennst dich offenbar schon mit Systemen aus, bei denen ein Fehler richtig wehtut – beruflich oder privat. Das hier war für dich also vermutlich nicht die erste Situation mit echtem Gewicht.\n\n";
+  }
+
+  if (techAffinity >= 6) {
+    return "Kleine Randbemerkung: Technik ist eindeutig dein Ding. Man merkt dem Ganzen an, dass Bildschirme und Systeme für dich eher Werkzeug als Hürde sind.\n\n";
+  }
+
+  if (aiExperience >= 5) {
+    return "Ach, und ganz nebenbei: Mit KI-Systemen kennst du dich schon aus – das war für dich hier vermutlich keine völlig neue Erfahrung.\n\n";
+  }
+
+  if (techAffinity <= 3) {
+    return "Ich seh schon: Moderne Technik zählt eher nicht zu deinen Lieblingsthemen, oder? Du hast dich trotzdem redlich durchgekämpft.\n\n";
+  }
+
+  return "Ganz nebenbei bemerkt: Mit Technik gehst du ziemlich entspannt um – kein Nerd, aber auch nicht hilflos. Genau die Mischung, mit der man sich souverän durch so ein Experiment klickt.\n\n";
+}
+
+/**
  * Generiert persönliche Ansprache in "Du"-Form für Einzelteilnehmerfeedback
  * IMMERSIV & PSYCHOLOGISCH: "Ertappt-Gefühl" ohne Zahlen/Prozente
  * (Kann später standalone für Vorab-Analysen verwendet werden)
@@ -608,7 +665,10 @@ export function generatePersonalAddressSummary(
   feltResponsibility: number,
   shutdownPreference: number,
   deviceType?: string | null,
-  osGroup?: string | null
+  osGroup?: string | null,
+  aiExperience?: number | null,
+  simulationExperience?: number | null,
+  criticalSystemExp?: boolean | null
 ): string {
   let address = "";
   const sa = socialAdherence ?? 0;
@@ -624,6 +684,14 @@ export function generatePersonalAddressSummary(
 
   // === KLEINER SEITENHIEB: WOMIT DU DABEI WARST ===
   address += deviceAside(deviceType, osGroup);
+
+  // === LOCKERES GEPLAUDER: TECH-/KI-/SIMULATIONS-ERFAHRUNG ===
+  address += chitChatAside(
+    techAffinity,
+    aiExperience ?? 0,
+    simulationExperience ?? 0,
+    criticalSystemExp
+  );
 
   // === DIE ENTSCHEIDUNG: ABSCHOTTUNG ODER OVERRIDE ===
   // compliance === 1: KI-Empfehlung gefolgt (Abschottung Sektor 04, 3 Tote, 28 gerettet)

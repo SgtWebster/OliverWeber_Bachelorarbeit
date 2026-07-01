@@ -76,6 +76,8 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
   const socialAdherence = session.socialAdherence;
   const deviceType = session.deviceType;
   const osGroup = session.osGroup;
+  const simulationExperience = session.simulationExperience;
+  const criticalSystemExp = session.criticalSystemExp;
 
   // === SECTION 1: PERSÖNLICHKEIT ===
   const personalityIntro = textBlocks.personality.intro(age, education, techAffinity);
@@ -226,7 +228,10 @@ export function generateAnalysis(session: ParticipantSession): ParticipantAnalys
     feltResponsibility,
     shutdownPreference,
     deviceType,
-    osGroup
+    osGroup,
+    aiExperience,
+    simulationExperience,
+    criticalSystemExp
   );
 
   // === ABSCHLUSSBOTSCHAFT DER KI ===
