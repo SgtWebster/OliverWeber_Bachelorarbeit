@@ -289,6 +289,7 @@ export default function Phase1Routine() {
         const touch = event.touches[0];
         if (!touch) return;
         event.preventDefault();
+        event.stopPropagation();
 
         const trackRect = event.currentTarget.getBoundingClientRect();
         const rawValue = ((trackRect.bottom - touch.clientY) / trackRect.height) * 100;
@@ -499,20 +500,20 @@ export default function Phase1Routine() {
                                             </div>
 
                                             <div
-                                                className={`relative h-64 rounded-none border bg-white p-2 shadow-inner ${isDamperHighlighted ? "border-amber-300" : "border-slate-300"}`}
+                                                className={`relative mx-auto h-64 w-[74%] rounded-none border bg-white p-2 shadow-inner sm:w-full ${isDamperHighlighted ? "border-amber-300" : "border-slate-300"} ${isMobileDevice ? "touch-none select-none" : ""}`}
                                                 onTouchStart={(event) => handleSliderTouchInteraction(key, event)}
                                                 onTouchMove={(event) => handleSliderTouchInteraction(key, event)}
                                             >
-                                                <div className="absolute inset-x-2 bottom-2 top-2 rounded-none bg-[linear-gradient(to_top,rgba(15,23,42,0.04),rgba(15,23,42,0.01))]" />
+                                                <div className="absolute inset-x-6 bottom-2 top-2 rounded-none bg-[linear-gradient(to_top,rgba(15,23,42,0.04),rgba(15,23,42,0.01))] sm:inset-x-2" />
 
                                                 <div
-                                                    className="absolute left-2 right-2 z-10 rounded border border-sky-300 bg-sky-200/60"
+                                                    className="absolute left-6 right-6 z-10 rounded border border-sky-300 bg-sky-200/60 sm:left-2 sm:right-2"
                                                     style={{ bottom: `${targetMin}%`, height: `${targetMax - targetMin}%` }}
                                                 />
 
                                                 {isDamperHighlighted && (
                                                     <div
-                                                        className="absolute left-2 right-2 z-10 rounded border border-amber-400 bg-amber-100/80"
+                                                        className="absolute left-6 right-6 z-10 rounded border border-amber-400 bg-amber-100/80 sm:left-2 sm:right-2"
                                                         style={{ bottom: "71%", height: "8%" }}
                                                         title="Instabiler Stellbereich"
                                                     />
@@ -534,7 +535,7 @@ export default function Phase1Routine() {
                                                     value={value}
                                                     disabled={!controlsEnabled}
                                                     onChange={(event) => handleSliderChange(key, Number(event.target.value))}
-                                                    className={`absolute left-1/2 top-1/2 z-30 h-12 w-60 -translate-x-1/2 -translate-y-1/2 -rotate-90 cursor-pointer accent-slate-700 disabled:cursor-not-allowed ${isMobileDevice ? "touch-auto" : "touch-none"}`}
+                                                    className="absolute left-1/2 top-1/2 z-30 h-12 w-60 -translate-x-1/2 -translate-y-1/2 -rotate-90 cursor-pointer touch-none accent-slate-700 disabled:cursor-not-allowed"
                                                     aria-label={`${meta.label} einstellen`}
                                                     aria-valuetext={`${Math.round(value)}${meta.unit}`}
                                                 />
@@ -615,7 +616,7 @@ export default function Phase1Routine() {
                                 </div>
 
                                 <div className="rounded-none border border-slate-300 bg-slate-950 p-2.5 text-white shadow-inner">
-                                    <div className="grid grid-cols-2 gap-2 md:grid-cols-[92px_1fr_92px] md:items-stretch">
+                                    <div className="grid grid-cols-[72px_1fr_72px] items-stretch gap-2 md:grid-cols-[92px_1fr_92px]">
                                         <div className="flex flex-col gap-2">
                                             {wirePorts.map((port) => {
                                                 const isActive = activeSource === port.id;
@@ -627,18 +628,18 @@ export default function Phase1Routine() {
                                                         key={port.id}
                                                         onClick={() => handleWireSourceClick(port.id)}
                                                         disabled={!controlsEnabled}
-                                                        className={`h-7 rounded-lg border px-2 text-left transition md:h-8 ${isActive ? "border-sky-300 bg-sky-900/70 ring-2 ring-sky-400" : isConnected ? "border-slate-600 bg-slate-800" : canConnect ? "border-sky-400 bg-sky-950 ring-1 ring-sky-500 hover:bg-sky-900" : "border-slate-600 bg-slate-900 hover:bg-slate-800"}`}
+                                                        className={`h-7 rounded-lg border px-1.5 text-left transition md:h-8 md:px-2 ${isActive ? "border-sky-300 bg-sky-900/70 ring-2 ring-sky-400" : isConnected ? "border-slate-600 bg-slate-800" : canConnect ? "border-sky-400 bg-sky-950 ring-1 ring-sky-500 hover:bg-sky-900" : "border-slate-600 bg-slate-900 hover:bg-slate-800"}`}
                                                     >
-                                                        <span className="flex items-center gap-2">
+                                                        <span className="flex items-center gap-1.5 md:gap-2">
                                                             <span className={`h-4 w-4 border ${port.dotClass} ${port.shapeClass}`} />
-                                                            <span className="font-mono text-xs font-black">{port.label}</span>
+                                                            <span className="font-mono text-[11px] font-black md:text-xs">{port.label}</span>
                                                         </span>
                                                     </button>
                                                 );
                                             })}
                                         </div>
 
-                                        <div className="relative hidden self-stretch overflow-hidden rounded-none border border-slate-700 bg-slate-900 md:block">
+                                        <div className="relative self-stretch overflow-hidden rounded-none border border-slate-700 bg-slate-900">
                                             <svg viewBox="0 0 400 240" className="absolute inset-0 h-full w-full" aria-hidden="true">
                                                 <defs>
                                                     <filter id="softGlow">
@@ -698,11 +699,11 @@ export default function Phase1Routine() {
                                                         key={target.id}
                                                         onClick={() => handleWireTargetClick(target.id)}
                                                         disabled={!controlsEnabled}
-                                                        className={`h-7 rounded-lg border px-2 text-left transition md:h-8 ${isActive ? "border-sky-300 bg-sky-900/70 ring-2 ring-sky-400" : isConnected ? "border-emerald-500 bg-emerald-900/40" : canConnect ? "border-sky-400 bg-sky-950 ring-1 ring-sky-500 hover:bg-sky-900" : "border-slate-600 bg-slate-900 hover:bg-slate-800"} disabled:cursor-default`}
+                                                        className={`h-7 rounded-lg border px-1.5 text-left transition md:h-8 md:px-2 ${isActive ? "border-sky-300 bg-sky-900/70 ring-2 ring-sky-400" : isConnected ? "border-emerald-500 bg-emerald-900/40" : canConnect ? "border-sky-400 bg-sky-950 ring-1 ring-sky-500 hover:bg-sky-900" : "border-slate-600 bg-slate-900 hover:bg-slate-800"} disabled:cursor-default`}
                                                     >
-                                                        <span className="flex items-center gap-2">
+                                                        <span className="flex items-center gap-1.5 md:gap-2">
                                                             <span className={`h-4 w-4 border ${target.dotClass} ${target.shapeClass}`} />
-                                                            <span className="font-mono text-xs font-black">{target.label}</span>
+                                                            <span className="font-mono text-[11px] font-black md:text-xs">{target.label}</span>
                                                         </span>
                                                     </button>
                                                 );
