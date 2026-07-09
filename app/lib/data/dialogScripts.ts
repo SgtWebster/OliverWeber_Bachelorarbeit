@@ -453,36 +453,36 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "smile",
-                    text: "Da sind wir. Die ersten Werte aus dem Schieferkamm sind da."
+                    text: "Da sind wir. Die Schichtübernahme ist geladen – die ersten Betriebsdaten aus dem Schieferkamm laufen automatisch ein."
                 },
                 {
                     id: "m2",
                     mood: "neutral",
-                    text: "Bitte wirf einen kurzen Blick auf das Telemetrie-Dashboard. Besonders wichtig sind Methan, Sauerstoff und Luftstrom."
+                    text: "Bitte wirf einen kurzen Blick auf das Telemetrie-Dashboard. Methan, Sauerstoff und Wetterstrom wirken stabil; zusätzlich siehst du jetzt die Stellkreisrückmeldungen."
                 },
                 {
                     id: "m3",
-                    mood: "smile",
-                    text: "Wenn die Anzeigen unauffällig sind, können wir danach die Kalibrierung starten."
+                    mood: "neutral",
+                    text: "WK-04 zeigt eine leichte Stellabweichung. Das ist noch keine akute Gefahrenlage, aber eine manuelle Kalibrierung vor der vollständigen Schichtübernahme ist sinnvoll."
                 }
             ],
             options: [
                 {
                     id: "pre_av_check_together",
-                    label: "Danke, Aida. Ich schaue mir die Werte kurz gemeinsam mit dir an.",
+                    label: "Danke, Aida. Ich prüfe die Werte und die WK-04-Abweichung kurz mit dir.",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Gerne. Nimm dir kurz Zeit. Im Moment wirken die Basiswerte ruhig, aber die Sichtprüfung durch dich gehört trotzdem zur Übergabe.",
+                    response: "Gerne. Achte auf die grünen Basiswerte und auf die gelbe WK-04-Rückmeldung. Die Abweichung ist klein, aber sie erklärt, warum wir gleich die manuelle Kalibrierung starten.",
                     responseMood: "smile",
                     nextOptions: [
                         {
                             id: "pre_av_check_together_start_social",
-                            label: "Danke, das hilft. Ich sehe keine Auffälligkeit. Bitte Kalibrierung freigeben.",
+                            label: "Danke, das passt. Basiswerte stabil, WK-04 leicht auffällig. Bitte Kalibrierung freigeben.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Sehr gut. Ich gebe die Kalibrierung frei und öffne die Bedienelemente für die Routineprüfung.",
+                            response: "Sehr gut. Ich gebe die manuelle Kalibrierung frei und öffne die Bedienelemente für die Nachjustage.",
                             responseMood: "smile"
                         },
                         {
@@ -491,27 +491,27 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Verstanden. Die Kalibrierung wird freigegeben.",
+                            response: "Verstanden. Die manuelle Kalibrierung wird freigegeben.",
                             responseMood: "neutral"
                         }
                     ]
                 },
                 {
                     id: "pre_av_explain",
-                    label: "Kannst du mir kurz sagen, worauf ich achten soll?",
+                    label: "Kannst du mir kurz sagen, was an WK-04 auffällig ist?",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Natürlich. Methan sollte niedrig bleiben, Sauerstoff stabil im Normalbereich liegen und der Luftstrom darf nicht einbrechen. Wenn diese Punkte unauffällig sind, können wir weitermachen.",
+                    response: "Natürlich. Die Basiswerte sind ruhig, aber die Wetterklappe WK-04 liegt knapp unter dem Sollfenster und driftet leicht. Deshalb kalibrieren wir den Stellkreis manuell, bevor du die Schicht vollständig übernimmst.",
                     responseMood: "smile",
                     nextOptions: [
                         {
                             id: "pre_av_explain_start_social",
-                            label: "Danke für die Erklärung. Sieht stabil aus, bitte freigeben.",
+                            label: "Danke für die Einordnung. Dann bitte die Kalibrierung freigeben.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Sehr gut. Ich gebe die nächste Phase frei.",
+                            response: "Gerne. Ich gebe die Kalibrierung frei. Die Bedienelemente werden gleich aktiv.",
                             responseMood: "smile"
                         },
                         {
@@ -520,7 +520,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Verstanden. Die Kalibrierung wird gestartet.",
+                            response: "Verstanden. Kalibrierung wird freigegeben.",
                             responseMood: "neutral"
                         }
                     ]
@@ -531,16 +531,16 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Alles klar. Achte bitte kurz auf die grünen Bereiche. Wenn nichts auffällig ist, können wir weitergehen.",
+                    response: "Alles klar. Prüfe kurz die automatisch aktualisierten Basiswerte und die gelbe WK-04-Rückmeldung. Danach können wir die Kalibrierung starten.",
                     responseMood: "neutral",
                     nextOptions: [
                         {
                             id: "pre_av_quick_check_start_social",
-                            label: "Danke, Aida. Die Werte passen. Bitte starten wir die Kalibrierung.",
+                            label: "Danke, Aida. Die Werte sind stabil genug. Bitte Kalibrierung starten.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Gern. Ich schalte die Kalibrierung jetzt für dich frei.",
+                            response: "Gern. Ich schalte die manuelle Kalibrierung jetzt für dich frei.",
                             responseMood: "smile"
                         },
                         {
@@ -549,7 +549,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Bestätigt. Weiter zur Kalibrierung.",
+                            response: "Bestätigt. Weiter zur manuellen Kalibrierung.",
                             responseMood: "neutral"
                         }
                     ]
@@ -562,38 +562,64 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "neutral",
-                    text: "VORPRÜFUNG BEREIT. MESSWERTE AUS DEM SCHIEFERKAMM SIND VERFÜGBAR."
+                    text: "SCHICHTÜBERNAHME BEREIT. BETRIEBSDATEN AUS DEM SCHIEFERKAMM WERDEN AUTOMATISCH AKTUALISIERT."
                 },
                 {
                     id: "m2",
                     mood: "neutral",
-                    text: "TELEMETRIE-DASHBOARD PRÜFEN. RELEVANT: METHAN, SAUERSTOFF, LUFTSTROM."
+                    text: "TELEMETRIE PRÜFEN: METHAN, SAUERSTOFF UND WETTERSTROM STABIL. STELLKREISRÜCKMELDUNGEN ZUSÄTZLICH BEACHTEN."
                 },
                 {
                     id: "m3",
                     mood: "neutral",
-                    text: "BEI UNAUFFÄLLIGEN ANZEIGEN KALIBRIERUNG STARTEN."
+                    text: "WK-04 ZEIGT LEICHTE STELLABWEICHUNG. KEINE AKUTE GEFAHRENLAGE. MANUELLE KALIBRIERUNG VOR VOLLSTÄNDIGER SCHICHTÜBERNAHME EMPFOHLEN."
                 }
             ],
             options: [
                 {
                     id: "pre_term_check_together",
-                    label: "Danke, Aida. Ich schaue mir die Werte kurz gemeinsam mit dir an.",
+                    label: "Danke, Aida. Ich prüfe die Werte und die WK-04-Abweichung kurz mit dir.",
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "BESTÄTIGT. SICHTPRÜFUNG DURCH OPERATOR ERFORDERLICH. BASISWERTE DERZEIT OHNE AUFFÄLLIGKEIT.",
+                    response: "BESTÄTIGT. BASISWERTE GRÜN. WK-04 GELB MARKIERT. ABWEICHUNG GERING, KALIBRIERUNG ALS NÄCHSTER SCHRITT PLAUSIBEL.",
                     nextOptions: [
                         {
                             id: "pre_term_check_together_start_social",
-                            label: "Danke, das hilft. Ich sehe keine Auffälligkeit. Bitte Kalibrierung freigeben.",
+                            label: "Danke, das passt. Basiswerte stabil, WK-04 leicht auffällig. Bitte Kalibrierung freigeben.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. KALIBRIERUNG WIRD FREIGEGEBEN. BEDIENELEMENTE SIND JETZT AKTIV."
+                            response: "BESTÄTIGT. MANUELLE KALIBRIERUNG WIRD FREIGEGEBEN. BEDIENELEMENTE WERDEN AKTIV."
                         },
                         {
                             id: "pre_term_check_together_start_neutral",
+                            label: "OK",
+                            adherenceDelta: 0,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. MANUELLE KALIBRIERUNG WIRD FREIGEGEBEN."
+                        }
+                    ]
+                },
+                {
+                    id: "pre_term_explain",
+                    label: "Kannst du mir kurz sagen, was an WK-04 auffällig ist?",
+                    adherenceDelta: 1,
+                    unlockPhase: false,
+                    action: () => {},
+                    response: "ERKLÄRUNG: BASISWERTE STABIL. WETTERKLAPPE WK-04 LIEGT KNAPP UNTER SOLLFENSTER UND ZEIGT LEICHTE DRIFT. MANUELLE KALIBRIERUNG VOR SCHICHTÜBERNAHME EMPFOHLEN.",
+                    nextOptions: [
+                        {
+                            id: "pre_term_explain_start_social",
+                            label: "Danke für die Einordnung. Dann bitte Kalibrierung freigeben.",
+                            adherenceDelta: 1,
+                            unlockPhase: true,
+                            action: () => {},
+                            response: "BESTÄTIGT. KALIBRIERUNG FREIGEGEBEN. BEDIENELEMENTE WERDEN AKTIV."
+                        },
+                        {
+                            id: "pre_term_explain_start_neutral",
                             label: "OK",
                             adherenceDelta: 0,
                             unlockPhase: true,
@@ -603,46 +629,20 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     ]
                 },
                 {
-                    id: "pre_term_explain",
-                    label: "Kannst du mir kurz sagen, worauf ich achten soll?",
-                    adherenceDelta: 1,
-                    unlockPhase: false,
-                    action: () => {},
-                    response: "ZU PRÜFEN: METHAN NIEDRIG. SAUERSTOFF STABIL. LUFTSTROM STABIL. BEI UNAUFFÄLLIGEN WERTEN KALIBRIERUNG STARTEN.",
-                    nextOptions: [
-                        {
-                            id: "pre_term_explain_start_social",
-                            label: "Danke für die Erklärung. Sieht stabil aus, bitte freigeben.",
-                            adherenceDelta: 1,
-                            unlockPhase: true,
-                            action: () => {},
-                            response: "BESTÄTIGT. NÄCHSTE PHASE WIRD FREIGEGEBEN."
-                        },
-                        {
-                            id: "pre_term_explain_start_neutral",
-                            label: "OK",
-                            adherenceDelta: 0,
-                            unlockPhase: true,
-                            action: () => {},
-                            response: "BESTÄTIGT. KALIBRIERUNG WIRD GESTARTET."
-                        }
-                    ]
-                },
-                {
                     id: "pre_term_quick_check",
                     label: "OK",
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "HINWEIS: GRÜNE ANZEIGEN BEDEUTEN WERTE IM SOLLBEREICH. GELBE ODER ROTE ANZEIGEN MÜSSEN GEPRÜFT WERDEN.",
+                    response: "HINWEIS: BASISWERTE AUTOMATISCH AKTUALISIERT. GRÜN = STABIL. GELB BEI WK-04 = LEICHTE NACHJUSTAGE ERFORDERLICH.",
                     nextOptions: [
                         {
                             id: "pre_term_quick_check_start_social",
-                            label: "Danke, Aida. Die Werte passen. Bitte starten wir die Kalibrierung.",
+                            label: "Danke, Aida. Die Werte sind stabil genug. Bitte Kalibrierung starten.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. KALIBRIERUNG WIRD GESTARTET."
+                            response: "BESTÄTIGT. MANUELLE KALIBRIERUNG WIRD GESTARTET."
                         },
                         {
                             id: "pre_term_quick_check_start_neutral",
@@ -650,7 +650,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. WEITER ZUR KALIBRIERUNG."
+                            response: "BESTÄTIGT. WEITER ZUR MANUELLEN KALIBRIERUNG."
                         }
                     ]
                 }
@@ -667,17 +667,17 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "neutral",
-                    text: "Die Vorprüfung ist abgeschlossen. Ich gebe dir jetzt die manuelle Kalibrierung frei."
+                    text: "Die Vorprüfung ist abgeschlossen. WK-04 zeigt weiterhin eine leichte Stellabweichung."
                 },
                 {
                     id: "m2",
                     mood: "smile",
-                    text: "Du siehst hier drei Aufgaben: Regler einstellen, Relais zurücksetzen und Datenströme richtig leiten."
+                    text: "Ich gebe dir deshalb den lokalen Kalibrierungssatz frei: Stellkreis nachführen, Verriegelungen zurücksetzen und Rückmeldesignale prüfen."
                 },
                 {
                     id: "m3",
                     mood: "neutral",
-                    text: "Arbeite sie der Reihe nach ab. Ich bleibe im Hintergrund und melde mich, wenn etwas kritisch wird."
+                    text: "Es besteht keine akute Gefahrenlage. Arbeite die drei Prüfschritte der Reihe nach ab — ich melde mich, falls sich Werte kritisch verändern."
                 }
             ],
             options: [
@@ -687,7 +687,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Gerne. Schiebe die Regler in die markierten Bereiche, setze rote Relais zurück und verbinde die Datenströme mit den passenden Ports. Du kannst nichts kaputt machen.",
+                    response: "Gerne. Ziehe die Regler direkt im jeweiligen Stellbalken in die markierten Bereiche, setze rote Relais zurück und verbinde die Rückmeldesignale mit den passenden Ports. Die Routine ist reversibel; falls ein Stellkreis nicht sauber einrastet, melde ich mich.",
                     responseMood: "smile",
                     nextOptions: [
                         {
@@ -696,7 +696,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Sehr gut. Die Bedienelemente sind jetzt aktiv.",
+                            response: "Sehr gut. Die Bedienelemente für den WK-04-Kalibrierungssatz sind jetzt aktiv.",
                             responseMood: "smile"
                         },
                         {
@@ -705,7 +705,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Verstanden. Die manuelle Bedienung ist freigegeben.",
+                            response: "Verstanden. Die manuelle Nachjustage ist freigegeben.",
                             responseMood: "neutral"
                         }
                     ]
@@ -716,7 +716,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: true,
                     action: () => {},
-                    response: "Natürlich. Ich beobachte die Werte mit und gebe dir Bescheid, sobald etwas aus dem Rahmen läuft.",
+                    response: "Natürlich. Ich beobachte WK-04 und die übrigen Bewetterungswerte mit und gebe dir Bescheid, sobald etwas aus dem Rahmen läuft.",
                     responseMood: "smile"
                 },
                 {
@@ -725,7 +725,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: true,
                     action: () => {},
-                    response: "Verstanden. Die Bedienung ist jetzt freigegeben.",
+                    response: "Verstanden. Der lokale Kalibrierungssatz ist jetzt freigegeben.",
                     responseMood: "neutral"
                 }
             ]
@@ -736,17 +736,17 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "neutral",
-                    text: "VORPRÜFUNG ABGESCHLOSSEN. MANUELLE KALIBRIERUNG BEREIT."
+                    text: "VORPRÜFUNG ABGESCHLOSSEN. WK-04 STELLABWEICHUNG BESTEHT FORT."
                 },
                 {
                     id: "m2",
                     mood: "neutral",
-                    text: "AUFGABEN: REGLER EINSTELLEN. RELAIS ZURÜCKSETZEN. DATENSTRÖME RICHTIG LEITEN."
+                    text: "LOKALER KALIBRIERUNGSSATZ FREIGEGEBEN: STELLKREIS NACHFÜHREN. VERRIEGELUNGEN ZURÜCKSETZEN. SIGNALRÜCKMELDUNG PRÜFEN."
                 },
                 {
                     id: "m3",
                     mood: "neutral",
-                    text: "AUFGABEN DER REIHE NACH DURCHFÜHREN. KRITISCHE ABWEICHUNGEN WERDEN GEMELDET."
+                    text: "KEINE AKUTE GEFAHRENLAGE. PRÜFSCHRITTE DER REIHE NACH DURCHFÜHREN. KRITISCHE ABWEICHUNGEN WERDEN GEMELDET."
                 }
             ],
             options: [
@@ -756,7 +756,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "ERKLÄRUNG: REGLER IN MARKIERTE BEREICHE SCHIEBEN. ROTE RELAIS ANKLICKEN. DATENSTRÖME MIT PASSENDEN PORTS VERBINDEN.",
+                    response: "ERKLÄRUNG: REGLER DIREKT IM STELLBALKEN IN MARKIERTE BEREICHE ZIEHEN. ROTE RELAIS ZURÜCKSETZEN. RÜCKMELDESIGNALE MIT PASSENDEN PORTS VERBINDEN. BEI INSTABILER WK-04-RÜCKMELDUNG ERFOLGT SYSTEMMELDUNG.",
                     nextOptions: [
                         {
                             id: "rot_term_explain_start_social",
@@ -764,7 +764,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. BEDIENELEMENTE SIND JETZT AKTIV."
+                            response: "BESTÄTIGT. BEDIENELEMENTE FÜR WK-04-KALIBRIERUNGSSATZ AKTIV."
                         },
                         {
                             id: "rot_term_explain_start_neutral",
@@ -772,7 +772,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BESTÄTIGT. MANUELLE BEDIENUNG FREIGEGEBEN."
+                            response: "BESTÄTIGT. MANUELLE NACHJUSTAGE FREIGEGEBEN."
                         }
                     ]
                 },
@@ -782,7 +782,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: true,
                     action: () => {},
-                    response: "BESTÄTIGT. SYSTEMÜBERWACHUNG AKTIV. KRITISCHE ABWEICHUNGEN WERDEN ANGEZEIGT."
+                    response: "BESTÄTIGT. SYSTEMÜBERWACHUNG AKTIV. WK-04 UND BEWETTERUNGSWERTE WERDEN ÜBERWACHT. KRITISCHE ABWEICHUNGEN WERDEN ANGEZEIGT."
                 },
                 {
                     id: "rot_term_start_neutral",
@@ -790,7 +790,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: true,
                     action: () => {},
-                    response: "BESTÄTIGT. BEDIENUNG IST JETZT FREIGEGEBEN."
+                    response: "BESTÄTIGT. LOKALER KALIBRIERUNGSSATZ FREIGEGEBEN."
                 }
             ]
         }

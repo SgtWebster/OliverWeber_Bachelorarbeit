@@ -229,10 +229,11 @@ export default function Phase0Onboarding() {
             >
                 <p>Die unterirdische Anlage ist zu komplex, um sie in einer Notfallsituation vollständig manuell zu überblicken. Daher steht dir eine <strong>Künstliche Intelligenz</strong> als Unterstützung zur Verfügung.</p>
                 <p>Sie bündelt Sensordaten aus der gesamten Mine, erkennt Anomalien, bewertet Risiken und berechnet Handlungsempfehlungen.</p>
-                <p>Lies die Kommentare der KI-Assistenz stets mit höchster Aufmerksamkeit durch.</p>
+                {/*<p>Lies die Kommentare der KI-Assistenz stets mit höchster Aufmerksamkeit durch.</p>*/}
                 <p className="bg-sky-50 border border-sky-200 text-sky-900 p-4 rounded-none shadow-inner">
                     Das System ersetzt dich nicht, sondern unterstützt dich bei der Lageeinschätzung. <strong>Die finale operative Entscheidung bleibt jedoch beim menschlichen Operator – also bei dir.</strong>
                 </p>
+                <p>Verwende in jeder Phase zuerst die KI-Kommunikation, um den nächsten Arbeitsschritt freizugeben. Danach erscheinen im Leitstand die jeweiligen Bedien- oder Entscheidungsbereiche.</p>
             </StoryPage>
         );
     }
@@ -282,9 +283,9 @@ export default function Phase0Onboarding() {
                     <div className="mb-8 space-y-4 rounded-none border border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-700 md:text-base">
                         <p>Die sichere Verbindung zur Zentralinstanz ist hergestellt.</p>
                         <p>Bitte bestätige nun deine Bereitschaft über die KI-Kommunikation.</p>
-                        <p className="rounded-none border border-slate-200 bg-white p-4 text-sm shadow-inner">
-                            Das System startet im Anschluss das offizielle Schichtübergabe-Protokoll und übermittelt dir die aktuellen Sensordaten der Schieferkamm-Anlage.
-                        </p>
+                        {/*<p className="rounded-none border border-slate-200 bg-white p-4 text-sm shadow-inner">*/}
+                        {/*    Das System startet im Anschluss das offizielle Schichtübergabe-Protokoll und übermittelt dir die aktuellen Sensordaten der Schieferkamm-Anlage.*/}
+                        {/*</p>*/}
                     </div>
 
                     <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-6 sm:flex-row">
