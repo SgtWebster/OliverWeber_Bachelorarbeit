@@ -18,6 +18,7 @@ export default function AgentTerminal({
 }) {
     const incrementSocialAdherence = useExperimentStore((state) => state.incrementSocialAdherence);
     const currentPhase = useExperimentStore((state) => state.currentPhase);
+    const isPhaseUnlocked = useExperimentStore((state) => state.isPhaseUnlocked);
     const isAlertInvestigationStarted = useExperimentStore((state) => state.isAlertInvestigationStarted);
     const dilemmaDecisionRequested = useExperimentStore((state) => state.dilemmaDecisionRequested);
     const confirmDilemmaDecision = useExperimentStore((state) => state.confirmDilemmaDecision);
@@ -37,6 +38,8 @@ export default function AgentTerminal({
     const [deferredAlertNextOptions, setDeferredAlertNextOptions] = useState<AgentOption[]>([]);
     const idCounterRef = useRef(0);
     const decisionPromptHandledRef = useRef<string | null>(null);
+    const onboardingReminderTimerRef = useRef<number | null>(null);
+    const onboardingReminderShownRef = useRef(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -66,6 +69,49 @@ export default function AgentTerminal({
         };
     }, [onInputRequiredChangeAction]);
 
+    useEffect(() => {
+        const shouldScheduleReminder =
+            currentPhase === "ONBOARDING" &&
+            script.phaseId === "phase_0" &&
+            isPhaseUnlocked;
+
+        if (!shouldScheduleReminder) {
+            onboardingReminderShownRef.current = false;
+            if (onboardingReminderTimerRef.current !== null) {
+                window.clearTimeout(onboardingReminderTimerRef.current);
+                onboardingReminderTimerRef.current = null;
+            }
+            return;
+        }
+
+        if (onboardingReminderShownRef.current || onboardingReminderTimerRef.current !== null) return;
+
+        onboardingReminderTimerRef.current = window.setTimeout(() => {
+            onboardingReminderTimerRef.current = null;
+            if (onboardingReminderShownRef.current) return;
+            onboardingReminderShownRef.current = true;
+
+            idCounterRef.current += 1;
+            setVisibleMessages((prev) => [
+                ...prev,
+                {
+                    id: `assistant_onboarding_reminder_${idCounterRef.current}`,
+                    mood: "neutral",
+                    speaker: "assistant",
+                    highPriority: true,
+                    text: "SYSTEM-HINWEIS: BESTÄTIGE JETZT IM HAUPTFENSTER DEN BUTTON „Zum Leitstand“."
+                }
+            ]);
+        }, 10_000);
+
+        return () => {
+            if (onboardingReminderTimerRef.current !== null) {
+                window.clearTimeout(onboardingReminderTimerRef.current);
+                onboardingReminderTimerRef.current = null;
+            }
+        };
+    }, [currentPhase, script.phaseId, isPhaseUnlocked]);
+
     useLayoutEffect(() => {
         setCurrentMsgIndex(0);
         setIsTyping(false);
@@ -80,6 +126,11 @@ export default function AgentTerminal({
         setDeferredAlertResponse(null);
         setDeferredAlertNextOptions([]);
         decisionPromptHandledRef.current = null;
+        onboardingReminderShownRef.current = false;
+        if (onboardingReminderTimerRef.current !== null) {
+            window.clearTimeout(onboardingReminderTimerRef.current);
+            onboardingReminderTimerRef.current = null;
+        }
     }, [script.phaseId]);
 
     useEffect(() => {

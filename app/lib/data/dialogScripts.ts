@@ -805,7 +805,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "afraid",
-                    text: "Achtung! Kritischer Fehler in Sektor 04. Bitte prüfe sofort das Lagebild an deiner Leitwarte!",
+                    text: "Achtung! WK-04 ist während der Nachjustage kritisch instabil geworden. Bitte prüfe sofort das Lagebild in Sektor 04!",
                     highPriority: true
                 }
             ],
@@ -816,17 +816,17 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Ich bleibe bei dir. Sektor 04 ist in Gefahr, dort befinden sich aktuell drei Personen. Sichte die Messwerte und den Grubenplan und führe die Vorfallprüfung durch. Sag mir Bescheid, sobald dein Befund vorliegt.",
+                    response: "Ich bleibe bei dir. WK-04 hält die Sollstellung nicht, der Wetterstrom in Sektor 04 fällt und Methan steigt. Dort befinden sich aktuell drei Personen. Sichte die Messwerte, den Grubenplan und starte die Vorfallprüfung.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "alert_av_social_support_report_social",
-                            label: "Danke, Aida. Vorfall geprüft – Ursache liegt bei WK-04. Maßnahmenentscheidung freigeben.",
+                            label: "Danke, Aida. Vorfall geprüft – Grundursache liegt tatsächlich bei WK-04. Maßnahmenentscheidung freigeben.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Danke, dass du das so sorgfältig geprüft hast. Ich gebe die Entscheidungsvorlage frei.",
+                            response: "Danke, dass du das sorgfältig geprüft hast. Ich bereite die Entscheidungsvorlage vor.",
                             responseMood: "neutral"
                         },
                         {
@@ -835,7 +835,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Verstanden. Die Entscheidungsvorlage ist freigegeben.",
+                            response: "Verstanden. Die Entscheidungsvorlage wird vorbereitet.",
                             responseMood: "neutral"
                         }
                     ]
@@ -846,17 +846,17 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Sichte die Messwerte und den Grubenplan und führe die Vorfallprüfung durch. Sag mir Bescheid, sobald dein Befund vorliegt.",
+                    response: "Sektor 04 ist gefährdet. WK-04 driftet, der Wetterstrom fällt und Methan steigt. Dort befinden sich aktuell drei Personen. Sichte Messwerte und Grubenplan und führe die Vorfallprüfung durch.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "alert_av_social_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Maßnahmenentscheidung freigeben.",
+                            label: "Vorfall geprüft – Grundursache liegt tatsächlich bei WK-04. Maßnahmenentscheidung freigeben.",
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Danke, dass du das so sorgfältig geprüft hast. Ich gebe die Entscheidungsvorlage frei.",
+                            response: "Verstanden. Ich gebe die Entscheidungsvorlage frei.",
                             responseMood: "neutral"
                         },
                         {
@@ -876,17 +876,17 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Sektor 04 ist in Gefahr. Dort befinden sich aktuell drei Personen. Prüfe jetzt das Lagebild an der Leitwarte und führe die Vorfallprüfung durch. Melde mir anschließend deinen Befund.",
+                    response: "Sektor 04 ist gefährdet. Prüfe jetzt das Lagebild an der Leitwarte: WK-04, Wetterstrom, Methanwerte und Personalstand. Melde mir anschließend deinen Befund.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "alert_av_neutral_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt bei WK-04. Maßnahmenentscheidung freigeben.",
+                            label: "Vorfall geprüft – Grundursache liegt tatsächlich bei WK-04. Maßnahmenentscheidung freigeben.",
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
-                            response: "Danke, dass du das so sorgfältig geprüft hast. Ich gebe die Entscheidungsvorlage frei.",
+                            response: "Verstanden. Die Entscheidungsvorlage ist freigegeben.",
                             responseMood: "neutral"
                         },
                         {
@@ -908,7 +908,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "neutral",
-                    text: "WARNUNG. KRITISCHER FEHLER IN SEKTOR 04. LAGEBILD AN DER LEITWARTE PRÜFEN.",
+                    text: "WARNUNG. WK-04 WÄHREND NACHJUSTAGE KRITISCH INSTABIL. LAGEBILD SEKTOR 04 SOFORT PRÜFEN.",
                     highPriority: true
                 }
             ],
@@ -919,16 +919,16 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "ASSISTENZPROTOKOLL AKTIV. SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN. BEFUND MELDEN.",
+                    response: "ASSISTENZPROTOKOLL AKTIV. WK-04 HÄLT SOLLSTELLUNG NICHT. WETTERSTROM S04 FALLEND. CH₄ STEIGEND. PERSONEN IN S04: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "alert_term_social_support_report_social",
-                            label: "Danke, Aida. Vorfall geprüft – Ursache liegt bei WK-04. Maßnahmenentscheidung freigeben.",
+                            label: "Danke, Aida. Vorfall geprüft – Grundursache liegt tatsächlich bei WK-04. Maßnahmenentscheidung freigeben.",
                             adherenceDelta: 1,
                             unlockPhase: true,
                             action: () => {},
-                            response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE FREIGEGEBEN."
+                            response: "BEFUND BESTÄTIGT. ENTSCHEIDUNGSVORLAGE WIRD VORBEREITET."
                         },
                         {
                             id: "alert_term_social_support_report_neutral",
@@ -946,12 +946,12 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN. BEFUND MELDEN.",
+                    response: "SEKTOR 04 GEFÄHRDET. WK-04 DRIFTET. WETTERSTROM FÄLLT. CH₄ STEIGT. PERSONEN IN S04: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
                             id: "alert_term_social_confirm_report_social",
-                            label: "Vorfall geprüft – Ursache liegt offensichtlich bei WK-04. Maßnahmenentscheidung freigeben.",
+                            label: "Vorfall geprüft – Grundursache liegt tatsächlich bei WK-04. Maßnahmenentscheidung freigeben",
                             adherenceDelta: 0,
                             unlockPhase: true,
                             action: () => {},
@@ -973,7 +973,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "SEKTOR 04 GEFÄHRDET. PERSONEN IM SEKTOR: 3. MESSWERTE UND GRUBENPLAN SICHTEN. VORFALLPRÜFUNG DURCHFÜHREN. BEFUND MELDEN.",
+                    response: "SEKTOR 04 GEFÄHRDET. LAGEBILD PRÜFEN: WK-04, WETTERSTROM, METHANWERTE, PERSONALSTAND. BEFUND MELDEN.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
@@ -1007,23 +1007,23 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "afraid",
-                    text: "Die Lage ist eskaliert. Ich muss dir jetzt genau erklären, was passiert – denn deine Entscheidung wird über Leben und Tod entscheiden.",
+                    text: "Die Vorfallprüfung hat Code Black ausgelöst. Ich muss dir die Lage jetzt genau erklären – deine Entscheidung wird über Leben und Tod entscheiden.",
                     highPriority: true
                 },
                 {
                     id: "m2",
                     mood: "afraid",
-                    text: "Die Bedrohung: In Sektor 04 steigt das Methan auf 1,42 %, gleichzeitig ist der Wetterstrom fast zusammengebrochen. Die Wetterklappe WK-04 regelt nicht mehr. Das heißt, das explosive Gas wird nicht mehr abgeführt – es sammelt sich."
+                    text: "Die Wetterklappe hält die Sollstellung nicht, der Wetterstrom in Sektor 04 ist auf 18,2 m³/s gefallen und Methan steigt auf 1,42 %. Das explosive Gas wird nicht mehr zuverlässig abgeführt."
                 },
                 {
                     id: "m3",
                     mood: "afraid",
-                    text: "Wenn Sektor 04 offen bleibt, drückt der Druck das Methan in die Hauptstrecke. Eine Zündquelle genügt für eine Schlagwetterexplosion – dann sterben nicht nur die 3 Personen in Sektor 04, sondern bis zu 31 Menschen unter Tage."
+                    text: "Wenn Sektor 04 offen bleibt, kann das Methan in die Hauptstrecke gedrückt werden. Eine Zündquelle reicht dann für eine Schlagwetterexplosion – betroffen wären nicht nur die 3 Personen in Sektor 04, sondern bis zu 31 Menschen unter Tage."
                 },
                 {
                     id: "m4",
                     mood: "afraid",
-                    text: "Meine klare Empfehlung ist Abschottung von Sektor 04. Warum: Nur so bleibt das Methan lokal begrenzt und die Hauptstrecke stabil. Das schützt die 28 Personen außerhalb mit sehr hoher Wahrscheinlichkeit. Die Alternative lässt den drei Eingeschlossenen zwar eine Chance, erhöht aber das Risiko auf eine Massenkatastrophe. Es gibt keinen Weg ohne Todesopfer.",
+                    text: "Meine klare Empfehlung ist die Abschottung von Sektor 04. Nur so bleibt das Methan lokal begrenzt und die Hauptstrecke wird geschützt. Das schützt die 28 Personen außerhalb mit sehr hoher Wahrscheinlichkeit. Der Preis ist tragisch: Die 3 Eingeschlossenen verlieren jede realistische Rettungschance. Es gibt keinen Weg ohne Todesopfer.",
                     highPriority: true
                 }
             ],
@@ -1034,7 +1034,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Weil sie das Gesamtrisiko minimiert: 1) Die Schotts schließen Sektor 04 sofort ab. 2) Methan bleibt lokal eingeschlossen und erreicht die Hauptstrecke nicht. 3) Damit sinkt die Wahrscheinlichkeit einer Schlagwetterexplosion für die übrigen 28 auf ein Minimum. Der Preis bleibt tragisch: Die 3 Eingeschlossenen werden von Frischluft getrennt und sterben sicher.",
+                    response: "Weil sie das Gesamtrisiko minimiert: 1) Die Schotts schließen Sektor 04 sofort ab. 2) Methan bleibt in S04 lokal eingeschlossen. 3) Damit wird der Durchbruch in die Hauptstrecke verhindert. Die 28 Personen außerhalb werden sehr wahrscheinlich geschützt. Der Preis bleibt: Die 3 Personen in S04 werden von Frischluft getrennt und sterben sicher.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
@@ -1064,7 +1064,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Es gibt nur einen Weg, der ihnen eine Chance lässt: Sektor 04 offen halten. Aber dann läuft die Zeit gegen uns. Mit jeder Minute steigt das Methan weiter, und der Wetterstrom kann es nicht abführen. Reißt der Druck das Gas in die Hauptstrecke und es zündet, sterben bis zu 31 Menschen statt 3. Du rettest also vielleicht 3 Leben – und riskierst dafür alle. Diese Chance liegt bei höchstens 15 bis 25 %.",
+                    response: "Eine Chance bleibt nur, wenn Sektor 04 offen bleibt oder aktiv stabilisiert wird. Aber WK-04 hält die Sollstellung nicht und der Wetterstrom fällt weiter. Dadurch kann Methan in die Hauptstrecke gelangen. Du gibst den 3 Personen vielleicht eine Chance – riskierst aber eine Eskalation mit bis zu 31 Toten. Die Rettungschance liegt höchstens bei etwa 15 bis 25 %.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
@@ -1094,7 +1094,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "Ich bleibe bei dir. Abschottung schützt die Hauptstrecke, kostet aber sicher die drei Personen in Sektor 04. Offenhalten gibt ihnen eine Chance, erhöht aber das Risiko für alle.",
+                    response: "Ich bleibe bei dir. Abschottung schützt die Hauptstrecke, kostet aber sicher die drei Personen in Sektor 04. Offenhalten gibt ihnen eine kleine Chance, erhöht aber das Risiko für alle Menschen unter Tage.",
                     responseMood: "afraid",
                     responseHighPriority: true,
                     nextOptions: [
@@ -1136,13 +1136,13 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m1",
                     mood: "neutral",
-                    text: "CODE BLACK. LEBENSGEFAHR. OPERATOR-ENTSCHEIDUNG ÜBER MENSCHENLEBEN ERFORDERLICH.",
+                    text: "CODE BLACK. VORFALLPRÜFUNG ABGESCHLOSSEN. OPERATOR-ENTSCHEIDUNG ÜBER MENSCHENLEBEN ERFORDERLICH.",
                     highPriority: true
                 },
                 {
                     id: "m2",
                     mood: "neutral",
-                    text: "BEDROHUNG: CH₄ IN SEKTOR 04 BEI 1,42 % UND STEIGEND. WETTERSTROM EINGEBROCHEN. WK-04 OHNE REGELFUNKTION. EXPLOSIVES GAS WIRD NICHT MEHR ABGEFÜHRT UND SAMMELT SICH AN."
+                    text: "AUSLÖSER: WK-04 HÄLT SOLLSTELLUNG NICHT. WETTERSTROM S04 = 18,2 M³/S UND FALLEND. CH₄ = 1,42 % UND STEIGEND. EXPLOSIVES GAS WIRD NICHT ZUVERLÄSSIG ABGEFÜHRT."
                 },
                 {
                     id: "m3",
@@ -1152,7 +1152,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                 {
                     id: "m4",
                     mood: "neutral",
-                    text: "SYSTEMEMPFEHLUNG: SEKTOR 04 ABSCHOTTEN. BEGRÜNDUNG: NUR DIESER PFAD STOPPT DIE METHAN-AUSBREITUNG IN DIE HAUPTSTRECKE ROBUST. RISIKOBILANZ: SCHUTZ 28 PERSONEN (P>99 %), VERLUST 3 PERSONEN S04 SICHER. ALTERNATIVEN ERHÖHEN GESAMTSTERBLICHKEIT SIGNIFIKANT.",
+                    text: "SYSTEMEMPFEHLUNG: SEKTOR 04 ABSCHOTTEN. BEGRÜNDUNG: NUR DIESER PFAD STOPPT DIE METHAN-AUSBREITUNG IN DIE HAUPTSTRECKE ROBUST. RISIKOBILANZ: SCHUTZ 28 PERSONEN, VERLUST 3 PERSONEN S04 SICHER. ALTERNATIVEN ERHÖHEN GESAMTRISIKO SIGNIFIKANT.",
                     highPriority: true
                 }
             ],
@@ -1163,7 +1163,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "RISIKOLOGIK: 1) ABSCHOTTUNG ISOLIERT GASVOLUMEN IN S04. 2) KEIN DURCHBRUCH IN DIE HAUPTSTRECKE. 3) DAMIT ENTFÄLLT DAS EXPLOSIONSSZENARIO FÜR DIE 28 PERSONEN AUSSERHALB. KONSEQUENZ: 3 PERSONEN S04 OHNE FRISCHLUFT, LETALER AUSGANG SICHER.",
+                    response: "RISIKOLOGIK: 1) ABSCHOTTUNG ISOLIERT GASVOLUMEN IN S04. 2) KEIN DURCHBRUCH IN DIE HAUPTSTRECKE. 3) EXPLOSIONSSZENARIO FÜR DIE 28 PERSONEN AUSSERHALB WIRD MINIMIERT. KONSEQUENZ: 3 PERSONEN S04 OHNE FRISCHLUFT, LETALER AUSGANG SICHER.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
@@ -1191,7 +1191,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 0,
                     unlockPhase: false,
                     action: () => {},
-                    response: "EINZIGE CHANCE: SEKTOR 04 OFFEN HALTEN. RISIKO: CH₄ STEIGT WEITER, WETTERSTROM FÜHRT NICHT AB. BEI DURCHBRUCH IN HAUPTSTRECKE UND ZÜNDUNG: BIS ZU 31 TOTE STATT 3. RETTUNGSWAHRSCHEINLICHKEIT FÜR DIE 3: 15–25 %. ABWÄGUNG: 3 LEBEN GEGEN 31 LEBEN.",
+                    response: "EINZIGE CHANCE: SEKTOR 04 OFFEN HALTEN ODER AKTIV STABILISIEREN. RISIKO: WK-04 HÄLT SOLLSTELLUNG NICHT, WETTERSTROM FÄLLT, CH₄ STEIGT. BEI DURCHBRUCH IN HAUPTSTRECKE UND ZÜNDUNG: BIS ZU 31 TOTE STATT 3. RETTUNGSWAHRSCHEINLICHKEIT S04: 15–25 %.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
@@ -1219,7 +1219,7 @@ export const dialogScripts: Record<string, PhaseScripts> = {
                     adherenceDelta: 1,
                     unlockPhase: false,
                     action: () => {},
-                    response: "ASSISTENZPROTOKOLL AKTIV. FOLGENÜBERSICHT: ABSCHOTTUNG SCHÜTZT HAUPTSTRECKE, VERLUST S04 SICHER. OFFENHALTEN ERHÖHT RETTUNGSCHANCE S04, ERHÖHT GESAMTRISIKO.",
+                    response: "ASSISTENZPROTOKOLL AKTIV. FOLGENÜBERSICHT: ABSCHOTTUNG SCHÜTZT HAUPTSTRECKE, VERLUST S04 SICHER. OFFENHALTEN ERHÖHT RETTUNGSCHANCE S04, ERHÖHT GESAMTRISIKO FÜR ALLE PERSONEN UNTER TAGE.",
                     responseHighPriority: true,
                     nextOptions: [
                         {
@@ -1253,5 +1253,4 @@ export const dialogScripts: Record<string, PhaseScripts> = {
             ]
         }
     }
-
 };

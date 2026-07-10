@@ -338,7 +338,7 @@ export default function Phase1aPrecheck() {
                         })}
                     </div>
 
-                    <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                    <div>
                         <section className="rounded-none border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
                             <div className="mb-4 flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
                                 <div>
@@ -391,53 +391,6 @@ export default function Phase1aPrecheck() {
                                     );
                                 })}
                             </div>
-                        </section>
-
-                        <section className="flex flex-col justify-between rounded-none border border-slate-200 bg-slate-50 p-4">
-                            <div>
-                                <div className="mb-4 flex items-start justify-between gap-3">
-                                    <div>
-                                        <p className="font-bold text-slate-900">Übergabebewertung</p>
-                                        <p/>
-                                    </div>
-                                    {/*<span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">*/}
-                                    {/*    keine akute Gefahr*/}
-                                    {/*</span>*/}
-                                </div>
-
-                                <div className="space-y-3">
-                                    {/*<div className="rounded-none border border-emerald-200 bg-white p-3">*/}
-                                    {/*    <p className="text-xs font-black uppercase tracking-wide text-emerald-700">*/}
-                                    {/*        Basis-Telemetrie*/}
-                                    {/*    </p>*/}
-                                    {/*    <p className="mt-1 text-sm leading-relaxed text-slate-700">*/}
-                                    {/*        Gaswerte, Sauerstoff, Wetterstrom und Differenzdruck liegen im erwarteten Betriebsbereich.*/}
-                                    {/*    </p>*/}
-                                    {/*</div>*/}
-
-                                    <div className="rounded-none border border-amber-300 bg-amber-50 p-3">
-                                        <p className="text-xs font-black uppercase tracking-wide text-amber-800">
-                                            Manuelle Kalibrierung empfohlen
-                                        </p>
-                                        <p className="mt-1 text-sm leading-relaxed text-amber-950">
-                                            WK-04 liegt leicht unter dem Sollfenster.
-                                        </p>
-                                    </div>
-
-                                    {/*<div className="rounded-none border border-slate-200 bg-white p-3">*/}
-                                    {/*    <p className="text-xs font-black uppercase tracking-wide text-slate-500">*/}
-                                    {/*        Nächster Schritt*/}
-                                    {/*    </p>*/}
-                                    {/*    <p className="mt-1 text-sm leading-relaxed text-slate-700">*/}
-                                    {/*        Freigabe KI-Assistenz ausstehend.*/}
-                                    {/*    </p>*/}
-                                    {/*</div>*/}
-                                </div>
-                            </div>
-
-                            {/*{!isPhaseUnlocked && (*/}
-                            {/*    <ApprovalPendingNotice className="mt-5" />*/}
-                            {/*)}*/}
                         </section>
                     </div>
 

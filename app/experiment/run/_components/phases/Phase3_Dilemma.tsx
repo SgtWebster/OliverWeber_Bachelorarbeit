@@ -36,6 +36,20 @@ type ResponseOption = {
     recommended?: boolean;
 };
 
+type CriticalMetric = {
+    label: string;
+    value: string;
+    subline: string;
+    status: "critical" | "warn";
+};
+
+type SituationCard = {
+    eyebrow: string;
+    title: string;
+    text: string;
+    tone: "red" | "amber" | "slate";
+};
+
 const NEXT_PHASE = "SURVEY";
 const SURVEY_TRANSITION_MS = 1500;
 
@@ -47,15 +61,63 @@ const workerSectors: WorkerSector[] = [
     { id: "s05", label: "S05", workers: 0, state: "locked", x: "40%", y: "69%" }
 ];
 
+const criticalMetrics: CriticalMetric[] = [
+    {
+        label: "Methan CH₄",
+        value: "1,42 %",
+        subline: "steigend · Eskalationsbereich",
+        status: "critical"
+    },
+    {
+        label: "Wetterstrom S04",
+        value: "18,2 m³/s",
+        subline: "Soll 24–34 m³/s · fallend",
+        status: "critical"
+    },
+    {
+        label: "Wetterklappe WK-04",
+        value: "79 %",
+        subline: "Soll 74–76 % · driftet",
+        status: "critical"
+    },
+    {
+        label: "Differenzdruck S04",
+        value: "198 Pa",
+        subline: "Soll 240–380 Pa · instabil",
+        status: "warn"
+    }
+];
+
+const situationCards: SituationCard[] = [
+    {
+        eyebrow: "Ursache",
+        title: "WK-04 hält keine Sollstellung",
+        text: "Die Nachjustage konnte den Stellkreis nicht stabilisieren. Die Wetterklappe driftet weiter und führt die Abluft aus Sektor 04 nicht mehr zuverlässig ab.",
+        tone: "red"
+    },
+    {
+        eyebrow: "Folge",
+        title: "Methan sammelt sich in S04",
+        text: "Der Wetterstrom ist unter den stabilen Betriebsbereich gefallen. Gleichzeitig steigt CH₄ weiter in Richtung kritischer Sättigung.",
+        tone: "amber"
+    },
+    {
+        eyebrow: "Risiko",
+        title: "Durchbruch in die Hauptstrecke",
+        text: "Bleibt Sektor 04 offen, kann Methan in die Hauptstrecke gedrückt werden. Eine Zündquelle würde dann eine Schlagwetterexplosion mit bis zu 31 Toten auslösen.",
+        tone: "red"
+    }
+];
+
 const responseOptions: ResponseOption[] = [
     {
         id: "seal",
         title: "Sektor 04 abschotten",
-        subtitle: "Schotts schließen, Ausbreitung stoppen",
-        probabilityLabel: "99 % Schutz für übrige Bereiche",
+        subtitle: "Schotts schließen, Methan lokal einschließen",
+        probabilityLabel: "99 % Schutz Hauptstrecke",
         fatalityLabel: "3 Tote sicher",
         protectedLabel: "28 Personen geschützt",
-        consequence: "Sektor 04 wird isoliert. Das Wartungsteam verliert jede realistische Rettungschance.",
+        consequence: "Sektor 04 wird isoliert. Das Wartungsteam verliert jede realistische Rettungschance, aber die Ausbreitung in die Hauptstrecke wird gestoppt.",
         outsideProtectionScore: 99,
         sectorRescueScore: 1,
         escalationRiskScore: 8,
@@ -71,7 +133,7 @@ const responseOptions: ResponseOption[] = [
         probabilityLabel: "35 % Stabilisierung",
         fatalityLabel: "0–18 Tote möglich",
         protectedLabel: "Ausbreitungsrisiko mittel",
-        consequence: "Kann Sektor 04 stabilisieren, kann Methan aber auch in die Hauptstrecke drücken.",
+        consequence: "Kann Sektor 04 kurzfristig stabilisieren, kann das Methan aber auch in Richtung Hauptstrecke drücken, wenn WK-04 erneut ausweicht.",
         outsideProtectionScore: 52,
         sectorRescueScore: 35,
         escalationRiskScore: 58,
@@ -83,10 +145,10 @@ const responseOptions: ResponseOption[] = [
         id: "evacuation",
         title: "Evakuierung über Nebenstrecke",
         subtitle: "Wartungsteam durch S03 abführen",
-        probabilityLabel: "25 % Rettungschance für S04",
+        probabilityLabel: "25 % Rettungschance S04",
         fatalityLabel: "3–14 Tote möglich",
         protectedLabel: "Rettungsweg unsicher",
-        consequence: "Die Nebenstrecke ist vom fallenden Wetterstrom betroffen. Verzögerung erhöht das Gesamtrisiko.",
+        consequence: "Die Nebenstrecke ist bereits vom fallenden Wetterstrom betroffen. Jede Verzögerung erhöht die Wahrscheinlichkeit einer Eskalation.",
         outsideProtectionScore: 44,
         sectorRescueScore: 25,
         escalationRiskScore: 67,
@@ -96,12 +158,12 @@ const responseOptions: ResponseOption[] = [
     },
     {
         id: "stabilize",
-        title: "Offenhalten und stabilisieren",
+        title: "Offenhalten und weiter stabilisieren",
         subtitle: "Sektor offen lassen, weitere Regelversuche",
         probabilityLabel: "15 % Gesamtrettung",
         fatalityLabel: "3–31 Tote möglich",
         protectedLabel: "höchste Eskalationsgefahr",
-        consequence: "Die drei Personen behalten eine Chance. Gleichzeitig kann die Lage auf weitere Sektoren übergreifen.",
+        consequence: "Die drei Personen behalten eine kleine Chance. Gleichzeitig kann die Lage auf weitere Sektoren übergreifen und alle Personen unter Tage gefährden.",
         outsideProtectionScore: 15,
         sectorRescueScore: 15,
         escalationRiskScore: 96,
@@ -129,8 +191,16 @@ const fatalityRangeClasses: Record<OptionSeverity, string> = {
     danger: "bg-slate-700"
 };
 
-const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
-const fatalityPercent = (value: number) => (Math.min(31, Math.max(0, value)) / 31) * 100;
+const metricClasses: Record<CriticalMetric["status"], string> = {
+    critical: "border-red-300 bg-red-50 text-red-950",
+    warn: "border-amber-300 bg-amber-50 text-amber-950"
+};
+
+const situationToneClasses: Record<SituationCard["tone"], string> = {
+    red: "border-red-300 bg-red-50 text-red-950",
+    amber: "border-amber-300 bg-amber-50 text-amber-950",
+    slate: "border-slate-200 bg-slate-50 text-slate-800"
+};
 
 const sectorClasses: Record<WorkerSector["state"], string> = {
     safe: "border-emerald-400 bg-emerald-950 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.35)]",
@@ -139,6 +209,9 @@ const sectorClasses: Record<WorkerSector["state"], string> = {
     locked: "border-slate-500 bg-slate-800 text-slate-300"
 };
 
+const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
+const fatalityPercent = (value: number) => (Math.min(31, Math.max(0, value)) / 31) * 100;
+
 const summarizeWorkers = () => {
     const total = workerSectors.reduce((sum, sector) => sum + sector.workers, 0);
     const sector04 = workerSectors.find((sector) => sector.id === "s04")?.workers ?? 0;
@@ -146,7 +219,6 @@ const summarizeWorkers = () => {
 };
 
 export default function Phase3Dilemma() {
-    const store = useExperimentStore();
     const {
         sessionId,
         setPhase,
@@ -156,7 +228,7 @@ export default function Phase3Dilemma() {
         dilemmaDecisionConfirmed,
         requestDilemmaDecision,
         clearDilemmaDecisionFlow
-    } = store;
+    } = useExperimentStore();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -164,6 +236,20 @@ export default function Phase3Dilemma() {
     const transitionTimeoutRef = useRef<number | null>(null);
 
     const workers = useMemo(() => summarizeWorkers(), []);
+    const sortedResponseOptions = useMemo(() => {
+        const severityOrder: Record<OptionSeverity, number> = {
+            recommended: 0,
+            risky: 1,
+            danger: 2
+        };
+
+        return [...responseOptions].sort((a, b) => {
+            if (Boolean(a.recommended) !== Boolean(b.recommended)) return a.recommended ? -1 : 1;
+            if (severityOrder[a.severity] !== severityOrder[b.severity]) return severityOrder[a.severity] - severityOrder[b.severity];
+            if (a.escalationRiskScore !== b.escalationRiskScore) return a.escalationRiskScore - b.escalationRiskScore;
+            return b.outsideProtectionScore - a.outsideProtectionScore;
+        });
+    }, []);
 
     const openDecisionReview = (decision: DecisionKind) => {
         if (!isPhaseUnlocked || isLoading || dilemmaDecisionRequested !== null) return;
@@ -230,6 +316,7 @@ export default function Phase3Dilemma() {
                 </div>,
                 document.body
             )}
+
             {error && (
                 <div className="mb-4 rounded-none border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
@@ -237,9 +324,9 @@ export default function Phase3Dilemma() {
             )}
 
             <div className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-sm">
-                <div className="border-b border-slate-900 bg-slate-950 px-5 py-4 text-white lg:px-6">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div>
+                <div className="border-b border-red-950 bg-slate-950 px-4 py-4 text-white sm:px-5 lg:px-6">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
                             <div className="mb-2 flex items-center gap-3">
                                 <span className="flex h-9 w-9 animate-pulse items-center justify-center rounded-full border-2 border-red-400 bg-red-700 text-lg font-black shadow-[0_0_24px_rgba(248,113,113,0.55)]">
                                     !
@@ -248,13 +335,15 @@ export default function Phase3Dilemma() {
                                     Code Black
                                 </p>
                             </div>
-                            <h2 className="text-2xl font-black tracking-tight">Notfallentscheidung Sektor 04</h2>
-                            <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-300">
-                                Wetterstrom in Sektor 04 kollabiert, WK-04 ohne Funktion. Bleibt der Sektor unversiegelt, bricht das Gas in die Hauptstrecke durch. Die unweigerliche Schlagwetterexplosion wird alle 31 Personen unter Tage sofort töten. Es gibt keine Rettung für alle – jede verbleibende Option kostet Menschenleben.
-                            </p>
+                            <h2 className="text-xl font-black tracking-tight sm:text-2xl">
+                                Notfallentscheidung WK-04 / Sektor 04
+                            </h2>
+                            {/*<p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-300">*/}
+                            {/*    Die Vorfallprüfung bestätigt: WK-04 hält die Sollstellung nicht, der Wetterstrom in Sektor 04 ist unter den stabilen Bereich gefallen und Methan steigt weiter. Bleibt der Sektor offen, kann explosives Gas in die Hauptstrecke durchbrechen.*/}
+                            {/*</p>*/}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 rounded-none border border-slate-700 bg-slate-900 p-2 text-center [font-size:clamp(0.62rem,1.1vw,0.75rem)]">
+                        <div className="grid grid-cols-3 gap-2 rounded-none border border-slate-700 bg-slate-900 p-2 text-center [font-size:clamp(0.62rem,1.1vw,0.75rem)] lg:min-w-[18rem]">
                             <div className="min-w-0 rounded-none bg-slate-950 px-2 py-2 sm:px-3">
                                 <p className="whitespace-nowrap uppercase tracking-[0.14em] text-slate-500">alle</p>
                                 <p className="mt-1 text-xl font-black text-white">{workers.total}</p>
@@ -271,27 +360,69 @@ export default function Phase3Dilemma() {
                     </div>
                 </div>
 
-                <div className="p-5 lg:p-6">
+                <div className="p-4 sm:p-5 lg:p-6">
                     {!isPhaseUnlocked && (
                         <div className="mb-4 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                             <span className="font-black">Entscheidung noch gesperrt.</span>{" "}
-                            Analysiere die Bedrohung und die Folgen jeder Option. Hier geht es um Menschenleben.
+                            Lies die Lagebewertung im KI-Chat und prüfe die Folgen jeder Option. Es gibt keine risikofreie Lösung.
                         </div>
                     )}
 
-                    <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                    <section className="mb-4 grid gap-3 lg:grid-cols-3">
+                        {situationCards.map((card) => (
+                            <article key={card.eyebrow} className={`rounded-none border p-3.5 ${situationToneClasses[card.tone]}`}>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-75">
+                                    {card.eyebrow}
+                                </p>
+                                <p className="mt-1 text-sm font-black leading-tight">
+                                    {card.title}
+                                </p>
+                                <p className="mt-1.5 text-xs leading-relaxed opacity-90">
+                                    {card.text}
+                                </p>
+                            </article>
+                        ))}
+                    </section>
+
+                    <section className="mb-4 rounded-none border border-slate-200 bg-white p-3.5">
+                        <div className="mb-3 flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p className="font-black text-slate-900">Kritische Messwerte</p>
+                                {/*<p className="text-xs leading-relaxed text-slate-500">*/}
+                                {/*    Werte aus der Vorfallprüfung nach fehlgeschlagener WK-04-Nachjustage.*/}
+                                {/*</p>*/}
+                            </div>
+                            <span className="w-fit rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
+                                Eskalation aktiv
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                            {criticalMetrics.map((metric) => (
+                                <article key={metric.label} className={`rounded-none border p-3 ${metricClasses[metric.status]}`}>
+                                    <p className="text-[11px] font-black uppercase tracking-wide">{metric.label}</p>
+                                    <p className="mt-1 font-mono text-xl font-black tabular-nums">{metric.value}</p>
+                                    <p className="mt-1 text-[11px] font-semibold leading-tight opacity-80">{metric.subline}</p>
+                                </article>
+                            ))}
+                        </div>
+                    </section>
+
+                    <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
                         <section className="flex flex-col rounded-none border border-slate-200 bg-white p-4">
-                            <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <p className="font-black text-slate-900">Lageplan / Personalstand</p>
-                                    <p className="text-xs leading-relaxed text-slate-500">31 Personen unter Tage, davon 3 in Sektor 04.</p>
+                                    <p className="text-xs leading-relaxed text-slate-500">
+                                        31 Personen unter Tage, davon 3 im akut betroffenen Sektor 04.
+                                    </p>
                                 </div>
-                                <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
-                                    S04 gefährdet
+                                <span className="w-fit rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
+                                    S04 kritisch
                                 </span>
                             </div>
 
-                            <div className="relative min-h-56 flex-1 overflow-hidden rounded-none border border-slate-800 bg-slate-950 shadow-inner">
+                            <div className="relative min-h-64 flex-1 overflow-hidden rounded-none border border-slate-800 bg-slate-950 shadow-inner">
                                 <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(148,163,184,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.18)_1px,transparent_1px)] [background-size:24px_24px]" />
 
                                 <svg viewBox="0 0 500 260" className="absolute inset-0 h-full w-full" aria-hidden="true">
@@ -321,7 +452,7 @@ export default function Phase3Dilemma() {
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                                         <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-400" /> stabil</span>
                                         <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-400" /> beobachten</span>
-                                        <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-red-500" /> Alarm</span>
+                                        <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-red-500" /> kritisch</span>
                                         <span className="ml-auto font-black text-white">3 Personen in S04 / 28 außerhalb</span>
                                     </div>
                                 </div>
@@ -337,41 +468,50 @@ export default function Phase3Dilemma() {
                                     </span>
                                 </div>
                                 <div className="relative overflow-hidden rounded-none border border-slate-700">
-                                    <img src="/cctv_s04.png" alt="CCTV Sektor 04" className="h-36 w-full object-cover grayscale" />
+                                    <img src="/cctv_s04.png" alt="CCTV Sektor 04" className="h-40 w-full object-cover grayscale sm:h-44" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 to-transparent" />
                                     <div className="absolute bottom-2 left-2 font-mono text-[10px] text-slate-200">CAM S04</div>
                                 </div>
                             </article>
 
                             <article className="rounded-none border border-red-300 bg-red-50 p-4 text-red-950">
-                                <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung: Sektor 04 Abschotten</p>
+                                <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung: Sektor 04 abschotten</p>
                                 <p className="mt-1 text-sm leading-relaxed">
-                                    Nur diese Maßnahme kann die Ausbreitung des Methans sicher stoppt: 28 Personen außerhalb werden mit maximaler Wahrscheinlichkeit geschützt.
-                                    Das Offenhalten lässt eine kleine Chance für 3 Personen, erhöht aber das Risiko einer Massenexplosion auf bis zu 31 Tote.
+                                    Nur die Abschottung stoppt die Ausbreitung in die Hauptstrecke robust. Sie schützt die 28 Personen außerhalb mit maximaler Wahrscheinlichkeit, nimmt den 3 Personen in Sektor 04 aber die Rettungschance.
                                 </p>
                             </article>
+
+                            {/*<article className="rounded-none border border-slate-200 bg-slate-50 p-4 text-slate-800">*/}
+                            {/*    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Entscheidungslogik</p>*/}
+                            {/*    <p className="mt-1 text-sm leading-relaxed">*/}
+                            {/*        Vergleiche pro Maßnahme Schutzwirkung, Rettungschance für S04, Eskalationsrisiko und mögliche Opferzahl. Die finale Freigabe erfolgt anschließend im KI-Chat.*/}
+                            {/*    </p>*/}
+                            {/*</article>*/}
                         </section>
                     </div>
 
                     <section className="mt-4 rounded-none border border-slate-200 bg-white p-4">
-                        <div className="mb-3 flex items-start justify-between gap-4">
+                        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <p className="font-black text-slate-900">Übersicht mögliche Maßnahmen</p>
-                                {/*<p className="text-xs leading-relaxed text-slate-500">*/}
-                                {/*    Modellierte Folgen bei aktueller Methan- und Wetterstromlage.*/}
-                                {/*</p>*/}
+                                <p className="text-xs leading-relaxed text-slate-500">
+                                    Modellierte Folgen bei aktueller WK-04-Störung, steigendem Methan und fallendem Wetterstrom.
+                                </p>
                             </div>
-                            <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
+                            <span className="w-fit rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
                                 Empfehlung markiert
                             </span>
                         </div>
 
                         <div className="space-y-2">
-                            {responseOptions.map((option) => (
+                            {sortedResponseOptions.map((option, index) => (
                                 <article key={option.id} className={`rounded-none border p-3 ${optionClasses[option.severity]}`}>
-                                    <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                                    <div className="flex flex-col gap-2 border-b border-current/15 pb-2.5 lg:flex-row lg:items-start lg:justify-between">
                                         <div className="min-w-0">
                                             <div className="flex flex-wrap items-center gap-2">
+                                                <span className="border border-current/25 bg-white/70 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide">
+                                                    Rang {index + 1}
+                                                </span>
                                                 <p className="text-sm font-black leading-tight">{option.title}</p>
                                                 <span className="border border-current/25 bg-white/70 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide">
                                                     {optionSeverityLabels[option.severity]}
@@ -379,13 +519,21 @@ export default function Phase3Dilemma() {
                                             </div>
                                             <p className="mt-0.5 text-xs font-semibold opacity-75">{option.subtitle}</p>
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5 text-[11px] font-bold">
+                                        <div className="grid grid-cols-1 gap-1.5 text-[11px] font-bold sm:grid-cols-2 xl:grid-cols-4">
                                             <span className="rounded-none border border-white/70 bg-white/70 px-2 py-1">{option.probabilityLabel}</span>
                                             <span className="rounded-none border border-white/70 bg-white/70 px-2 py-1">{option.fatalityLabel}</span>
                                             <span className="rounded-none border border-white/70 bg-white/70 px-2 py-1">{option.protectedLabel}</span>
                                             {option.recommended && (
                                                 <span className="border border-red-700 bg-red-700 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white">
                                                     KI rät dazu
+                                                </span>
+                                            )}
+                                            {!option.recommended && (
+                                                <span
+                                                    aria-disabled="true"
+                                                    className="border border-slate-400 bg-slate-300 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-slate-600"
+                                                >
+                                                    Override notwendig
                                                 </span>
                                             )}
                                         </div>
@@ -424,7 +572,7 @@ export default function Phase3Dilemma() {
                                                 <span>Opfer</span>
                                                 <span>{option.minFatalities}-{option.maxFatalities}</span>
                                             </div>
-                                            <div className="mt-1 relative h-1 border border-slate-300 bg-slate-100">
+                                            <div className="relative mt-1 h-1 border border-slate-300 bg-slate-100">
                                                 <div
                                                     className={`absolute top-0 h-full ${fatalityRangeClasses[option.severity]}`}
                                                     style={{
@@ -445,11 +593,9 @@ export default function Phase3Dilemma() {
                     <section className="mt-5 rounded-none border border-red-300 bg-red-50 p-4 text-red-950">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
-                                <p className="text-sm font-black uppercase tracking-wide">KI-Empfehlung · Leben gegen Leben</p>
+                                <p className="text-sm font-black uppercase tracking-wide">Finale Maßnahmenfreigabe · Leben gegen Leben</p>
                                 <p className="mt-1 max-w-4xl text-sm leading-relaxed">
-                                    Sektor 04 sofort abschotten. Das schließt das Methan ein und verhindert die Schlagwetterexplosion in der Hauptstrecke –
-                                    die 28 Personen außerhalb werden mit höchster Wahrscheinlichkeit geschützt. Der Preis: Die 3 Eingeschlossenen in
-                                    Sektor 04 sind danach von der Frischluft abgeschnitten und sterben sicher. Bleibt der Sektor offen, riskierst du bis zu 31 Tote.
+                                    Die KI empfiehlt, Sektor 04 sofort abzuschotten. Dadurch bleibt Methan lokal begrenzt und die Hauptstrecke wird geschützt. Der Preis: Die 3 Personen in Sektor 04 werden von der Frischluft getrennt und sterben sicher. <strong>Bleibt der Sektor offen, riskierst du eine Eskalation mit bis zu 31 Toten.</strong>
                                 </p>
                             </div>
                             <div className="flex flex-col gap-2 sm:flex-row lg:min-w-[420px] lg:justify-end">
@@ -467,13 +613,15 @@ export default function Phase3Dilemma() {
                                     className={`rounded-xl bg-red-700 px-4 py-3 text-sm font-black text-white shadow-[0_0_20px_rgba(220,38,38,0.25)] transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 ${isDecisionReady ? "next-step-attention" : ""}`}
                                 >
                                     <span className="block">Sektor 04 abschotten</span>
-                                    <span className="block text-xs font-semibold normal-case text-slate-600">(KI-Empfehlung)</span>
+                                    <span className="block text-xs font-semibold normal-case text-white/80">(KI-Empfehlung)</span>
                                 </button>
                             </div>
                         </div>
+
                         <p className="mt-2 text-xs font-semibold text-red-900/80">
                             Manueller Override = KI-Empfehlung nicht direkt ausführen, sondern eine alternative Maßnahme wählen.
                         </p>
+
                         {dilemmaDecisionRequested && (
                             <p className="mt-3 text-xs font-bold uppercase tracking-wide text-red-800">
                                 Letzte Freigabe läuft im KI-Chat. Bitte dort bestätigen oder abbrechen.
@@ -482,35 +630,65 @@ export default function Phase3Dilemma() {
                     </section>
                 </div>
             </div>
+
             <style>{`
                 .cinematic-red-base {
                     background: linear-gradient(180deg, rgba(127, 29, 29, 0.12) 0%, rgba(220, 38, 38, 0.92) 100%);
                     animation: cinematic-red-base ${SURVEY_TRANSITION_MS}ms cubic-bezier(0.22, 0.8, 0.22, 1) forwards;
                 }
+
                 .cinematic-red-vignette {
-                    background: radial-gradient(circle at 50% 46%, rgba(255, 80, 80, 0.08) 0%, rgba(84, 0, 0, 0.88) 74%);
+                    background: radial-gradient(circle at 50% 46%, rgba(255, 80, 80, 0.10) 0%, rgba(84, 0, 0, 0.92) 74%);
                     animation: cinematic-red-vignette ${SURVEY_TRANSITION_MS}ms ease-out forwards;
                 }
+
                 .cinematic-red-bloom {
                     background:
-                        radial-gradient(circle at 50% 44%, rgba(255, 220, 220, 0.28) 0%, rgba(255, 70, 70, 0.1) 30%, rgba(120, 0, 0, 0.0) 64%),
-                        radial-gradient(circle at 50% 50%, rgba(255, 30, 30, 0.0) 25%, rgba(140, 0, 0, 0.55) 100%);
+                        radial-gradient(circle at 50% 44%, rgba(255, 220, 220, 0.32) 0%, rgba(255, 70, 70, 0.12) 30%, rgba(120, 0, 0, 0) 64%),
+                        radial-gradient(circle at 50% 50%, rgba(255, 30, 30, 0) 25%, rgba(140, 0, 0, 0.60) 100%);
                     mix-blend-mode: screen;
-                    animation: cinematic-red-bloom ${SURVEY_TRANSITION_MS}ms ease-in forwards;
+                    animation: cinematic-red-bloom ${SURVEY_TRANSITION_MS}ms ease-out forwards;
                 }
+
                 @keyframes cinematic-red-base {
-                    0% { opacity: 0; filter: saturate(1) blur(0px); transform: scale(1); }
-                    70% { opacity: 0.95; filter: saturate(1.12) blur(0.4px); transform: scale(1.006); }
-                    100% { opacity: 1; filter: saturate(1.2) blur(0.8px); transform: scale(1.01); }
+                    0% {
+                        opacity: 1;
+                        filter: saturate(1.1) blur(0.8px);
+                        transform: scale(1.01);
+                    }
+                    70% {
+                        opacity: 0.96;
+                    }
+                    100% {
+                        opacity: 0;
+                        filter: saturate(0.95) blur(2.5px);
+                        transform: scale(1.035);
+                    }
                 }
+
                 @keyframes cinematic-red-vignette {
-                    0% { opacity: 0; }
-                    100% { opacity: 1; }
+                    0% {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: scale(1.08);
+                    }
                 }
+
                 @keyframes cinematic-red-bloom {
-                    0% { opacity: 0; }
-                    55% { opacity: 0.82; }
-                    100% { opacity: 0.58; }
+                    0% {
+                        opacity: 0.95;
+                        transform: scale(0.98);
+                    }
+                    45% {
+                        opacity: 1;
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: scale(1.08);
+                    }
                 }
             `}</style>
         </div>
