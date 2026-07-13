@@ -1,5 +1,32 @@
 // app/(main)/bachelorarbeit/page.tsx
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+const title = 'Bachelorarbeit Oliver Weber';
+const description =
+    'Nimm am anonymen Experiment zur Bachelorarbeit von Oliver Weber am MCI Innsbruck teil und unterstütze das Forschungsprojekt Mensch & Maschine.';
+
+export const metadata: Metadata = {
+    metadataBase: new URL('https://oliver-weber.at'),
+    title,
+    description,
+    alternates: {
+        canonical: '/bachelorarbeit',
+    },
+    openGraph: {
+        title: 'Forschungsprojekt: Mensch & Maschine',
+        description,
+        url: '/bachelorarbeit',
+        siteName: title,
+        locale: 'de_AT',
+        type: 'website',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Forschungsprojekt: Mensch & Maschine',
+        description,
+    },
+};
 
 export default function BachelorarbeitLandingPage() {
     return (
