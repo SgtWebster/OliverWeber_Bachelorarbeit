@@ -15,87 +15,144 @@ export default function OpenGraphImage() {
                     width: '100%',
                     height: '100%',
                     display: 'flex',
-                    padding: '64px',
+                    flexDirection: 'column',
                     color: '#0f172a',
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%)',
+                    background: '#f8fafc',
                     fontFamily: 'Arial, sans-serif',
                 }}
             >
                 <div
                     style={{
-                        display: 'flex',
-                        flex: 1,
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                    }}
-                >
-                    <div
-                        style={{
-                            display: 'flex',
-                            color: '#0369a1',
-                            fontSize: 25,
-                            fontWeight: 700,
-                            letterSpacing: 3,
-                            textTransform: 'uppercase',
-                        }}
-                    >
-                        MCI Innsbruck · Bachelorarbeit
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <div
-                            style={{
-                                display: 'flex',
-                                maxWidth: 780,
-                                fontSize: 68,
-                                fontWeight: 800,
-                                lineHeight: 1.05,
-                                letterSpacing: -2,
-                            }}
-                        >
-                            Forschungsprojekt: Mensch & Maschine
-                        </div>
-                        <div
-                            style={{
-                                display: 'flex',
-                                marginTop: 28,
-                                color: '#475569',
-                                fontSize: 31,
-                            }}
-                        >
-                            Anonym teilnehmen und Forschung unterstützen
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', color: '#334155', fontSize: 27, fontWeight: 700 }}>
-                        Oliver Weber
-                    </div>
-                </div>
-                <div
-                    style={{
-                        width: 270,
-                        marginLeft: 48,
+                        height: 72,
+                        padding: '0 56px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
+                        color: '#ffffff',
+                        background: '#020617',
+                        fontSize: 27,
+                        fontWeight: 800,
+                        letterSpacing: -0.5,
                     }}
                 >
+                    oliver <span style={{ margin: '0 7px', color: '#5eead4' }}>ulrich</span> weber
+                </div>
+
+                <div style={{ flex: 1, display: 'flex', padding: '34px 46px 38px' }}>
                     <div
                         style={{
-                            width: 250,
-                            height: 250,
+                            flex: 1,
                             display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#ffffff',
-                            background: '#0f172a',
-                            borderRadius: 36,
-                            boxShadow: '0 24px 50px rgba(15, 23, 42, 0.2)',
+                            overflow: 'hidden',
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: 24,
+                            boxShadow: '0 18px 45px rgba(15, 23, 42, 0.14)',
                         }}
                     >
-                        <div style={{ display: 'flex', fontSize: 25, fontWeight: 700 }}>GEWINNSPIEL</div>
-                        <div style={{ display: 'flex', marginTop: 8, fontSize: 72, fontWeight: 800 }}>100 €</div>
-                        <div style={{ display: 'flex', marginTop: 4, color: '#bae6fd', fontSize: 21 }}>
-                            Gutschein-Gesamtwert
+                        <div
+                            style={{
+                                width: '66%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                padding: '38px 44px',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    color: '#0369a1',
+                                    fontSize: 18,
+                                    fontWeight: 800,
+                                    letterSpacing: 2.5,
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                MCI Innsbruck · Bachelorarbeit
+                            </div>
+
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    marginTop: 12,
+                                    fontSize: 48,
+                                    fontWeight: 800,
+                                    lineHeight: 1.08,
+                                    letterSpacing: -1.4,
+                                }}
+                            >
+                                Forschungsprojekt
+                            </div>
+
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    marginTop: 17,
+                                    color: '#475569',
+                                    fontSize: 22,
+                                    lineHeight: 1.35,
+                                }}
+                            >
+                                Wenige Minuten, komplett anonym – unterstütze mich bei meiner Bachelorarbeit.
+                            </div>
+
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    marginTop: 20,
+                                    padding: '14px 18px',
+                                    color: '#065f46',
+                                    background: '#ecfdf5',
+                                    border: '1px solid #a7f3d0',
+                                    borderRadius: 12,
+                                    fontSize: 19,
+                                }}
+                            >
+                                <span style={{ marginRight: 10, fontWeight: 800 }}>Zu gewinnen:</span>
+                                1x 50€ & 2x 50€ Amazon-Gutscheine
+                            </div>
+
+                            <div
+                                style={{
+                                    alignSelf: 'flex-start',
+                                    display: 'flex',
+                                    marginTop: 20,
+                                    padding: '13px 24px',
+                                    color: '#ffffff',
+                                    background: '#0f172a',
+                                    borderRadius: 10,
+                                    fontSize: 19,
+                                    fontWeight: 700,
+                                }}
+                            >
+                                Jetzt am Experiment teilnehmen
+                            </div>
+                        </div>
+
+                        <div
+                            style={{
+                                width: '34%',
+                                display: 'flex',
+                                overflow: 'hidden',
+                                background: '#f1f5f9',
+                                borderLeft: '1px solid #cbd5e1',
+                            }}
+                        >
+                            {/* ImageResponse benötigt hier ein natives img-Element. */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src="https://oliver-weber.at/gutscheine.png"
+                                alt=""
+                                width="376"
+                                height="486"
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center',
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
