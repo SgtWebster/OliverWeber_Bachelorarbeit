@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 
 const title = 'Bachelorarbeit Oliver Weber';
 const description =
-    'Nimm am anonymen Experiment zur Bachelorarbeit von Oliver Weber am MCI Innsbruck teil und unterstütze das Forschungsprojekt Mensch & Maschine.';
+    'Nimm am Experiment zu meiner Bachelorarbeit teil';
 
 export const metadata: Metadata = {
     metadataBase: new URL('https://oliver-weber.at'),
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
         canonical: '/bachelorarbeit',
     },
     openGraph: {
-        title: 'Forschungsprojekt: Mensch & Maschine',
+        title: 'Bachelorarbeit Oliver Weber',
         description,
         url: '/bachelorarbeit',
         siteName: title,
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Forschungsprojekt: Mensch & Maschine',
+        title: 'Bachelorarbeit Oliver Weber',
         description,
     },
 };
