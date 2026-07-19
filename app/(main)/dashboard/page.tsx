@@ -538,6 +538,57 @@ export default async function DashboardPage() {
         { label: "Simulationserfahrung", key: "simulationExperience" },
         { label: "Alter", key: "age", digits: 1 },
     ];
+    const countDemographicValues = (
+        values: (string | null)[],
+        labels: Record<string, string>
+    ) => {
+        const counts = new Map<string, number>();
+
+        values.forEach((value) => {
+            if (!value) return;
+            const label = labels[value] ?? value;
+            counts.set(label, (counts.get(label) ?? 0) + 1);
+        });
+
+        return Array.from(counts, ([label, count]) => ({ label, count }))
+            .sort((left, right) => right.count - left.count);
+    };
+    const compactDistribution = (
+        values: { label: string; count: number }[],
+        maxRows: number
+    ) => {
+        if (values.length <= maxRows) return values;
+
+        return [
+            ...values.slice(0, maxRows - 1),
+            {
+                label: "Weitere",
+                count: values
+                    .slice(maxRows - 1)
+                    .reduce((sum, value) => sum + value.count, 0),
+            },
+        ];
+    };
+    const ageValues = numberValues(completedRows, "age").sort((left, right) => left - right);
+    const ageMean = mean(ageValues);
+    const ageMedian = ageValues.length === 0
+        ? null
+        : ageValues.length % 2 === 1
+            ? ageValues[Math.floor(ageValues.length / 2)]
+            : (ageValues[ageValues.length / 2 - 1] + ageValues[ageValues.length / 2]) / 2;
+    const genderDistribution = countDemographicValues(
+        completedRows.map((row) => row.gender),
+        genderLabels
+    );
+    const educationDistribution = compactDistribution(
+        countDemographicValues(
+            completedRows.map((row) => row.education),
+            educationLabels
+        ),
+        4
+    );
+    const genderTotal = genderDistribution.reduce((sum, value) => sum + value.count, 0);
+    const educationTotal = educationDistribution.reduce((sum, value) => sum + value.count, 0);
 
     async function handleLogout() {
         "use server";
@@ -647,14 +698,92 @@ export default async function DashboardPage() {
                             </div>
                         </article>
 
-                        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <article className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-cyan-50/40 p-4">
                             <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
-                                Hinweis soziale Adhärenz
-                                <InfoHint text="Im Methodiktext wird soziale Adhärenz als Ja/Nein-Auswertung beschrieben. Im aktuellen Datenmodell liegt sie als Summenscore vor; daher wird live kein Chi-Quadrat-Test dafür berechnet." />
+                                Demografische Übersicht
+                                <InfoHint text="Kompakte Beschreibung der vollständigen Datensätze. Prozentwerte beziehen sich jeweils auf gültige Angaben; seltene Bildungsabschlüsse werden unter „Weitere“ zusammengefasst." />
                             </h3>
-                            {/*<p className="mt-3 text-sm leading-relaxed text-slate-600">*/}
-                            {/*    Soziale Adhärenz wird aktuell als <strong>Summenscore</strong> gespeichert. Live sinnvoll darstellbar sind Mittelwerte nach Gruppe; ein Häufigkeitstest wäre erst mit klarer Binär-Kodierung oder Schwellenwert methodisch sauber.*/}
-                            {/*</p>*/}
+                            <div className="mt-3 grid grid-cols-3 gap-2">
+                                <LiveStat
+                                    label="Ø Alter"
+                                    value={ageMean == null ? "-" : `${ageMean.toFixed(1)}`}
+                                    hint={`${ageValues.length} gültige Angaben`}
+                                />
+                                <LiveStat
+                                    label="Median"
+                                    value={formatNullableNumber(ageMedian, 1)}
+                                    hint="Jahre"
+                                />
+                                <LiveStat
+                                    label="Spanne"
+                                    value={ageValues.length === 0 ? "-" : `${ageValues[0]}–${ageValues[ageValues.length - 1]}`}
+                                    hint="Jahre"
+                                />
+                            </div>
+                            <div className="mt-3 grid grid-cols-2 gap-4">
+                                <div>
+                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                        <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+                                            Geschlecht
+                                        </p>
+                                        <span className="text-[10px] text-slate-400">n={genderTotal}</span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {genderDistribution.map((value) => {
+                                            const percentage = genderTotal === 0 ? 0 : (value.count / genderTotal) * 100;
+
+                                            return (
+                                                <div key={value.label}>
+                                                    <div className="mb-0.5 flex items-center justify-between gap-2 text-[11px]">
+                                                        <span className="truncate font-semibold text-slate-700">{value.label}</span>
+                                                        <span className="shrink-0 tabular-nums text-slate-500">{value.count} · {percentage.toFixed(0)}%</span>
+                                                    </div>
+                                                    <div className="h-1 overflow-hidden rounded-full bg-slate-100">
+                                                        <div
+                                                            className="h-full rounded-full bg-sky-500"
+                                                            style={{ width: `${percentage}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {genderDistribution.length === 0 && (
+                                            <p className="text-xs text-slate-400">Keine Angaben</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                        <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+                                            Bildung
+                                        </p>
+                                        <span className="text-[10px] text-slate-400">n={educationTotal}</span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {educationDistribution.map((value) => {
+                                            const percentage = educationTotal === 0 ? 0 : (value.count / educationTotal) * 100;
+
+                                            return (
+                                                <div key={value.label}>
+                                                    <div className="mb-0.5 flex items-center justify-between gap-2 text-[11px]">
+                                                        <span className="truncate font-semibold text-slate-700" title={value.label}>{value.label}</span>
+                                                        <span className="shrink-0 tabular-nums text-slate-500">{value.count} · {percentage.toFixed(0)}%</span>
+                                                    </div>
+                                                    <div className="h-1 overflow-hidden rounded-full bg-slate-100">
+                                                        <div
+                                                            className="h-full rounded-full bg-cyan-500"
+                                                            style={{ width: `${percentage}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {educationDistribution.length === 0 && (
+                                            <p className="text-xs text-slate-400">Keine Angaben</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </article>
                     </div>
 
