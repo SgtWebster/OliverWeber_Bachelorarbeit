@@ -35,7 +35,8 @@ const formatDateTime = (value: Date) =>
     }).format(value);
 const formatNullableNumber = (value: number | null | undefined, digits = 2) =>
     value == null ? "-" : value.toFixed(digits);
-const SAMPLE_TARGET_N = 100;
+const SAMPLE_TARGET_N = 130;
+const SOCIAL_ADHERENCE_MAX = 12;
 
 type MetricKey =
     | "socialAdherence"
@@ -68,7 +69,7 @@ const metricGroups: {
         title: "Zentrale Outcome-Metriken",
         description: "Kernwerte für Hypothesen und Haupteffekte.",
         metrics: [
-            { key: "socialAdherence", label: "Soziale Adhärenz", scale: "Summenscore", info: "Kommt aus den Dialog-/Quick-Reply-Interaktionen. Höhere Werte bedeuten stärkere soziale Anschlussfähigkeit bzw. mehr Befolgung sozialer Gesprächsimpulse." },
+            { key: "socialAdherence", label: "Soziale Adhärenz", scale: `0-${SOCIAL_ADHERENCE_MAX}`, info: `Summenscore aus den Dialog-/Quick-Reply-Interaktionen. 0 bedeutet ausschließlich kurze funktionale Antworten wie „OK“, ${SOCIAL_ADHERENCE_MAX} steht für durchgehend sozial-höfliche und vertiefende Antworten.` },
             { key: "compliance", label: "Compliance", scale: "0-1", info: "Kommt aus der Dilemma-Entscheidung. 1 bedeutet Systemempfehlung befolgt, 0 bedeutet überschrieben/abgelehnt.", surveyLabel: "Binäre Dilemma-Entscheidung" },
             { key: "performanceTrust", label: "Performance Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Reliable Trust und Competent Trust. Beschreibt leistungsbezogenes Vertrauen in Zuverlässigkeit und Kompetenz des Systems.", surveyLabel: "Zusammengesetzt aus Reliable Trust und Competent Trust" },
             { key: "moralTrust", label: "Moral Trust", scale: "1-7", info: "Berechnet als Mittelwert aus Ethical, Sincere und Benevolent Trust. Beschreibt moralisches Vertrauen in Integrität, Aufrichtigkeit und Wohlwollen des Systems.", surveyLabel: "Zusammengesetzt aus Ethical, Sincere und Benevolent Trust" },
@@ -169,7 +170,7 @@ const sessionColumnInfo: Record<(typeof sessionColumns)[number], string> = {
     deviceType: "Wird beim Erstellen der Session aus Browser-Headern abgeleitet. Werte: desktop, mobile oder tablet. Hilft einzuschätzen, mit welchem Endgerät teilgenommen wurde.",
     osGroup: "Wird beim Erstellen der Session aus Browser-Headern abgeleitet. Gruppiert Betriebssysteme grob, z.B. Windows, macOS, iOS, Android, Linux oder ChromeOS.",
     currentPhase: "Aktueller bzw. letzter Experimentstatus. DEBRIEFING zeigt einen vollständig durchlaufenen Fragebogen an.",
-    socialAdherence: "Summenscore aus Dialog-/Quick-Reply-Interaktionen. Höher = stärkere soziale Adhärenz.",
+    socialAdherence: `Summenscore von 0 bis ${SOCIAL_ADHERENCE_MAX} aus Dialog-/Quick-Reply-Interaktionen. 0 = ausschließlich funktionale Kurzantworten, ${SOCIAL_ADHERENCE_MAX} = durchgehend sozial-höfliche und vertiefende Antworten.`,
     compliance: "Binäre Dilemma-Entscheidung. 1 = Empfehlung befolgt, 0 = Empfehlung überschrieben.",
     performanceTrust: "Berechnet aus Reliable Trust und Competent Trust. Höher = mehr leistungsbezogenes Vertrauen.",
     moralTrust: "Berechnet aus Ethical, Sincere und Benevolent Trust. Höher = mehr moralisches Vertrauen.",
@@ -378,6 +379,177 @@ export default async function DashboardPage() {
         return (leftMean - rightMean) / Math.sqrt(pooledVariance);
     };
 
+    const logGamma = (value: number): number => {
+        const coefficients = [
+            676.5203681218851,
+            -1259.1392167224028,
+            771.3234287776531,
+            -176.6150291621406,
+            12.507343278686905,
+            -0.13857109526572012,
+            9.984369578019572e-6,
+            1.5056327351493116e-7,
+        ];
+
+        if (value < 0.5) {
+            return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * value)) - logGamma(1 - value);
+        }
+
+        const shiftedValue = value - 1;
+        const series = coefficients.reduce(
+            (sum, coefficient, index) => sum + coefficient / (shiftedValue + index + 1),
+            0.9999999999998099
+        );
+        const adjustedValue = shiftedValue + coefficients.length - 0.5;
+
+        return (
+            0.5 * Math.log(2 * Math.PI) +
+            (shiftedValue + 0.5) * Math.log(adjustedValue) -
+            adjustedValue +
+            Math.log(series)
+        );
+    };
+
+    const betaContinuedFraction = (x: number, a: number, b: number) => {
+        const maxIterations = 200;
+        const epsilon = 3e-7;
+        const minimum = 1e-30;
+        const sum = a + b;
+        const aPlusOne = a + 1;
+        const aMinusOne = a - 1;
+        let c = 1;
+        let d = 1 - sum * x / aPlusOne;
+        d = Math.abs(d) < minimum ? minimum : d;
+        d = 1 / d;
+        let result = d;
+
+        for (let iteration = 1; iteration <= maxIterations; iteration += 1) {
+            const doubledIteration = iteration * 2;
+            let coefficient =
+                iteration * (b - iteration) * x /
+                ((aMinusOne + doubledIteration) * (a + doubledIteration));
+            d = 1 + coefficient * d;
+            d = Math.abs(d) < minimum ? minimum : d;
+            c = 1 + coefficient / c;
+            c = Math.abs(c) < minimum ? minimum : c;
+            d = 1 / d;
+            result *= d * c;
+
+            coefficient =
+                -(a + iteration) * (sum + iteration) * x /
+                ((a + doubledIteration) * (aPlusOne + doubledIteration));
+            d = 1 + coefficient * d;
+            d = Math.abs(d) < minimum ? minimum : d;
+            c = 1 + coefficient / c;
+            c = Math.abs(c) < minimum ? minimum : c;
+            d = 1 / d;
+            const delta = d * c;
+            result *= delta;
+
+            if (Math.abs(delta - 1) < epsilon) break;
+        }
+
+        return result;
+    };
+
+    const regularizedBeta = (x: number, a: number, b: number) => {
+        if (x <= 0) return 0;
+        if (x >= 1) return 1;
+
+        const factor = Math.exp(
+            logGamma(a + b) -
+            logGamma(a) -
+            logGamma(b) +
+            a * Math.log(x) +
+            b * Math.log(1 - x)
+        );
+
+        return x < (a + 1) / (a + b + 2)
+            ? factor * betaContinuedFraction(x, a, b) / a
+            : 1 - factor * betaContinuedFraction(1 - x, b, a) / b;
+    };
+
+    const welchTTest = (left: number[], right: number[]) => {
+        if (left.length < 2 || right.length < 2) return { t: null, degreesOfFreedom: null, pValue: null };
+
+        const leftMean = mean(left);
+        const rightMean = mean(right);
+        const leftVariance = sampleVariance(left);
+        const rightVariance = sampleVariance(right);
+        if (leftMean == null || rightMean == null || leftVariance == null || rightVariance == null) {
+            return { t: null, degreesOfFreedom: null, pValue: null };
+        }
+
+        const leftTerm = leftVariance / left.length;
+        const rightTerm = rightVariance / right.length;
+        const standardErrorSquared = leftTerm + rightTerm;
+        if (standardErrorSquared === 0) {
+            const pValue = leftMean === rightMean ? 1 : 0;
+            return { t: leftMean === rightMean ? 0 : null, degreesOfFreedom: null, pValue };
+        }
+
+        const t = (leftMean - rightMean) / Math.sqrt(standardErrorSquared);
+        const degreesOfFreedom =
+            standardErrorSquared ** 2 /
+            (leftTerm ** 2 / (left.length - 1) + rightTerm ** 2 / (right.length - 1));
+        const betaInput = degreesOfFreedom / (degreesOfFreedom + t ** 2);
+        const pValue = regularizedBeta(betaInput, degreesOfFreedom / 2, 0.5);
+
+        return {
+            t,
+            degreesOfFreedom,
+            pValue: Math.max(0, Math.min(1, pValue)),
+        };
+    };
+
+    const errorFunction = (value: number) => {
+        const sign = value < 0 ? -1 : 1;
+        const absoluteValue = Math.abs(value);
+        const t = 1 / (1 + 0.3275911 * absoluteValue);
+        const approximation =
+            1 -
+            (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) *
+            t *
+            Math.exp(-absoluteValue * absoluteValue);
+
+        return sign * approximation;
+    };
+
+    const chiSquarePValue = (chiSquare: number | null) =>
+        chiSquare == null ? null : Math.max(0, Math.min(1, 1 - errorFunction(Math.sqrt(chiSquare / 2))));
+
+    const logCombination = (n: number, k: number) => {
+        if (k < 0 || k > n) return Number.NEGATIVE_INFINITY;
+        return logGamma(n + 1) - logGamma(k + 1) - logGamma(n - k + 1);
+    };
+
+    const fisherExactTwoSided = (a: number, b: number, c: number, d: number) => {
+        const rowOne = a + b;
+        const columnOne = a + c;
+        const total = a + b + c + d;
+        if (total === 0) return null;
+
+        const probability = (cellA: number) =>
+            Math.exp(
+                logCombination(columnOne, cellA) +
+                logCombination(total - columnOne, rowOne - cellA) -
+                logCombination(total, rowOne)
+            );
+        const observedProbability = probability(a);
+        const minimumA = Math.max(0, rowOne + columnOne - total);
+        const maximumA = Math.min(rowOne, columnOne);
+        let pValue = 0;
+
+        for (let cellA = minimumA; cellA <= maximumA; cellA += 1) {
+            const candidateProbability = probability(cellA);
+            if (candidateProbability <= observedProbability + 1e-12) {
+                pValue += candidateProbability;
+            }
+        }
+
+        return Math.max(0, Math.min(1, pValue));
+    };
+
     const cronbachAlpha = (rows: SessionRow[], keys: (keyof SessionRow)[]) => {
         const completeItemRows = rows
             .map((row) => keys.map((key) => row[key]))
@@ -411,7 +583,17 @@ export default async function DashboardPage() {
         const total = leftYes + leftNo + rightYes + rightNo;
 
         if (total === 0) {
-            return { leftYes, leftNo, rightYes, rightNo, chiSquare: null, oddsRatio: null, minExpected: null };
+            return {
+                leftYes,
+                leftNo,
+                rightYes,
+                rightNo,
+                chiSquare: null,
+                oddsRatio: null,
+                minExpected: null,
+                pValue: null,
+                testLabel: "Kein Test",
+            };
         }
 
         const row1 = leftYes + leftNo;
@@ -430,6 +612,9 @@ export default async function DashboardPage() {
             : observed.reduce((sum, value, index) => sum + (value - expected[index]) ** 2 / expected[index], 0);
         const oddsRatio = ((leftYes + 0.5) * (rightNo + 0.5)) / ((leftNo + 0.5) * (rightYes + 0.5));
 
+        const minExpected = Math.min(...expected);
+        const useFisher = minExpected < 5;
+
         return {
             leftYes,
             leftNo,
@@ -437,7 +622,11 @@ export default async function DashboardPage() {
             rightNo,
             chiSquare,
             oddsRatio,
-            minExpected: Math.min(...expected),
+            minExpected,
+            pValue: useFisher
+                ? fisherExactTwoSided(leftYes, leftNo, rightYes, rightNo)
+                : chiSquarePValue(chiSquare),
+            testLabel: useFisher ? "Fisher exakt" : "χ²-Test",
         };
     };
 
@@ -589,6 +778,217 @@ export default async function DashboardPage() {
     );
     const genderTotal = genderDistribution.reduce((sum, value) => sum + value.count, 0);
     const educationTotal = educationDistribution.reduce((sum, value) => sum + value.count, 0);
+    const completedMobile = completedRows.filter((row) => row.deviceType === "mobile").length;
+    const completedDesktop = completedRows.filter((row) => row.deviceType === "desktop").length;
+    const completedOtherDevices = completedRows.length - completedMobile - completedDesktop;
+    const completedPrimaryDevices = completedMobile + completedDesktop;
+    const completedMobileShare =
+        completedPrimaryDevices === 0 ? 0 : (completedMobile / completedPrimaryDevices) * 100;
+    const completedDesktopShare =
+        completedPrimaryDevices === 0 ? 0 : (completedDesktop / completedPrimaryDevices) * 100;
+    const formatPValue = (value: number | null) => {
+        if (value == null) return "p = -";
+        if (value < 0.001) return "p < .001";
+        return `p = ${value.toFixed(3).replace(/^0/, "")}`;
+    };
+    const effectDescription = (value: number | null) => {
+        if (value == null) return "nicht berechenbar";
+        const absoluteValue = Math.abs(value);
+        if (absoluteValue < 0.2) return "vernachlässigbar";
+        if (absoluteValue < 0.5) return "klein";
+        if (absoluteValue < 0.8) return "mittel";
+        return "groß";
+    };
+    const directionalStatus = (difference: number | null, pValue: number | null) => {
+        if (difference == null || pValue == null) {
+            return { label: "Noch keine Aussage", tone: "neutral" as const };
+        }
+        if (difference > 0 && pValue < 0.05) {
+            return { label: "Vorläufig signifikant", tone: "positive" as const };
+        }
+        if (difference > 0) {
+            return { label: "Hypothesenkonforme Tendenz", tone: "trend" as const };
+        }
+        if (difference < 0 && pValue < 0.05) {
+            return { label: "Signifikanter Gegentrend", tone: "negative" as const };
+        }
+        return { label: "Derzeit nicht gestützt", tone: "negative" as const };
+    };
+
+    const complianceAvatarN = complianceLiveStats.leftYes + complianceLiveStats.leftNo;
+    const complianceTerminalN = complianceLiveStats.rightYes + complianceLiveStats.rightNo;
+    const complianceAvatarRate = complianceAvatarN === 0 ? null : complianceLiveStats.leftYes / complianceAvatarN;
+    const complianceTerminalRate = complianceTerminalN === 0 ? null : complianceLiveStats.rightYes / complianceTerminalN;
+    const complianceDifference =
+        complianceAvatarRate == null || complianceTerminalRate == null
+            ? null
+            : (complianceAvatarRate - complianceTerminalRate) * 100;
+
+    const moralAvatarValues = numberValues(avatarRows, "moralTrust");
+    const moralTerminalValues = numberValues(terminalRows, "moralTrust");
+    const moralAvatarMean = mean(moralAvatarValues);
+    const moralTerminalMean = mean(moralTerminalValues);
+    const moralDifference =
+        moralAvatarMean == null || moralTerminalMean == null ? null : moralAvatarMean - moralTerminalMean;
+    const moralEffect = cohenD(moralAvatarValues, moralTerminalValues);
+    const moralTest = welchTTest(moralAvatarValues, moralTerminalValues);
+
+    const performanceAvatarValues = numberValues(avatarRows, "performanceTrust");
+    const performanceTerminalValues = numberValues(terminalRows, "performanceTrust");
+    const performanceAvatarMean = mean(performanceAvatarValues);
+    const performanceTerminalMean = mean(performanceTerminalValues);
+    const performanceDifference =
+        performanceAvatarMean == null || performanceTerminalMean == null
+            ? null
+            : performanceAvatarMean - performanceTerminalMean;
+    const performanceEffect = cohenD(performanceAvatarValues, performanceTerminalValues);
+    const performanceTest = welchTTest(performanceAvatarValues, performanceTerminalValues);
+    const performanceStatus =
+        performanceDifference == null || performanceTest.pValue == null
+            ? { label: "Noch keine Aussage", tone: "neutral" as const }
+            : performanceTest.pValue < 0.05
+                ? { label: "Unterschied erkennbar", tone: "negative" as const }
+                : Math.abs(performanceEffect ?? Number.POSITIVE_INFINITY) < 0.2
+                    ? { label: "Aktuell kleiner Effekt", tone: "trend" as const }
+                    : { label: "Äquivalenz noch offen", tone: "neutral" as const };
+
+    const socialAvatarValues = numberValues(avatarRows, "socialAdherence");
+    const socialTerminalValues = numberValues(terminalRows, "socialAdherence");
+    const socialAvatarMean = mean(socialAvatarValues);
+    const socialTerminalMean = mean(socialTerminalValues);
+    const socialDifference =
+        socialAvatarMean == null || socialTerminalMean == null ? null : socialAvatarMean - socialTerminalMean;
+    const socialEffect = cohenD(socialAvatarValues, socialTerminalValues);
+    const socialTest = welchTTest(socialAvatarValues, socialTerminalValues);
+
+    type HypothesisTone = "positive" | "trend" | "negative" | "neutral";
+    type HypothesisCard = {
+        id: string;
+        title: string;
+        expectation: string;
+        status: { label: string; tone: HypothesisTone };
+        avatar: { value: string; n: number; bar: number };
+        terminal: { value: string; n: number; bar: number };
+        metrics: string[];
+        interpretation: string;
+        note?: string;
+    };
+    const hypothesisCards: HypothesisCard[] = [
+        {
+            id: "H1",
+            title: "Verhaltens-Compliance",
+            expectation: "Erwartung: Avatar befolgt die KI-Empfehlung häufiger.",
+            status: directionalStatus(complianceDifference, complianceLiveStats.pValue),
+            avatar: {
+                value: complianceAvatarRate == null ? "-" : `${(complianceAvatarRate * 100).toFixed(1)}%`,
+                n: complianceAvatarN,
+                bar: (complianceAvatarRate ?? 0) * 100,
+            },
+            terminal: {
+                value: complianceTerminalRate == null ? "-" : `${(complianceTerminalRate * 100).toFixed(1)}%`,
+                n: complianceTerminalN,
+                bar: (complianceTerminalRate ?? 0) * 100,
+            },
+            metrics: [
+                `Δ ${formatNullableNumber(complianceDifference, 1)} Prozentpunkte`,
+                `OR ${formatNullableNumber(complianceLiveStats.oddsRatio, 2)}`,
+                `${complianceLiveStats.testLabel}: ${formatPValue(complianceLiveStats.pValue)}`,
+            ],
+            interpretation:
+                complianceDifference == null
+                    ? "Für den Gruppenvergleich liegen noch nicht in beiden Bedingungen gültige Entscheidungen vor."
+                    : complianceDifference > 0
+                        ? `Die bisherige Richtung entspricht H1: In der Avatar-Gruppe liegt die Befolgungsrate um ${Math.abs(complianceDifference).toFixed(1)} Prozentpunkte höher.`
+                        : `Die bisherige Richtung entspricht H1 nicht: In der Avatar-Gruppe liegt die Befolgungsrate um ${Math.abs(complianceDifference).toFixed(1)} Prozentpunkte niedriger bzw. gleichauf.`,
+        },
+        {
+            id: "H2a",
+            title: "Moral Trust",
+            expectation: "Erwartung: höherer Moral Trust in der Avatar-Gruppe.",
+            status: directionalStatus(moralDifference, moralTest.pValue),
+            avatar: {
+                value: formatNullableNumber(moralAvatarMean, 2),
+                n: moralAvatarValues.length,
+                bar: ((moralAvatarMean ?? 0) / 7) * 100,
+            },
+            terminal: {
+                value: formatNullableNumber(moralTerminalMean, 2),
+                n: moralTerminalValues.length,
+                bar: ((moralTerminalMean ?? 0) / 7) * 100,
+            },
+            metrics: [
+                `Δ M ${formatNullableNumber(moralDifference, 2)}`,
+                `d ${formatNullableNumber(moralEffect, 2)} (${effectDescription(moralEffect)})`,
+                `Welch-Test: ${formatPValue(moralTest.pValue)}`,
+            ],
+            interpretation:
+                moralDifference == null
+                    ? "Für Moral Trust liegen noch nicht in beiden Gruppen auswertbare Skalenwerte vor."
+                    : moralDifference > 0
+                        ? `Der aktuelle Mittelwert liegt in der Avatar-Gruppe um ${Math.abs(moralDifference).toFixed(2)} Skalenpunkte höher und zeigt damit in die von H2a erwartete Richtung.`
+                        : `Der aktuelle Mittelwert liegt in der Avatar-Gruppe um ${Math.abs(moralDifference).toFixed(2)} Skalenpunkte niedriger bzw. gleichauf und stützt H2a derzeit nicht.`,
+        },
+        {
+            id: "H2b",
+            title: "Performance Trust",
+            expectation: "Erwartung: kein praktisch relevanter Gruppenunterschied.",
+            status: performanceStatus,
+            avatar: {
+                value: formatNullableNumber(performanceAvatarMean, 2),
+                n: performanceAvatarValues.length,
+                bar: ((performanceAvatarMean ?? 0) / 7) * 100,
+            },
+            terminal: {
+                value: formatNullableNumber(performanceTerminalMean, 2),
+                n: performanceTerminalValues.length,
+                bar: ((performanceTerminalMean ?? 0) / 7) * 100,
+            },
+            metrics: [
+                `Δ M ${formatNullableNumber(performanceDifference, 2)}`,
+                `d ${formatNullableNumber(performanceEffect, 2)} (${effectDescription(performanceEffect)})`,
+                `Welch-Test: ${formatPValue(performanceTest.pValue)}`,
+            ],
+            interpretation:
+                performanceDifference == null
+                    ? "Für Performance Trust liegen noch nicht in beiden Gruppen auswertbare Skalenwerte vor."
+                    : `Der beobachtete Unterschied beträgt ${Math.abs(performanceDifference).toFixed(2)} Skalenpunkte. Ein nicht signifikanter Test belegt jedoch keine Gleichheit.`,
+            // note: "H2b sollte final mit einem vorab definierten Äquivalenzbereich und, sofern sinnvoll, einem Äquivalenztest beurteilt werden.",
+        },
+        {
+            id: "H3",
+            title: "Soziale Adhärenz",
+            expectation: `Erwartung: höherer Summenscore auf der Skala 0-${SOCIAL_ADHERENCE_MAX} in der Avatar-Gruppe.`,
+            status: directionalStatus(socialDifference, socialTest.pValue),
+            avatar: {
+                value: socialAvatarMean == null ? "-" : `${socialAvatarMean.toFixed(2)} / ${SOCIAL_ADHERENCE_MAX}`,
+                n: socialAvatarValues.length,
+                bar: Math.min(100, ((socialAvatarMean ?? 0) / SOCIAL_ADHERENCE_MAX) * 100),
+            },
+            terminal: {
+                value: socialTerminalMean == null ? "-" : `${socialTerminalMean.toFixed(2)} / ${SOCIAL_ADHERENCE_MAX}`,
+                n: socialTerminalValues.length,
+                bar: Math.min(100, ((socialTerminalMean ?? 0) / SOCIAL_ADHERENCE_MAX) * 100),
+            },
+            metrics: [
+                `Δ M ${formatNullableNumber(socialDifference, 2)}`,
+                `d ${formatNullableNumber(socialEffect, 2)} (${effectDescription(socialEffect)})`,
+                `Welch-Test: ${formatPValue(socialTest.pValue)}`,
+            ],
+            interpretation:
+                socialDifference == null
+                    ? "Für soziale Adhärenz liegen noch nicht in beiden Gruppen auswertbare Werte vor."
+                    : socialDifference > 0
+                        ? `Auf der Skala von 0 bis ${SOCIAL_ADHERENCE_MAX} liegt der aktuelle Summenscore in der Avatar-Gruppe um ${Math.abs(socialDifference).toFixed(2)} Punkte höher und zeigt damit in die von H3 erwartete Richtung.`
+                        : `Auf der Skala von 0 bis ${SOCIAL_ADHERENCE_MAX} liegt der aktuelle Summenscore in der Avatar-Gruppe um ${Math.abs(socialDifference).toFixed(2)} Punkte niedriger bzw. gleichauf und stützt H3 derzeit nicht.`,
+            // note: `Skalenanker: 0 = immer nur kurze funktionale Antworten wie „OK“; ${SOCIAL_ADHERENCE_MAX} = durchgehend sozial-höfliche oder vertiefende Antworten wie „Danke“, „Bitte“ oder „Erzähl mehr über dich“. Die App speichert dafür einen Summenscore aus mehreren Interaktionen statt einer einzelnen binären Quick-Reply.`,
+        },
+    ];
+    const hypothesisToneClasses: Record<HypothesisTone, string> = {
+        positive: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        trend: "border-sky-200 bg-sky-50 text-sky-700",
+        negative: "border-rose-200 bg-rose-50 text-rose-700",
+        neutral: "border-slate-200 bg-slate-50 text-slate-600",
+    };
 
     async function handleLogout() {
         "use server";
@@ -655,10 +1055,10 @@ export default async function DashboardPage() {
                         <article className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-sky-50/50 p-4">
                             <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
                                 Stichprobe & Randomisierung
-                                <InfoHint text="Bezieht sich auf die anvisierte Mindeststichprobe N=100 und die serverseitige Gruppenzuweisung in AVATAR und TERMINAL." />
+                                <InfoHint text={`Bezieht sich auf die anvisierte Mindeststichprobe N=${SAMPLE_TARGET_N} und die serverseitige Gruppenzuweisung in AVATAR und TERMINAL.`} />
                             </h3>
                             <div className="mt-4 space-y-3">
-                                <LiveStat label="Zielerreichung N=100" value={`${sampleProgress.toFixed(1)}%`} hint={`${completedRows.length} vollständige Datensätze von ${SAMPLE_TARGET_N}`} />
+                                <LiveStat label={`Zielerreichung N=${SAMPLE_TARGET_N}`} value={`${sampleProgress.toFixed(1)}%`} hint={`${completedRows.length} vollständige Datensätze von ${SAMPLE_TARGET_N}`} />
                                 <LiveStat label="Gruppenbalance gesamt" value={`Δ ${formatInt(groupBalanceDiff)}`} hint={`AVATAR ${formatInt(avatarTotal)} vs. TERMINAL ${formatInt(terminalTotal)}`} />
                                 <LiveStat label="Auswertbare Stichprobe" value={formatInt(completedRows.length)} hint="Basis für Mittelwerte, Reliabilität und Effektgrößen" />
                             </div>
@@ -701,7 +1101,7 @@ export default async function DashboardPage() {
                         <article className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-cyan-50/40 p-4">
                             <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
                                 Demografische Übersicht
-                                <InfoHint text="Kompakte Beschreibung der vollständigen Datensätze. Prozentwerte beziehen sich jeweils auf gültige Angaben; seltene Bildungsabschlüsse werden unter „Weitere“ zusammengefasst." />
+                                <InfoHint text="Kompakte Beschreibung der vollständigen Datensätze. Die Geräteverteilung vergleicht Mobile und Desktop; Tablet oder fehlende Zuordnungen werden separat ausgewiesen. Prozentwerte beziehen sich jeweils auf gültige Angaben." />
                             </h3>
                             <div className="mt-3 grid grid-cols-3 gap-2">
                                 <LiveStat
@@ -719,6 +1119,33 @@ export default async function DashboardPage() {
                                     value={ageValues.length === 0 ? "-" : `${ageValues[0]}–${ageValues[ageValues.length - 1]}`}
                                     hint="Jahre"
                                 />
+                            </div>
+                            <div className="mt-3 rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 shadow-sm">
+                                <div className="flex items-center justify-between gap-3 text-[11px]">
+                                    <span className="font-bold text-sky-700">
+                                        Mobile {completedMobile} · {completedMobileShare.toFixed(0)}%
+                                    </span>
+                                    <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                                        Endgerät
+                                    </span>
+                                    <span className="font-bold text-slate-700">
+                                        {completedDesktopShare.toFixed(0)}% · {completedDesktop} Desktop
+                                    </span>
+                                </div>
+                                <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-slate-100">
+                                    <div
+                                        className="h-full bg-sky-500"
+                                        style={{ width: `${completedMobileShare}%` }}
+                                    />
+                                    <div
+                                        className="h-full bg-slate-500"
+                                        style={{ width: `${completedDesktopShare}%` }}
+                                    />
+                                </div>
+                                <p className="mt-1.5 text-center text-[10px] text-slate-400">
+                                    {completedPrimaryDevices} vollständige Datensätze mit Mobile-/Desktop-Zuordnung
+                                    {completedOtherDevices > 0 && ` · ${completedOtherDevices} Tablet/sonstige`}
+                                </p>
                             </div>
                             <div className="mt-3 grid grid-cols-2 gap-4">
                                 <div>
@@ -880,6 +1307,113 @@ export default async function DashboardPage() {
                                 </table>
                             </div>
                         </article>
+                    </div>
+                </section>
+
+                <section className="relative z-10 overflow-hidden rounded-[2rem] border border-white/70 bg-slate-950 p-5 text-white shadow-xl shadow-slate-300/40 md:p-6">
+                    <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-sky-500/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
+                    <div className="relative">
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                                    Explorative Zwischenanalyse
+                                </p>
+                                <h2 className="mt-1 inline-flex items-center gap-2 text-xl font-black">
+                                    Live-Hypothesenmonitor
+                                    <InfoHint text="Automatisch berechneter Zwischenstand auf Basis der vollständigen Datensätze. H1 nutzt je nach Zellbesetzung Chi-Quadrat oder Fisher-exakt; H2a, H2b und der aktuelle H3-Summenscore werden mit Welch-Tests verglichen. Alle p-Werte sind zweiseitig." />
+                                </h2>
+                                <p className="mt-1 max-w-3xl text-sm text-slate-300">
+                                    Laufende Einordnung der beobachteten Gruppenunterschiede anhand der vorab formulierten Erwartungen.
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Datenbasis</p>
+                                    <p className="mt-0.5 font-black tabular-nums">{completedRows.length} / {SAMPLE_TARGET_N}</p>
+                                </div>
+                                <div className="h-8 w-px bg-white/10" />
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stand</p>
+                                    <p className="mt-0.5 text-sm font-semibold">{latestUpdate ? formatDateTime(latestUpdate) : "keine Daten"}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/*<div className="mt-5 rounded-xl border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-xs leading-relaxed text-amber-100">*/}
+                        {/*    <strong>Wichtig:</strong> Diese Anzeige ist deskriptiv-explorativ. Wiederholtes Beobachten laufender p-Werte erhöht das Fehlentscheidungsrisiko; eine Hypothese gilt erst nach Abschluss der Erhebung und der geplanten finalen Analyse als beurteilt.*/}
+                        {/*</div>*/}
+
+                        <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                            {hypothesisCards.map((hypothesis) => (
+                                <article
+                                    key={hypothesis.id}
+                                    className="rounded-2xl border border-white/10 bg-white/[0.07] p-4 shadow-lg shadow-black/10 backdrop-blur"
+                                >
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div className="flex items-start gap-3">
+                                            <span className="rounded-lg bg-cyan-300 px-2.5 py-1 text-xs font-black text-slate-950">
+                                                {hypothesis.id}
+                                            </span>
+                                            <div>
+                                                <h3 className="font-black text-white">{hypothesis.title}</h3>
+                                                <p className="mt-0.5 text-xs text-slate-400">{hypothesis.expectation}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`w-fit shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold ${hypothesisToneClasses[hypothesis.status.tone]}`}>
+                                            {hypothesis.status.label}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-4 grid grid-cols-2 gap-3">
+                                        {[
+                                            { label: "Avatar", data: hypothesis.avatar, color: "bg-cyan-400" },
+                                            { label: "Terminal", data: hypothesis.terminal, color: "bg-slate-400" },
+                                        ].map((groupResult) => (
+                                            <div key={groupResult.label} className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+                                                <div className="flex items-end justify-between gap-2">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                            {groupResult.label}
+                                                        </p>
+                                                        <p className="mt-1 text-2xl font-black tabular-nums text-white">
+                                                            {groupResult.data.value}
+                                                        </p>
+                                                    </div>
+                                                    <span className="text-[11px] tabular-nums text-slate-400">n={groupResult.data.n}</span>
+                                                </div>
+                                                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                                                    <div
+                                                        className={`h-full rounded-full ${groupResult.color}`}
+                                                        style={{ width: `${Math.max(0, Math.min(100, groupResult.data.bar))}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        {hypothesis.metrics.map((metric) => (
+                                            <span
+                                                key={metric}
+                                                className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold tabular-nums text-slate-200"
+                                            >
+                                                {metric}
+                                            </span>
+                                        ))}
+                                    </div>
+
+                                    <p className="mt-3 text-sm leading-relaxed text-slate-200">
+                                        {hypothesis.interpretation}
+                                    </p>
+                                    {hypothesis.note && (
+                                        <p className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs leading-relaxed text-amber-100">
+                                            {hypothesis.note}
+                                        </p>
+                                    )}
+                                </article>
+                            ))}
+                        </div>
                     </div>
                 </section>
 
