@@ -684,15 +684,15 @@ export default async function DashboardPage() {
             terminal: numberValues(terminalRows, "totalTrust"),
         },
     ];
-    const reliabilityRows = [
-        { label: "Reliable", alpha: cronbachAlpha(completedRows, ["mdmtReliable", "mdmtPredictable", "mdmtDependable", "mdmtConsistent"]) },
-        { label: "Competent", alpha: cronbachAlpha(completedRows, ["mdmtCompetent", "mdmtSkilled", "mdmtCapable", "mdmtMeticulous"]) },
-        { label: "Ethical", alpha: cronbachAlpha(completedRows, ["mdmtEthical", "mdmtPrincipled", "mdmtMoral", "mdmtHasIntegrity"]) },
-        { label: "Sincere", alpha: cronbachAlpha(completedRows, ["mdmtTruthful", "mdmtGenuine", "mdmtSincere", "mdmtFrank"]) },
-        { label: "Benevolent", alpha: cronbachAlpha(completedRows, ["mdmtBenevolent", "mdmtKind", "mdmtConsiderate", "mdmtHasGoodwill"]) },
+    const reliabilityScales: { label: string; keys: (keyof SessionRow)[] }[] = [
+        { label: "Reliable", keys: ["mdmtReliable", "mdmtPredictable", "mdmtDependable", "mdmtConsistent"] },
+        { label: "Competent", keys: ["mdmtCompetent", "mdmtSkilled", "mdmtCapable", "mdmtMeticulous"] },
+        { label: "Ethical", keys: ["mdmtEthical", "mdmtPrincipled", "mdmtMoral", "mdmtHasIntegrity"] },
+        { label: "Sincere", keys: ["mdmtTruthful", "mdmtGenuine", "mdmtSincere", "mdmtFrank"] },
+        { label: "Benevolent", keys: ["mdmtBenevolent", "mdmtKind", "mdmtConsiderate", "mdmtHasGoodwill"] },
         {
             label: "Performance Trust Items",
-            alpha: cronbachAlpha(completedRows, [
+            keys: [
                 "mdmtReliable",
                 "mdmtPredictable",
                 "mdmtDependable",
@@ -701,11 +701,11 @@ export default async function DashboardPage() {
                 "mdmtSkilled",
                 "mdmtCapable",
                 "mdmtMeticulous",
-            ]),
+            ],
         },
         {
             label: "Moral Trust Items",
-            alpha: cronbachAlpha(completedRows, [
+            keys: [
                 "mdmtEthical",
                 "mdmtPrincipled",
                 "mdmtMoral",
@@ -718,9 +718,15 @@ export default async function DashboardPage() {
                 "mdmtKind",
                 "mdmtConsiderate",
                 "mdmtHasGoodwill",
-            ]),
+            ],
         },
     ];
+    const reliabilityRows = reliabilityScales.map((scale) => ({
+        label: scale.label,
+        overall: cronbachAlpha(completedRows, scale.keys),
+        avatar: cronbachAlpha(avatarRows, scale.keys),
+        terminal: cronbachAlpha(terminalRows, scale.keys),
+    }));
     const controlBalanceRows: { label: string; key: MetricKey; digits?: number }[] = [
         { label: "Technikaffinität", key: "techAffinity" },
         { label: "KI-Erfahrung", key: "aiExperience" },
@@ -1251,21 +1257,34 @@ export default async function DashboardPage() {
                         <article className="rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-1">
                             <h3 className="inline-flex items-center gap-1.5 font-black text-slate-900">
                                 Reliabilität MDMT
-                                <InfoHint text="Cronbachs Alpha wird aus den vollständigen Itemantworten der jeweiligen Skala berechnet. Werte ab ca. .70 werden oft als akzeptabel interpretiert, abhängig vom Kontext." />
+                                <InfoHint text="Cronbachs Alpha wird aus den vollständigen Itemantworten der jeweiligen Skala berechnet – insgesamt und getrennt nach Experimentalbedingung. Die Gruppenwerte dienen der diagnostischen Prüfung, ob die Skalen in beiden Interfaces ähnlich konsistent funktionieren; Unterschiede zwischen Alpha-Werten sind nicht automatisch signifikant." />
                             </h3>
                             <div className="mt-4 overflow-visible rounded-xl border border-slate-200">
                                 <table className="min-w-full text-sm">
                                     <thead className="bg-slate-50 text-slate-500">
                                         <tr>
                                             <th className="px-3 py-2 text-left">Skala</th>
-                                            <th className="px-3 py-2 text-right">α</th>
+                                            <th className="px-2 py-2 text-right">
+                                                <span className="block">Gesamt</span>
+                                                <span className="block text-[9px] font-medium text-slate-400">n={completedRows.length}</span>
+                                            </th>
+                                            <th className="px-2 py-2 text-right">
+                                                <span className="block">Avatar</span>
+                                                <span className="block text-[9px] font-medium text-slate-400">n={avatarRows.length}</span>
+                                            </th>
+                                            <th className="px-2 py-2 text-right">
+                                                <span className="block">Terminal</span>
+                                                <span className="block text-[9px] font-medium text-slate-400">n={terminalRows.length}</span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {reliabilityRows.map((row) => (
                                             <tr key={row.label} className="border-t border-slate-100">
                                                 <td className="px-3 py-2 font-semibold">{row.label}</td>
-                                                <td className="px-3 py-2 text-right">{formatNullableNumber(row.alpha, 2)}</td>
+                                                <td className="px-2 py-2 text-right tabular-nums">{formatNullableNumber(row.overall, 2)}</td>
+                                                <td className="px-2 py-2 text-right tabular-nums">{formatNullableNumber(row.avatar, 2)}</td>
+                                                <td className="px-2 py-2 text-right tabular-nums">{formatNullableNumber(row.terminal, 2)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
