@@ -1100,7 +1100,7 @@ export default async function DashboardPage() {
                             </div>
                             <div className="mt-3 grid grid-cols-2 gap-2">
                                 <LiveStat label="Odds Ratio" value={formatNullableNumber(complianceLiveStats.oddsRatio, 2)} hint="AVATAR vs. TERMINAL" />
-                                <LiveStat label="χ²" value={formatNullableNumber(complianceLiveStats.chiSquare, 2)} hint={complianceLiveStats.minExpected != null && complianceLiveStats.minExpected < 5 ? "kleine Zellen: Fisher prüfen" : "Chi-Quadrat geeignet"} />
+                                <LiveStat label="χ²" value={formatNullableNumber(complianceLiveStats.chiSquare, 2)} hint={complianceLiveStats.minExpected != null && complianceLiveStats.minExpected < 5 ? "kleine Zellen: Fisher prüfen" : "Chi-Quadrat"} />
                             </div>
                         </article>
 
